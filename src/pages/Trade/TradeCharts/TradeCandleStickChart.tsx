@@ -592,7 +592,7 @@ export default function TradeCandleStickChart(props: ChartData) {
             setIsLoading(true);
             return undefined;
         }
-    }, [props.liquidityData, props.liquidityData?.ranges, props.poolPriceDisplay]);
+    }, []);
 
     useEffect(() => {
         console.log('resetting scale for chart because timeframe changed');
@@ -608,7 +608,7 @@ export default function TradeCandleStickChart(props: ChartData) {
             return undefined;
         });
         setScaleForChartLiquidity(liquidityData);
-    }, [liquidityData?.totalLiq]);
+    }, [liquidityData]);
 
     const setScaleForChartLiquidity = (liquidityData: any) => {
         console.log('parse Liq Scale');
