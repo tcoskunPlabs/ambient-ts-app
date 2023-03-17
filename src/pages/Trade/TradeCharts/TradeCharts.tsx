@@ -1,15 +1,11 @@
 // START: Import React and Dongles
-import { Dispatch, SetStateAction, useState, useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { Dispatch, SetStateAction, useState, useEffect, useRef } from 'react';
 import {
     AiOutlineCamera,
     AiOutlineFullscreen,
     AiOutlineDownload,
-    AiOutlineCopy,
-    AiOutlineLink,
-    AiOutlineTwitter,
 } from 'react-icons/ai';
-import { HiOutlineExternalLink } from 'react-icons/hi';
+import { VscClose } from 'react-icons/vsc';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 
 // START: Import JSX Components
@@ -18,24 +14,44 @@ import { DefaultTooltip } from '../../../components/Global/StyledTooltip/StyledT
 // START: Import Local Files
 import styles from './TradeCharts.module.css';
 import printDomToImage from '../../../utils/functions/printDomToImage';
-import getUnicodeCharacter from '../../../utils/functions/getUnicodeCharacter';
+
 import {
-    // eslint-disable-next-line
-    tradeData as TradeDataIF,
-    toggleDidUserFlipDenom,
+    candleDomain,
     setActiveChartPeriod,
-    targetData,
 } from '../../../utils/state/tradeDataSlice';
-import { CandleData, CandlesByPoolAndDuration } from '../../../utils/state/graphDataSlice';
-import { usePoolChartData } from '../../../state/pools/hooks';
-import { useAppSelector, useAppDispatch } from '../../../utils/hooks/reduxToolkit';
+import {
+    CandleData,
+    CandlesByPoolAndDuration,
+    LiquidityData,
+} from '../../../utils/state/graphDataSlice';
+import {
+    useAppSelector,
+    useAppDispatch,
+} from '../../../utils/hooks/reduxToolkit';
 import TradeCandleStickChart from './TradeCandleStickChart';
-import { PoolIF, TokenIF } from '../../../utils/interfaces/exports';
 import { get24hChange } from '../../../App/functions/getPoolStats';
 import TradeChartsLoading from './TradeChartsLoading/TradeChartsLoading';
+import { ChainSpec, CrocPoolView } from '@crocswap-libs/sdk';
+import IconWithTooltip from '../../../components/Global/IconWithTooltip/IconWithTooltip';
+// import { formatAmountOld } from '../../../utils/numbers';
+import UseOnClickOutside from '../../../utils/hooks/useOnClickOutside';
+import TradeChartsTokenInfo from './TradeChartsComponents/TradeChartsTokenInfo';
+import TimeFrame from './TradeChartsComponents/TimeFrame';
+import VolumeTVLFee from './TradeChartsComponents/VolumeTVLFee';
+import CurveDepth from './TradeChartsComponents/CurveDepth';
+import CurrentDataInfo from './TradeChartsComponents/CurrentDataInfo';
+import { useLocation } from 'react-router-dom';
+import TutorialOverlay from '../../../components/Global/TutorialOverlay/TutorialOverlay';
+import { tradeChartTutorialSteps } from '../../../utils/tutorial/TradeChart';
+import { favePoolsMethodsIF } from '../../../App/hooks/useFavePools';
+import { chartSettingsMethodsIF } from '../../../App/hooks/useChartSettings';
 
 // interface for React functional component props
-interface TradeChartsPropsIF {
+interface propsIF {
+    isUserLoggedIn: boolean | undefined;
+    pool: CrocPoolView | undefined;
+    // poolPriceTick: number | undefined;
+    chainData: ChainSpec;
     chainId: string;
     lastBlockNumber: number;
     poolPriceDisplay: number;
@@ -44,27 +60,58 @@ interface TradeChartsPropsIF {
     isTokenABase: boolean;
     fullScreenChart: boolean;
     setFullScreenChart: Dispatch<SetStateAction<boolean>>;
-    changeState: (isOpen: boolean | undefined, candleData: CandleData | undefined) => void;
-    candleData: CandlesByPoolAndDuration | undefined;
-    targetData: targetData[] | undefined;
-    limitPrice: string | undefined;
-    setLimitRate: React.Dispatch<React.SetStateAction<string>>;
-    limitRate: string;
-    favePools: PoolIF[];
-    addPoolToFaves: (tokenA: TokenIF, tokenB: TokenIF, chainId: string, poolId: number) => void;
-    removePoolFromFaves: (
-        tokenA: TokenIF,
-        tokenB: TokenIF,
-        chainId: string,
-        poolId: number,
+    changeState: (
+        isOpen: boolean | undefined,
+        candleData: CandleData | undefined,
     ) => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    liquidityData: any;
+    candleData: CandlesByPoolAndDuration | undefined;
+    limitTick: number | undefined;
+    favePools: favePoolsMethodsIF;
+    liquidityData: LiquidityData;
     isAdvancedModeActive: boolean | undefined;
     simpleRangeWidth: number | undefined;
-    pinnedMinPriceDisplayTruncated: number | undefined;
-    pinnedMaxPriceDisplayTruncated: number | undefined;
-    spotPriceDisplay: string | undefined;
+    upBodyColor: string;
+    upBorderColor: string;
+    downBodyColor: string;
+    downBorderColor: string;
+    upVolumeColor: string;
+    downVolumeColor: string;
+    baseTokenAddress: string;
+    poolPriceNonDisplay: number | undefined;
+    selectedDate: Date | undefined;
+    setSelectedDate: Dispatch<Date | undefined>;
+    activeTimeFrame: string;
+    setActiveTimeFrame: Dispatch<SetStateAction<string>>;
+    TradeSettingsColor: JSX.Element;
+
+    poolPriceChangePercent: string | undefined;
+
+    setPoolPriceChangePercent: Dispatch<SetStateAction<string | undefined>>;
+    isPoolPriceChangePositive: boolean;
+
+    setIsPoolPriceChangePositive: Dispatch<SetStateAction<boolean>>;
+    handlePulseAnimation: (type: string) => void;
+    fetchingCandle: boolean;
+    setFetchingCandle: React.Dispatch<React.SetStateAction<boolean>>;
+    minPrice: number;
+    maxPrice: number;
+    setMaxPrice: Dispatch<SetStateAction<number>>;
+    setMinPrice: Dispatch<SetStateAction<number>>;
+    rescaleRangeBoundariesWithSlider: boolean;
+    setRescaleRangeBoundariesWithSlider: React.Dispatch<
+        React.SetStateAction<boolean>
+    >;
+    showSidebar: boolean;
+
+    isTutorialMode: boolean;
+    setIsTutorialMode: Dispatch<SetStateAction<boolean>>;
+    setCandleDomains: React.Dispatch<React.SetStateAction<candleDomain>>;
+    chartSettings: chartSettingsMethodsIF;
+    setSimpleRangeWidth: React.Dispatch<React.SetStateAction<number>>;
+    setRepositionRangeWidth: React.Dispatch<React.SetStateAction<number>>;
+    repositionRangeWidth: number;
+    setChartTriggeredBy: React.Dispatch<React.SetStateAction<string>>;
+    chartTriggeredBy: string;
 }
 
 export interface CandleChartData {
@@ -76,36 +123,112 @@ export interface CandleChartData {
     close: number;
     time: number;
     allSwaps: unknown;
+    color: string;
+    stroke: string;
+}
+
+export interface TvlChartData {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    time: any;
+    value: number;
+}
+
+export interface VolumeChartData {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    time: any;
+    value: number;
+    color: string;
+}
+export interface FeeChartData {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    time: any;
+    value: number;
+}
+export interface LiquidityDataLocal {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    activeLiq: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    liqPrices: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    deltaAverageUSD: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cumAverageUSD: any;
+}
+
+export interface LiqSnap {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    activeLiq: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pinnedMaxPriceDisplayTruncated: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pinnedMinPriceDisplayTruncated: any;
 }
 
 // React functional component
-export default function TradeCharts(props: TradeChartsPropsIF) {
+export default function TradeCharts(props: propsIF) {
     const {
+        isUserLoggedIn,
+        pool,
+        chainData,
         isTokenABase,
         poolPriceDisplay,
         fullScreenChart,
         setFullScreenChart,
         lastBlockNumber,
         chainId,
-        addPoolToFaves,
-        removePoolFromFaves,
         favePools,
+        expandTradeTable,
+        selectedDate,
+        setSelectedDate,
+        activeTimeFrame,
+        setActiveTimeFrame,
+        TradeSettingsColor,
+        poolPriceChangePercent,
+        setPoolPriceChangePercent,
+        isPoolPriceChangePositive,
+        setIsPoolPriceChangePositive,
+        handlePulseAnimation,
+        fetchingCandle,
+        setFetchingCandle,
+        minPrice,
+        maxPrice,
+        setMaxPrice,
+        setMinPrice,
+        rescaleRangeBoundariesWithSlider,
+        setRescaleRangeBoundariesWithSlider,
+        showSidebar,
+        setCandleDomains,
+        setSimpleRangeWidth,
+        chartSettings,
+        setChartTriggeredBy,
+        chartTriggeredBy,
     } = props;
 
+    // console.log('rendering TradeCharts.tsx');
+
     const dispatch = useAppDispatch();
+
+    // allow a local environment variable to be defined in [app_repo]/.env.local to turn off connections to the cache server
+    const isServerEnabled =
+        process.env.REACT_APP_CACHE_SERVER_IS_ENABLED !== undefined
+            ? process.env.REACT_APP_CACHE_SERVER_IS_ENABLED === 'true'
+            : true;
 
     // ---------------------TRADE DATA CALCULATIONS------------------------
 
     const { tradeData } = useAppSelector((state) => state);
     const { poolIndex } = lookupChain(chainId);
 
+    const [rescale, setRescale] = useState(true);
+    const [latest, setLatest] = useState(false);
+    const [showLatest, setShowLatest] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [reset, setReset] = useState(false);
+
     const setActivePeriod = (period: number) => {
         dispatch(setActiveChartPeriod(period));
     };
     const denomInBase = tradeData.isDenomBase;
-    // const denomInTokenA = (denomInBase && isTokenABase) || (!denomInBase && !isTokenABase);
-    // const tokenASymbol = tradeData.tokenA.symbol;
-    // const tokenBSymbol = tradeData.tokenB.symbol;
     const tokenAAddress = tradeData.tokenA.address;
     const tokenBAddress = tradeData.tokenB.address;
 
@@ -133,11 +256,14 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
     };
     const saveImageContent = (
         <div className={styles.save_image_container}>
-            <div className={styles.save_image_content} onClick={downloadAsImage}>
+            <div
+                className={styles.save_image_content}
+                onClick={downloadAsImage}
+            >
                 <AiOutlineDownload />
                 Save Chart Image
             </div>
-            <div className={styles.save_image_content}>
+            {/* <div className={styles.save_image_content}>
                 <AiOutlineCopy />
                 Copy Chart Image
             </div>
@@ -152,16 +278,35 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
             <div className={styles.save_image_content}>
                 <AiOutlineTwitter />
                 Tweet chart image
-            </div>
+            </div> */}
         </div>
     );
     // CHART SETTINGS------------------------------------------------------------
     // const [openSettingsTooltip, setOpenSettingsTooltip] = useState(false);
-    const [showTvl, setShowTvl] = useState(false);
-    const [showFeeRate, setShowFeeRate] = useState(false);
-    const [showVolume, setShowVolume] = useState(false);
+    const [showTvl, setShowTvl] = useState(chartSettings.tvlSubchart.isEnabled);
+    const [showFeeRate, setShowFeeRate] = useState(
+        chartSettings.feeRateSubchart.isEnabled,
+    );
+    const [showVolume, setShowVolume] = useState(
+        chartSettings.volumeSubchart.isEnabled,
+    );
 
-    const chartItemStates = { showFeeRate, showTvl, showVolume };
+    const [liqMode, setLiqMode] = useState('Curve'); // TODO: switch default back to depth once depth mode is fixed
+
+    const path = useLocation().pathname;
+
+    const isMarketOrLimitModule =
+        path.includes('market') || path.includes('limit');
+
+    useEffect(() => {
+        if (isMarketOrLimitModule) {
+            // setLiqMode('Depth'); // TODO: the following code will be uncommented once depth mode is fixed
+        } else {
+            setLiqMode('Curve');
+        }
+    }, [isMarketOrLimitModule]);
+
+    const chartItemStates = { showFeeRate, showTvl, showVolume, liqMode };
 
     // END OF CHART SETTINGS------------------------------------------------------------
 
@@ -176,13 +321,89 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
             document.body.removeEventListener('keydown', closeOnEscapeKeyDown);
         };
     });
+    const chartSettingsRef = useRef<HTMLDivElement>(null);
+
+    const chartSettingsOutsideClickHandler = () => {
+        setShowChartSettings(false);
+    };
+    UseOnClickOutside(chartSettingsRef, chartSettingsOutsideClickHandler);
+
+    const exDataContent = (
+        <div>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+            Perferendis, doloremque.
+        </div>
+    );
+    const chartSettingsData = [
+        { icon: '🍅', label: 'Tomato', content: exDataContent },
+        { icon: '🥬', label: 'Lettuce', content: exDataContent },
+        { icon: '🥕', label: 'Carrot', content: exDataContent },
+        { icon: '🫐', label: 'Blueberries', content: exDataContent },
+        { icon: '🥂 ', label: 'Colors', content: TradeSettingsColor },
+    ];
+
+    const [showChartSettings, setShowChartSettings] = useState(false);
+    const [selectedChartSetting, setSelectedChartSetting] = useState(
+        chartSettingsData[0],
+    );
+    const chartSettingNavs = (
+        <ul className={styles.chart_settings_nav}>
+            {chartSettingsData.map((item, idx) => (
+                <li
+                    key={idx}
+                    className={
+                        item.label === selectedChartSetting.label
+                            ? styles.setting_active
+                            : styles.setting
+                    }
+                    onClick={() => setSelectedChartSetting(item)}
+                >
+                    <IconWithTooltip title={item.label} placement='left'>
+                        {item.icon}
+                    </IconWithTooltip>
+                </li>
+            ))}
+        </ul>
+    );
+    // useEffect(() => {
+    //     const currentTabData = chartSettingsData.find(
+    //         (item) => item.label === selectedChartSetting.label,
+    //     );
+    //     if (currentTabData) setSelectedChartSetting(currentTabData);
+    // }, [chartSettingsData]);
+    const mainChartSettingsContent = (
+        <div
+            // ref={chartSettingsRef}
+            className={`${styles.main_settings_container} ${
+                showChartSettings && styles.main_settings_container_active
+            }`}
+        >
+            <header>
+                <p />
+                <h2>Chart Settings</h2>
+                <div onClick={() => setShowChartSettings(false)}>
+                    <VscClose size={24} />
+                </div>
+            </header>
+            <div className={styles.chart_settings_inner}>
+                {chartSettingNavs}
+                <section className={styles.main_chart_settings_content}>
+                    <h1>{selectedChartSetting.label}</h1>
+                    {selectedChartSetting.content}
+                </section>
+            </div>
+        </div>
+    );
     const graphSettingsContent = (
         <div className={styles.graph_settings_container}>
-            <div onClick={() => setFullScreenChart(!fullScreenChart)}>
+            <div
+                onClick={() => setFullScreenChart(!fullScreenChart)}
+                id='trade_chart_full_screen_button'
+            >
                 <AiOutlineFullscreen size={20} />
             </div>
             <DefaultTooltip interactive title={saveImageContent}>
-                <div>
+                <div id='trade_chart_save_image'>
                     <AiOutlineCamera size={20} />
                 </div>
             </DefaultTooltip>
@@ -191,17 +412,12 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
 
     // END OF GRAPH SETTINGS CONTENT------------------------------------------------------
 
-    const [poolPriceChangePercent, setPoolPriceChangePercent] = useState<string | undefined>(
-        undefined,
-    );
-    const [isPoolPriceChangePositive, setIsPoolPriceChangePositive] = useState<boolean>(true);
-
     const baseTokenAddress = isTokenABase ? tokenAAddress : tokenBAddress;
     const quoteTokenAddress = isTokenABase ? tokenBAddress : tokenAAddress;
 
     useEffect(() => {
         (async () => {
-            if (tokenAAddress && tokenBAddress) {
+            if (isServerEnabled && tokenAAddress && tokenBAddress) {
                 try {
                     const priceChangeResult = await get24hChange(
                         chainId,
@@ -213,6 +429,7 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
 
                     if (priceChangeResult > -0.01 && priceChangeResult < 0.01) {
                         setPoolPriceChangePercent('No Change');
+                        setIsPoolPriceChangePositive(true);
                     } else if (priceChangeResult) {
                         priceChangeResult > 0
                             ? setIsPoolPriceChangePositive(true)
@@ -239,279 +456,54 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
                 }
             }
         })();
-    }, [denomInBase, baseTokenAddress, quoteTokenAddress, lastBlockNumber]);
-
-    // ---------------------------ACTIVE OVERLAY BUTTON FUNCTIONALITY-------------------------------
-
-    // this could be simplify into 1 reusable function but I figured we might have to do some other calculations for each of these so I am sepearing it for now. -Jr
-    const handleVolumeToggle = () => setShowVolume(!showVolume);
-
-    const handleTvlToggle = () => setShowTvl(!showTvl);
-    const handleFeeRateToggle = () => setShowFeeRate(!showFeeRate);
-
-    const exampleAction = () => console.log('example');
-
-    const chartOverlayButtonData1 = [
-        { name: 'Volume', selected: showVolume, action: handleVolumeToggle },
-        { name: 'TVL', selected: showTvl, action: handleTvlToggle },
-        { name: 'Fee Rate', selected: showFeeRate, action: handleFeeRateToggle },
-    ];
-
-    const chartOverlayButtonData2 = [
-        { name: 'Curve', selected: false, action: exampleAction },
-        { name: 'Depth', selected: false, action: exampleAction },
-    ];
-
-    const chartOverlayButtons1 = chartOverlayButtonData1.map((button, idx) => (
-        <div className={styles.settings_container} key={idx}>
-            <button
-                onClick={button.action}
-                className={
-                    button.selected
-                        ? styles.active_selected_button
-                        : styles.non_active_selected_button
-                }
-            >
-                {button.name}
-            </button>
-        </div>
-    ));
-
-    const chartOverlayButtons2 = chartOverlayButtonData2.map((button, idx) => (
-        <div className={styles.settings_container} key={idx}>
-            <button
-                onClick={button.action}
-                className={
-                    button.selected
-                        ? styles.active_selected_button
-                        : styles.non_active_selected_button
-                }
-            >
-                {button.name}
-            </button>
-        </div>
-    ));
-    // --------------------------- END OF ACTIVE OVERLAY BUTTON FUNCTIONALITY-------------------------------
-
-    // --------------------------- TIME FRAME BUTTON FUNCTIONALITY-------------------------------
-
-    const activeTimeFrameData = [
-        { label: '1m', activePeriod: 60 },
-        { label: '5m', activePeriod: 300 },
-        { label: '15m', activePeriod: 900 },
-        { label: '1h', activePeriod: 3600 },
-        { label: '4h', activePeriod: 14400 },
-        { label: '1d', activePeriod: 86400 },
-    ];
-    const [activeTimeFrame, setActiveTimeFrame] = useState('5m');
-
-    function handleTimeFrameButtonClick(label: string, time: number) {
-        setActiveTimeFrame(label);
-        setActivePeriod(time);
-    }
-
-    const activeTimeFrameDisplay = activeTimeFrameData.map((time, idx) => (
-        <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -10, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className={styles.settings_container}
-            key={idx}
-        >
-            <button
-                onClick={() => handleTimeFrameButtonClick(time.label, time.activePeriod)}
-                className={
-                    time.label === activeTimeFrame
-                        ? styles.active_button2
-                        : styles.non_active_button2
-                }
-            >
-                {time.label}
-
-                {time.label === activeTimeFrame && (
-                    <motion.div
-                        layoutId='outline2'
-                        className={styles.outline2}
-                        initial={false}
-                        transition={spring}
-                    />
-                )}
-            </button>
-        </motion.div>
-    ));
-
-    // --------------------------- END OF TIME FRAME BUTTON FUNCTIONALITY-------------------------------
-
-    // --------------------------- LIQUIDITY TYPE BUTTON FUNCTIONALITY-------------------------------
-    const liquidityTypeData = [{ label: 'Depth' }, { label: 'Curve' }];
-    const [liquidityType, setLiquidityType] = useState('depth');
-
-    function handleLiquidityTypeButtonClick(label: string) {
-        setLiquidityType(label.toLowerCase());
-    }
-
-    const liquidityTypeDisplay = liquidityTypeData.map((type, idx) => (
-        <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -10, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className={`${styles.settings_container} `}
-            key={idx}
-        >
-            <button
-                onClick={() => handleLiquidityTypeButtonClick(type.label)}
-                className={
-                    type.label.toLowerCase() === liquidityType
-                        ? styles.active_button2
-                        : styles.non_active_button2
-                }
-            >
-                {type.label}
-
-                {type.label.toLowerCase() === liquidityType && (
-                    <motion.div
-                        layoutId='outline'
-                        className={styles.outline}
-                        initial={false}
-                        transition={spring}
-                    />
-                )}
-            </button>
-        </motion.div>
-    ));
-    // eslint-disable-next-line
-    const liquidityTypeContent = (
-        <div className={styles.liquidity_type_container}>
-            <div />
-            <div className={styles.liquidity_type_content}>
-                <span>Liquidity Type</span>
-
-                {liquidityTypeDisplay}
-            </div>
-        </div>
-    );
-    // --------------------------- END OF LIQUIDITY TYPE BUTTON FUNCTIONALITY-------------------------------
-    // TOKEN INFO----------------------------------------------------------------
-
-    // console.log({ favePools });
-    const currentPoolData = {
-        base: tradeData.baseToken,
-        quote: tradeData.quoteToken,
-        chainId: chainId,
-        poolId: 36000,
-    };
-
-    const isButtonFavorited = favePools?.some(
-        (pool: PoolIF) =>
-            pool.base.address === currentPoolData.base.address &&
-            pool.quote.address === currentPoolData.quote.address &&
-            pool.poolId === currentPoolData.poolId &&
-            pool.chainId.toString() === currentPoolData.chainId.toString(),
-    );
-
-    const handleFavButton = () =>
-        isButtonFavorited
-            ? removePoolFromFaves(tradeData.baseToken, tradeData.quoteToken, chainId, 36000)
-            : addPoolToFaves(tradeData.quoteToken, tradeData.baseToken, chainId, 36000);
-
-    const favButton = (
-        <motion.div
-            whileTap={{ scale: 3 }}
-            transition={{ duration: 0.5 }}
-            onClick={handleFavButton}
-            className={styles.fav_button}
-            style={{
-                cursor: 'pointer',
-            }}
-        >
-            <svg
-                width='23'
-                height='23'
-                viewBox='0 0 23 23'
-                fill='none'
-                xmlns='http://www.w3.org/2000/svg'
-            >
-                <path
-                    d='M11.5 1.58301L14.7187 8.10384L21.9166 9.15593L16.7083 14.2288L17.9375 21.3955L11.5 18.0101L5.06248 21.3955L6.29165 14.2288L1.08331 9.15593L8.28123 8.10384L11.5 1.58301Z'
-                    stroke='#ebebff'
-                    fill={isButtonFavorited ? '#ebebff' : 'none'}
-                    strokeWidth='2'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    className={styles.star_svg}
-                />
-            </svg>
-        </motion.div>
-    );
-
-    const tokenInfo = (
-        <div className={styles.token_info_container}>
-            <div className={styles.tokens_info}>
-                {favButton}
-                <div
-                    className={styles.tokens_images}
-                    onClick={() => dispatch(toggleDidUserFlipDenom())}
-                >
-                    <img
-                        src={
-                            denomInBase ? tradeData.baseToken.logoURI : tradeData.quoteToken.logoURI
-                        }
-                        alt='token'
-                        width='30px'
-                    />
-                    <img
-                        src={
-                            denomInBase ? tradeData.quoteToken.logoURI : tradeData.baseToken.logoURI
-                        }
-                        alt='token'
-                        width='30px'
-                    />
-                </div>
-                <span
-                    className={styles.tokens_name}
-                    onClick={() => dispatch(toggleDidUserFlipDenom())}
-                >
-                    {denomInBase ? tradeData.baseToken.symbol : tradeData.quoteToken.symbol} /{' '}
-                    {denomInBase ? tradeData.quoteToken.symbol : tradeData.baseToken.symbol}
-                </span>
-            </div>
-
-            <div className={styles.chart_overlay_container}>{chartOverlayButtons1}</div>
-            <div className={styles.chart_overlay_container}>{chartOverlayButtons2}</div>
-        </div>
-    );
-    // END OF TOKEN INFO----------------------------------------------------------------
-
-    // TIME FRAME CONTENT--------------------------------------------------------------
-
-    const currencyCharacter = denomInBase
-        ? // denom in a, return token b character
-          getUnicodeCharacter(tradeData.quoteToken.symbol)
-        : // denom in b, return token a character
-          getUnicodeCharacter(tradeData.baseToken.symbol);
+    }, [
+        isServerEnabled,
+        denomInBase,
+        baseTokenAddress,
+        quoteTokenAddress,
+        lastBlockNumber,
+    ]);
 
     // console.log({ poolPriceChangePercent });
     const timeFrameContent = (
         <div className={styles.time_frame_container}>
-            <div className={styles.left_side}>
-                <span className={styles.amount}>
-                    {poolPriceDisplay === Infinity || poolPriceDisplay === 0
-                        ? '…'
-                        : `${currencyCharacter}${truncatedPoolPrice}`}
-                </span>
-                <span
-                    className={
-                        isPoolPriceChangePositive ? styles.change_positive : styles.change_negative
-                    }
-                >
-                    {poolPriceChangePercent === undefined ? '…' : poolPriceChangePercent + ' | 24h'}
-                </span>
+            <div
+                className={styles.chart_overlay_container}
+                id='trade_charts_time_frame'
+            >
+                <TimeFrame
+                    activeTimeFrame={activeTimeFrame}
+                    setActiveTimeFrame={setActiveTimeFrame}
+                    setActivePeriod={setActivePeriod}
+                />
             </div>
-            <div className={styles.right_side}>
-                {/* <span>Timeframe</span> */}
-                {activeTimeFrameDisplay}
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
+                id='trade_charts_volume_tvl'
+            >
+                <VolumeTVLFee
+                    setShowVolume={setShowVolume}
+                    setShowTvl={setShowTvl}
+                    setShowFeeRate={setShowFeeRate}
+                    showVolume={showVolume}
+                    showTvl={showTvl}
+                    showFeeRate={showFeeRate}
+                    chartSettings={chartSettings}
+                />
+            </div>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'end',
+                    alignItems: 'end',
+                }}
+                id='trade_charts_curve_depth'
+            >
+                <CurveDepth setLiqMode={setLiqMode} liqMode={liqMode} />
             </div>
         </div>
     );
@@ -519,83 +511,42 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
     // END OF TIME FRAME CONTENT--------------------------------------------------------------
 
     // CURRENT DATA INFO----------------------------------------------------------------
-    const [currentData, setCurrentData] = useState<CandleChartData>();
+    const [currentData, setCurrentData] = useState<
+        CandleChartData | undefined
+    >();
+    const [currentVolumeData, setCurrentVolumeData] = useState<
+        number | undefined
+    >();
 
-    function formattedCurrentData(data: number): string {
-        return data
-            ? data.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-              })
-            : '';
-    }
+    const tvlDisplay = <p className={styles.tvl_display}></p>;
 
-    const currentDataInfo = (
-        <div className={styles.current_data_info}>
-            {denomInBase ? tradeData.baseToken.symbol : tradeData.quoteToken.symbol} /{' '}
-            {denomInBase ? tradeData.quoteToken.symbol : tradeData.baseToken.symbol}·{' '}
-            {activeTimeFrame} ·{' '}
-            {currentData
-                ? 'O: ' +
-                  formattedCurrentData(currentData.open) +
-                  ' H: ' +
-                  formattedCurrentData(currentData.high) +
-                  ' L: ' +
-                  formattedCurrentData(currentData.low) +
-                  ' C: ' +
-                  formattedCurrentData(currentData.close)
-                : ''}
+    const tokenInfo = (
+        <div className={styles.token_info_container}>
+            <TradeChartsTokenInfo
+                isPoolPriceChangePositive={isPoolPriceChangePositive}
+                poolPriceDisplay={poolPriceDisplay}
+                poolPriceChangePercent={poolPriceChangePercent}
+                setPoolPriceChangePercent={setPoolPriceChangePercent}
+                favePools={favePools}
+                chainId={chainId}
+            />
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '8px',
+                }}
+            >
+                <div>{tvlDisplay}</div>
+            </div>
+            <div>{graphSettingsContent}</div>
         </div>
     );
-
-    // END OF CURRENT DATA INFO--------------------------------------------------------------
-
-    // CANDLE STICK DATA---------------------------------------------------
-    const chartData = usePoolChartData('0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8'); // ETH/USDC pool address
-
-    const formattedTvlData = useMemo(() => {
-        if (chartData) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return chartData.map((day: any) => {
-                return {
-                    time: new Date(day.date * 1000),
-                    value: day.totalValueLockedUSD,
-                };
-            });
-        } else {
-            return [];
-        }
-    }, [chartData]);
-
-    const formattedVolumeData = useMemo(() => {
-        if (chartData) {
-            return chartData.map((day) => {
-                return {
-                    time: new Date(day.date * 1000),
-                    value: day.volumeUSD,
-                };
-            });
-        } else {
-            return [];
-        }
-    }, [chartData]);
-
-    const formattedFeesUSD = useMemo(() => {
-        if (chartData) {
-            return chartData.map((day) => {
-                return {
-                    time: new Date(day.date * 1000),
-                    value: day.feesUSD,
-                };
-            });
-        } else {
-            return [];
-        }
-    }, [chartData]);
-    // END OF CANDLE STICK DATA---------------------------------------------------
-    // This is a simple loading that last for 1 sec before displaying the graph. The graph is already in the dom by then. We will just positon this in front of it and then remove it after 1 sec.
+    // END OF TOKEN INFO----------------------------------------------------------------
 
     const expandGraphStyle = props.expandTradeTable ? styles.hide_graph : '';
+
     const [graphIsLoading, setGraphIsLoading] = useState(true);
 
     useEffect(() => {
@@ -605,48 +556,113 @@ export default function TradeCharts(props: TradeChartsPropsIF) {
         return () => clearTimeout(timer);
     }, []);
 
+    const [isTutorialEnabled, setIsTutorialEnabled] = useState(false);
+
     return (
-        <>
-            <div className={`${styles.graph_style} ${expandGraphStyle}`}>
-                {graphSettingsContent}
+        <div
+            className={styles.main_container_chart}
+            style={{
+                padding: fullScreenChart ? '1rem' : '0',
+                background: fullScreenChart ? 'var(--dark2)' : '',
+            }}
+            ref={canvasRef}
+        >
+            {mainChartSettingsContent}
+            <div className={`${styles.graph_style} ${expandGraphStyle}  `}>
+                {props.isTutorialMode && (
+                    <div className={styles.tutorial_button_container}>
+                        <button
+                            className={styles.tutorial_button}
+                            onClick={() => setIsTutorialEnabled(true)}
+                        >
+                            Tutorial Mode
+                        </button>
+                    </div>
+                )}
                 {tokenInfo}
                 {timeFrameContent}
-                {/* {liquidityTypeContent} */}
-                {currentDataInfo}
+
+                <CurrentDataInfo
+                    showTooltip={showTooltip}
+                    currentData={currentData}
+                    currentVolumeData={currentVolumeData}
+                    showLatest={showLatest}
+                    setLatest={setLatest}
+                    setReset={setReset}
+                    setRescale={setRescale}
+                    rescale={rescale}
+                    reset={reset}
+                />
             </div>
             {graphIsLoading ? (
                 <TradeChartsLoading />
             ) : (
-                <div style={{ width: '100%', height: '100%' }} ref={canvasRef}>
+                <div style={{ width: '100%', height: '100%', zIndex: '2' }}>
                     <TradeCandleStickChart
-                        tvlData={formattedTvlData}
-                        volumeData={formattedVolumeData}
-                        feeData={formattedFeesUSD}
-                        priceData={props.candleData}
+                        isUserLoggedIn={isUserLoggedIn}
+                        pool={pool}
+                        chainData={chainData}
+                        expandTradeTable={expandTradeTable}
+                        candleData={props.candleData}
                         changeState={props.changeState}
                         chartItemStates={chartItemStates}
-                        targetData={props.targetData}
-                        limitPrice={props.limitPrice}
-                        setLimitRate={props.setLimitRate}
-                        limitRate={props.limitRate}
-                        denomInBase={denomInBase}
+                        limitTick={props.limitTick}
                         liquidityData={props.liquidityData}
                         isAdvancedModeActive={props.isAdvancedModeActive}
                         simpleRangeWidth={props.simpleRangeWidth}
-                        pinnedMinPriceDisplayTruncated={props.pinnedMinPriceDisplayTruncated}
-                        pinnedMaxPriceDisplayTruncated={props.pinnedMaxPriceDisplayTruncated}
-                        spotPriceDisplay={props.spotPriceDisplay}
+                        poolPriceDisplay={poolPriceDisplay}
                         truncatedPoolPrice={parseFloat(truncatedPoolPrice)}
                         setCurrentData={setCurrentData}
+                        setCurrentVolumeData={setCurrentVolumeData}
+                        upBodyColor={props.upBodyColor}
+                        upBorderColor={props.upBorderColor}
+                        downBodyColor={props.downBodyColor}
+                        downBorderColor={props.downBorderColor}
+                        upVolumeColor={props.upVolumeColor}
+                        downVolumeColor={props.downVolumeColor}
+                        baseTokenAddress={props.baseTokenAddress}
+                        chainId={chainId}
+                        poolPriceNonDisplay={props.poolPriceNonDisplay}
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                        rescale={rescale}
+                        setRescale={setRescale}
+                        latest={latest}
+                        setLatest={setLatest}
+                        reset={reset}
+                        setReset={setReset}
+                        showLatest={showLatest}
+                        setShowLatest={setShowLatest}
+                        activeTimeFrame={activeTimeFrame}
+                        setShowTooltip={setShowTooltip}
+                        handlePulseAnimation={handlePulseAnimation}
+                        fetchingCandle={fetchingCandle}
+                        setFetchingCandle={setFetchingCandle}
+                        minPrice={minPrice}
+                        maxPrice={maxPrice}
+                        setMaxPrice={setMaxPrice}
+                        setMinPrice={setMinPrice}
+                        rescaleRangeBoundariesWithSlider={
+                            rescaleRangeBoundariesWithSlider
+                        }
+                        setRescaleRangeBoundariesWithSlider={
+                            setRescaleRangeBoundariesWithSlider
+                        }
+                        showSidebar={showSidebar}
+                        setCandleDomains={setCandleDomains}
+                        setSimpleRangeWidth={setSimpleRangeWidth}
+                        setRepositionRangeWidth={props.setRepositionRangeWidth}
+                        repositionRangeWidth={props.repositionRangeWidth}
+                        setChartTriggeredBy={setChartTriggeredBy}
+                        chartTriggeredBy={chartTriggeredBy}
                     />
                 </div>
             )}
-        </>
+            <TutorialOverlay
+                isTutorialEnabled={isTutorialEnabled}
+                setIsTutorialEnabled={setIsTutorialEnabled}
+                steps={tradeChartTutorialSteps}
+            />
+        </div>
     );
 }
-
-const spring = {
-    type: 'spring',
-    stiffness: 500,
-    damping: 30,
-};

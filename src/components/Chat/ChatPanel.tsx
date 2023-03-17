@@ -1,18 +1,22 @@
 import styles from './ChatPanel.module.css';
-import { motion } from 'framer-motion';
 import SentMessagePanel from './MessagePanel/SentMessagePanel/SentMessagePanel';
 import DividerDark from '../Global/DividerDark/DividerDark';
 import MessageInput from './MessagePanel/InputBox/MessageInput';
-import IncomingMessage from './MessagePanel/Inbox/IncomingMessage';
 import Room from './MessagePanel/Room/Room';
-import { RiCloseFill } from 'react-icons/ri';
-import { useEffect, useRef, useState } from 'react';
-import { recieveMessageByRoomRoute, socket } from './Service/chatApi';
-import axios from 'axios';
-import { Message } from './Model/MessageModel';
-import { PoolIF } from '../../utils/interfaces/PoolIF';
-import { TokenIF } from '../../utils/interfaces/TokenIF';
-import { targetData } from '../../utils/state/tradeDataSlice';
+import { RiArrowDownSLine } from 'react-icons/ri';
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import useSocket from './Service/useSocket';
+import { TokenIF } from '../../utils/interfaces/exports';
+import { TbTableExport } from 'react-icons/tb';
+import { useParams } from 'react-router-dom';
+import useChatApi from './Service/ChatApi';
+import { useAppSelector } from '../../utils/hooks/reduxToolkit';
+import { BsChatLeftFill } from 'react-icons/bs';
+import { useAccount, useEnsName } from 'wagmi';
+import { IoIosArrowUp, IoIosArrowDown } from 'react-icons/io';
+import FullChat from '../../App/components/Chat/FullChat/FullChat';
+import trimString from '../../utils/functions/trimString';
+import { favePoolsMethodsIF } from '../../App/hooks/useFavePools';
 
 interface currentPoolInfo {
     tokenA: TokenIF;
@@ -26,174 +30,507 @@ interface currentPoolInfo {
     primaryQuantity: string;
     isTokenAPrimaryRange: boolean;
     primaryQuantityRange: string;
-    limitPrice: string;
+    limitTick: number | undefined;
     advancedLowTick: number;
     advancedHighTick: number;
-    simpleRangeWidth: number;
     slippageTolerance: number;
     activeChartPeriod: number;
-    targetData: targetData[];
-    pinnedMaxPriceDisplayTruncated: number;
-    pinnedMinPriceDisplayTruncated: number;
 }
 
-interface ChatProps {
-    chatStatus: boolean;
+interface propsIF {
+    isChatOpen: boolean;
+    setIsChatOpen: Dispatch<SetStateAction<boolean>>;
     onClose: () => void;
-    favePools: PoolIF[];
+    favePools: favePoolsMethodsIF;
     currentPool: currentPoolInfo;
-    isFullScreen?: boolean;
+    isFullScreen: boolean;
+    fullScreen?: boolean;
+    userImageData: string[];
+    appPage?: boolean;
+    username?: string | undefined | null;
 }
 
-export default function ChatPanel(props: ChatProps) {
-    const { favePools, currentPool } = props;
-    const messageEnd = useRef<HTMLInputElement | null>(null);
-    const _socket = socket;
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [room, setRoom] = useState('Global');
-
-    useEffect(() => {
-        console.log({ favePools });
-    }, [favePools]);
-
-    const currentUser = '62f24f3ff40188d467c532e8';
-
-    useEffect(() => {
-        _socket.on('msg-recieve', () => {
-            /*
-            
-             */
-        });
-        getMsg();
-    }, [props.chatStatus, messages, room, props.currentPool]);
-
+export default function ChatPanel(props: propsIF) {
+    const { isFullScreen, favePools, currentPool, setIsChatOpen } = props;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
-    const getMsg = async () => {
-        let response;
-        if (room === 'Current Pool') {
-            response = await axios.get(
-                recieveMessageByRoomRoute +
-                    '/' +
-                    currentPool.baseToken.symbol +
-                    currentPool.quoteToken.symbol,
-            );
-        } else {
-            response = await axios.get(recieveMessageByRoomRoute + '/' + room);
-        }
-        setMessages(response.data);
-    };
+    // const navigate = useNavigate();
 
-    const scrollToBottom = () => {
-        messageEnd.current?.scrollTo(0, messageEnd.current?.scrollHeight);
-    };
+    // eslint-disable-next-line
+    const messageEnd = useRef<any>(null);
+    const [room, setRoom] = useState('Global');
+    const [moderator, setModerator] = useState(false);
+    const [isCurrentPool, setIsCurrentPool] = useState(false);
+    const [showCurrentPoolButton, setShowCurrentPoolButton] = useState(true);
+    const [userCurrentPool, setUserCurrentPool] = useState('ETH/USDC');
+    const { address } = useAccount();
+    const { data: ens } = useEnsName({ address });
+    const [ensName, setEnsName] = useState('');
+    const [currentUser, setCurrentUser] = useState<string | undefined>(
+        undefined,
+    );
+    const [scrollDirection, setScrollDirection] = useState(String);
+    const [notification, setNotification] = useState(0);
+    const [isMessageDeleted, setIsMessageDeleted] = useState(false);
+    const [isScrollToBottomButtonPressed, setIsScrollToBottomButtonPressed] =
+        useState(true);
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [props.chatStatus, room]);
-
-    const header = (
-        <header className={styles.modal_header}>
-            <h2 className={styles.modal_title}>Chat</h2>
-            <RiCloseFill size={27} className={styles.close_button} onClick={props.onClose} />
-        </header>
+    // console.log('running ChatPanel');
+    const { messages, getMsg, lastMessage, messageUser } = useSocket(
+        room.toUpperCase(),
     );
 
-    return (
-        <>
-            {props.chatStatus ? (
-                //  <div className={styles.outside_modal}>
+    const { getID, updateUser, updateMessageUser, saveUser } = useChatApi();
 
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4 }}
-                    className={`
-                    ${styles.main_body}
-                    `}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(e: any) => e.stopPropagation()}
-                >
+    const userData = useAppSelector((state) => state.userData);
+    const isUserLoggedIn = userData.isLoggedIn;
+    const resolvedAddress = userData.resolvedAddress;
+
+    const secondaryImageData = userData.secondaryImageData || '';
+
+    const { address: addressFromParams } = useParams();
+
+    const connectedAccountActive =
+        !addressFromParams ||
+        resolvedAddress?.toLowerCase() === address?.toLowerCase();
+
+    // eslint-disable-next-line
+    function closeOnEscapeKeyDown(e: any) {
+        if ((e.charCode || e.keyCode) === 27) setIsChatOpen(false);
+    }
+
+    // eslint-disable-next-line
+    function openChatPanel(e: any) {
+        if (e.keyCode === 67 && e.ctrlKey && e.altKey) {
+            setIsChatOpen(!props.isChatOpen);
+        }
+    }
+
+    useEffect(() => {
+        document.body.addEventListener('keydown', closeOnEscapeKeyDown);
+        document.body.addEventListener('keydown', openChatPanel);
+        return function cleanUp() {
+            document.body.removeEventListener('keydown', closeOnEscapeKeyDown);
+        };
+    });
+
+    useEffect(() => {
+        if (scrollDirection === 'Scroll Up') {
+            if (messageUser !== currentUser) {
+                if (
+                    lastMessage?.mentionedName === ensName ||
+                    lastMessage?.mentionedName === address
+                ) {
+                    setNotification((notification) => notification + 1);
+                }
+            } else if (messageUser === currentUser) {
+                setIsScrollToBottomButtonPressed(true);
+                const timer = setTimeout(() => {
+                    messageEnd.current?.scrollTo(
+                        messageEnd.current?.scrollHeight,
+                        messageEnd.current?.scrollHeight,
+                    );
+                }, 100);
+
+                setNotification(0);
+                return () => clearTimeout(timer);
+            }
+        } else {
+            messageEnd.current?.scrollTo(
+                messageEnd.current?.scrollHeight,
+                messageEnd.current?.scrollHeight,
+            );
+        }
+    }, [lastMessage]);
+
+    // console.log({ ens });
+    // console.log({ ensName });
+
+    useEffect(() => {
+        setScrollDirection('Scroll Down');
+        if (address) {
+            if (ens === null || ens === undefined) {
+                setEnsName('defaultValue');
+            } else {
+                setEnsName(ens);
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            getID().then((result: any) => {
+                if (result.status === 'Not OK') {
+                    // eslint-disable-next-line
+                    saveUser(address, ensName).then((result: any) => {
+                        setCurrentUser(result.userData._id);
+                        return result;
+                    });
+                } else {
+                    result.userData.isModerator === true
+                        ? setModerator(true)
+                        : setModerator(false);
+                    setCurrentUser(result.userData._id);
+                    setUserCurrentPool(result.userData.userCurrentPool);
+                    if (result.userData.ensName !== ensName) {
+                        updateUser(
+                            currentUser as string,
+                            ensName,
+                            userCurrentPool,
+                        ).then(
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (result: any) => {
+                                if (result.status === 'OK') {
+                                    console.log(result);
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    updateMessageUser(
+                                        currentUser as string,
+                                        ensName,
+                                    ).then(
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        (result: any) => {
+                                            return result;
+                                        },
+                                    );
+                                }
+                            },
+                        );
+                    }
+                }
+            });
+        } else {
+            setCurrentUser(undefined);
+        }
+    }, [ens, address, props.isChatOpen, isFullScreen, userCurrentPool]);
+
+    useEffect(() => {
+        setIsScrollToBottomButtonPressed(false);
+        scrollToBottom();
+        setNotification(0);
+        getMsg();
+    }, [room]);
+
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        getID().then((result: any) => {
+            if (result?.status === 'OK') {
+                result.userData.isModerator === true
+                    ? setModerator(true)
+                    : setModerator(false);
+                setCurrentUser(result.userData._id);
+                setUserCurrentPool(result.userData.userCurrentPool);
+                if (result.userData.ensName !== ensName) {
+                    // eslint-disable-next-line
+                    updateUser(
+                        currentUser as string,
+                        ensName,
+                        userCurrentPool,
+                    ).then(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (result: any) => {
+                            if (result.status === 'OK') {
+                                console.log(result);
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                updateMessageUser(
+                                    currentUser as string,
+                                    ensName,
+                                ).then(
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    (result: any) => {
+                                        return result;
+                                    },
+                                );
+                            }
+                        },
+                    );
+                }
+            }
+        });
+    }, [userCurrentPool]);
+
+    useEffect(() => {
+        if (isMessageDeleted === true) {
+            getMsg();
+        }
+    }, [isMessageDeleted]);
+
+    useEffect(() => {
+        setIsScrollToBottomButtonPressed(false);
+        scrollToBottom();
+        setNotification(0);
+        console.log('scrolling to bottom');
+    }, [props.isChatOpen]);
+
+    function handleCloseChatPanel() {
+        props.setIsChatOpen(false);
+    }
+
+    const scrollToBottomButton = async () => {
+        setIsScrollToBottomButtonPressed(true);
+        messageEnd.current?.scrollTo(
+            messageEnd.current?.scrollHeight,
+            messageEnd.current?.scrollHeight,
+        );
+        setScrollDirection('Scroll Down');
+    };
+
+    const scrollToBottom = async () => {
+        const timer = setTimeout(() => {
+            messageEnd.current?.scrollTo(
+                messageEnd.current?.scrollHeight,
+                messageEnd.current?.scrollHeight,
+            );
+        }, 1000);
+        return () => clearTimeout(timer);
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleScroll = (e: any) => {
+        if (0 <= e.target.scrollTop) {
+            setNotification(0);
+            setIsScrollToBottomButtonPressed(false);
+            setScrollDirection('Scroll Down');
+        } else {
+            setScrollDirection('Scroll Up');
+        }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleWheel = (e: any) => {
+        if (
+            e.nativeEvent.wheelDelta > 0 &&
+            messageEnd.current?.scrollHeight !==
+                messageEnd.current?.scrollHeight
+        ) {
+            setScrollDirection('Scroll Up');
+            setIsScrollToBottomButtonPressed(false);
+        }
+        if (0 <= messageEnd.current?.scrollTop) {
+            setScrollDirection('Scroll Down');
+        }
+    };
+
+    // const handleFullScreenRedirect = () => {
+    //     navigate('/app/chat');
+    //     props.setIsChatOpen(true);
+    // };
+
+    const header = (
+        <div
+            className={styles.chat_header}
+            onClick={() => setIsChatOpen(!props.isChatOpen)}
+        >
+            <h2 className={styles.chat_title}>Chat</h2>
+            <section style={{ paddingRight: '10px' }}>
+                {isFullScreen || !props.isChatOpen ? (
+                    <></>
+                ) : (
+                    <TbTableExport
+                        size={18}
+                        className={styles.open_full_button}
+                        onClick={() =>
+                            window.open(
+                                '/chat/' + room.replace('/', '&').toLowerCase(),
+                            )
+                        }
+                    />
+                )}
+                {isFullScreen || !props.isChatOpen ? (
+                    <></>
+                ) : (
+                    <IoIosArrowDown
+                        size={22}
+                        className={styles.close_button}
+                        onClick={() => handleCloseChatPanel()}
+                    />
+                )}
+                {!props.isChatOpen && <IoIosArrowUp size={22} />}
+            </section>
+        </div>
+    );
+
+    const messageList = (
+        <div
+            ref={messageEnd}
+            className={styles.scrollable_div}
+            onScroll={handleScroll}
+            onWheel={handleWheel}
+            id='chatmessage'
+        >
+            {messages &&
+                messages.map((item, i) => (
                     <div
-                        className={`
-                            ${styles.modal_body}
-                        `}
+                        key={item._id}
+                        style={{ width: '90%', marginBottom: 4 }}
                     >
-                        <div className={styles.chat_body}>
-                            {header}
-
-                            <Room
-                                favePools={favePools}
-                                selectedRoom={room}
-                                setRoom={setRoom}
-                                currentPool={currentPool}
-                            />
-
-                            <div style={{ width: '90%' }}>
-                                <DividerDark changeColor addMarginTop addMarginBottom />
-                            </div>
-
-                            <MessageInput message={messages[0]} room={room} />
-
-                            <div className={styles.scrollable_div} ref={messageEnd}>
-                                {/* 
-                            {messages.map((item:Message) => {
-                              <div style={{ width: '90%' }}>
-                                </div>                            })} */}
-                                {messages.map((item) => (
-                                    <div
-                                        key={item.sender}
-                                        style={{ width: '90%', marginBottom: 4 }}
-                                    >
-                                        {item.sender === currentUser ? (
-                                            <>
-                                                <DividerDark
-                                                    changeColor
-                                                    addMarginTop
-                                                    addMarginBottom
-                                                />
-                                                <SentMessagePanel message={item} />
-                                            </>
-                                        ) : (
-                                            <IncomingMessage message={item} />
-                                        )}
-                                    </div>
-                                ))}
-
-                                {/* <div style={{ width: '90%' }}>
-                                <DividerDark changeColor addMarginTop addMarginBottom />
-                                <SentMessagePanel message='message blah blah blah blah blah blah blah blah blah blah' />
-                            </div>
-                            <div style={{ width: '90%' }}>
-                                <IncomingMessage message='message blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah' />
-                            </div>
-
-                            <div style={{ width: '90%' }}>
-                                <DividerDark changeColor addMarginTop addMarginBottom />
-                                <SentMessagePanel message='message blah blah blah blah blah blah blah blah blah blah' />
-                            </div>
-
-                            <div style={{ width: '90%' }}>
-                                <DividerDark changeColor addMarginTop addMarginBottom />
-                                <SentMessagePanel message='message blah blah blah blah blah blah blah blah blah blah' />
-                            </div>
-
-                            <div style={{ width: '90%' }}>
-                                <IncomingMessage message='message' />
-                            </div>
-
-                            <div style={{ width: '90%' }}>
-                                <DividerDark changeColor addMarginTop addMarginBottom />
-                                <SentMessagePanel message='message blah blah blah blah blah blah blah blah blah blah' />
-                            </div> */}
-                            </div>
-                        </div>
+                        <SentMessagePanel
+                            isUserLoggedIn={isUserLoggedIn as boolean}
+                            message={item}
+                            ensName={ensName}
+                            isCurrentUser={item.sender === currentUser}
+                            currentUser={currentUser}
+                            userImageData={
+                                connectedAccountActive
+                                    ? props.userImageData
+                                    : secondaryImageData
+                            }
+                            resolvedAddress={resolvedAddress}
+                            connectedAccountActive={address}
+                            moderator={moderator}
+                            room={room}
+                            isMessageDeleted={isMessageDeleted}
+                            setIsMessageDeleted={setIsMessageDeleted}
+                            previousMessage={
+                                i === messages.length - 1
+                                    ? null
+                                    : messages[i + 1]
+                            }
+                            nextMessage={i === 0 ? null : messages[i - 1]}
+                        />
                     </div>
-                </motion.div>
+                ))}
+        </div>
+    );
+
+    const chatNotification = (
+        <div className={styles.chat_notification}>
+            {notification > 0 &&
+            scrollDirection === 'Scroll Up' &&
+            !isScrollToBottomButtonPressed ? (
+                isFullScreen ? (
+                    <div className={styles.chat_notification}>
+                        <span
+                            style={{ marginTop: '-18px', cursor: 'pointer' }}
+                            onClick={() => scrollToBottomButton()}
+                        >
+                            <BsChatLeftFill size={25} color='#7371fc' />
+                            <span className={styles.text}>{notification}</span>
+                        </span>
+                        <span style={{ marginTop: '-18px', cursor: 'pointer' }}>
+                            <RiArrowDownSLine
+                                role='button'
+                                size={27}
+                                color='#7371fc'
+                                onClick={() => scrollToBottomButton()}
+                            />
+                        </span>
+                    </div>
+                ) : (
+                    <div className={styles.chat_notification}>
+                        <span onClick={() => scrollToBottomButton()}>
+                            <BsChatLeftFill size={25} color='#7371fc' />
+                            <span className={styles.text}>{notification}</span>
+                        </span>
+                        <span>
+                            <RiArrowDownSLine
+                                role='button'
+                                size={27}
+                                color='#7371fc'
+                                onClick={() => scrollToBottomButton()}
+                            />
+                        </span>
+                    </div>
+                )
+            ) : scrollDirection === 'Scroll Up' &&
+              notification <= 0 &&
+              !isScrollToBottomButtonPressed ? (
+                isFullScreen ? (
+                    <span style={{ marginTop: '-18px', cursor: 'pointer' }}>
+                        <RiArrowDownSLine
+                            role='button'
+                            size={27}
+                            color='#7371fc'
+                            onClick={() => scrollToBottomButton()}
+                        />
+                    </span>
+                ) : (
+                    <span>
+                        <RiArrowDownSLine
+                            role='button'
+                            size={27}
+                            color='#7371fc'
+                            onClick={() => scrollToBottomButton()}
+                        />
+                    </span>
+                )
             ) : (
-                // </div>
-                <></>
+                ''
             )}
-        </>
+        </div>
+    );
+
+    const messageInput = (
+        <MessageInput
+            currentUser={currentUser as string}
+            message={messages[0]}
+            room={
+                room === 'Current Pool'
+                    ? currentPool.baseToken.symbol +
+                      '/' +
+                      currentPool.quoteToken.symbol
+                    : room
+            }
+            ensName={ensName}
+        />
+    );
+
+    const contentHeight = props.isChatOpen ? '479px' : '30px';
+    if (props.appPage)
+        return (
+            <FullChat
+                messageList={messageList}
+                chatNotification={chatNotification}
+                messageInput={messageInput}
+                room={room}
+                userName={
+                    ens === null || ens === ''
+                        ? trimString(address as string, 6, 0, '…')
+                        : (ens as string)
+                }
+                setRoom={setRoom}
+                setIsCurrentPool={setIsCurrentPool}
+                showCurrentPoolButton={showCurrentPoolButton}
+                setShowCurrentPoolButton={setShowCurrentPoolButton}
+                favePools={favePools}
+                userCurrentPool={userCurrentPool}
+            />
+        );
+
+    return (
+        <div
+            className={styles.main_container}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onClick={(e: any) => e.stopPropagation()}
+        >
+            <div
+                className={styles.modal_body}
+                style={{ height: contentHeight, width: '100%' }}
+            >
+                <div className={styles.chat_body}>
+                    {header}
+
+                    <Room
+                        favePools={favePools}
+                        selectedRoom={room}
+                        setRoom={setRoom}
+                        currentPool={currentPool}
+                        isFullScreen={isFullScreen}
+                        room={room}
+                        setIsCurrentPool={setIsCurrentPool}
+                        isCurrentPool={isCurrentPool}
+                        showCurrentPoolButton={showCurrentPoolButton}
+                        setShowCurrentPoolButton={setShowCurrentPoolButton}
+                        userCurrentPool={userCurrentPool}
+                        setUserCurrentPool={setUserCurrentPool}
+                        currentUser={currentUser}
+                        ensName={ensName}
+                    />
+
+                    <DividerDark changeColor addMarginTop addMarginBottom />
+
+                    {messageList}
+
+                    {chatNotification}
+
+                    {messageInput}
+                    <div id='thelastmessage' />
+                </div>
+            </div>
+        </div>
     );
 }

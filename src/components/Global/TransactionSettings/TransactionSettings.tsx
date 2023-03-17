@@ -5,58 +5,74 @@ import { useState } from 'react';
 import styles from './TransactionSettings.module.css';
 import Button from '../Button/Button';
 import SlippageTolerance from '../SlippageTolerance/SlippageTolerance';
-// import { useAppDispatch } from '../../../utils/hooks/reduxToolkit';
-// import { setSlippageTolerance } from '../../../utils/state/tradeDataSlice';
-import { SlippagePairIF } from '../../../utils/interfaces/exports';
+import ConfirmationModalControl from '../ConfirmationModalControl/ConfirmationModalControl';
+import DividerDark from '../DividerDark/DividerDark';
+import { SlippageMethodsIF } from '../../../App/hooks/useSlippage';
 
 // interface for component props
-interface TransactionSettingsPropsIF {
-    module: 'Swap' | 'Market Order' | 'Limit Order' | 'Range Order';
-    slippage: SlippagePairIF;
+interface propsIF {
+    module: 'Swap' | 'Market Order' | 'Limit Order' | 'Range Order' | 'Reposition';
+    toggleFor: string;
+    slippage: SlippageMethodsIF;
     isPairStable: boolean;
     onClose: () => void;
+    bypassConfirm: boolean;
+    toggleBypassConfirm: (item: string, pref: boolean) => void;
 }
 
-export default function TransactionSettings(props: TransactionSettingsPropsIF) {
-    const { module, slippage, isPairStable, onClose } = props;
-
-    // const dispatch = useAppDispatch();
+export default function TransactionSettings(props: propsIF) {
+    const {
+        module,
+        toggleFor,
+        slippage,
+        isPairStable,
+        onClose,
+        bypassConfirm,
+        toggleBypassConfirm,
+    } = props;
 
     const [newSlippage, setNewSlippage] = useState<string>(
-        isPairStable ? slippage.stable.value : slippage.volatile.value,
+        isPairStable ? slippage.stable.toString() : slippage.volatile.toString(),
     );
 
-    const setSlippage = (input: string) => {
-        setNewSlippage(input);
+    const handleSubmit = (): void => {
+        const slippageAsFloat = parseFloat(newSlippage);
         isPairStable
-            ? slippage.stable.setValue(newSlippage)
-            : slippage.volatile.setValue(newSlippage);
-    };
-
-    const handleClose = () => {
-        // dispatch(setSlippageTolerance(parseInt(newSlippage)));
-        // isPairStable
-        //     ? slippage.stable.setValue(newSlippage)
-        //     : slippage.volatile.setValue(newSlippage);
-        setSlippage(newSlippage);
+            ? slippage.updateStable(slippageAsFloat)
+            : slippage.updateVolatile(slippageAsFloat);
         onClose();
     };
+
+    const handleKeyDown = (event: { keyCode: number }): void => {
+        event.keyCode === 13 && handleSubmit();
+    }
 
     const shouldDisplaySlippageTolerance = module !== 'Limit Order';
 
     return (
         <div className={styles.settings_container}>
             <div className={styles.settings_title}>{module + ' Settings'}</div>
-            {shouldDisplaySlippageTolerance ? (
+            {shouldDisplaySlippageTolerance && (
                 <SlippageTolerance
                     slippageValue={newSlippage}
-                    setSlippage={setSlippage}
+                    setNewSlippage={setNewSlippage}
                     module={module}
+                    handleKeyDown={handleKeyDown}
                 />
-            ) : null}
+            )}
+            <DividerDark />
+            <DividerDark />
+
+            <ConfirmationModalControl
+                bypassConfirm={bypassConfirm}
+                toggleBypassConfirm={toggleBypassConfirm}
+                toggleFor={toggleFor}
+                displayInSettings={true}
+            />
+
             <div className={styles.button_container}>
                 {shouldDisplaySlippageTolerance ? (
-                    <Button title='Submit' action={handleClose} />
+                    <Button title='Submit' action={handleSubmit} flat={true} />
                 ) : null}
             </div>
         </div>

@@ -62,12 +62,12 @@
 
 .star_svg {
     cursor: pointer;
+    transition: all var(--animation-speed) ease-in-out;
 }
 
 .star_svg:hover {
     fill: var(--text-grey-light);
     cursor: pointer;
-    transition: all var(--animation-speed) ease-in-out;
 }
 
 /* Desktop screen Sizes */
@@ -97,15 +97,15 @@
 }
 
 /* Mobile Landscape Screen Sizes */
-@media only screen and (min-width: 480px) {
+@media only screen and (min-width: 580px) {
     .tokens_container {
         display: flex;
     }
     .main_container {
-        grid-template-columns: 50px 50px auto ;
+        grid-template-columns: 50px 50px auto;
         /* background: red; */
     }
-    svg {
+    .fav_button svg {
         width: 15px;
     }
 }
@@ -121,7 +121,7 @@
         /* background: blue; */
     }
 
-    svg {
+    .fav_button svg {
         width: 15px;
     }
 }
@@ -135,16 +135,16 @@
     .main_container {
         grid-template-columns: 100px 100px auto;
     }
-    svg {
+    .fav_button svg {
         width: 20px;
     }
 }
 /* Extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1600px) {
     .main_container {
-        grid-template-columns: 100px 100px 0.99fr ;
+        grid-template-columns: 100px 100px 0.99fr;
     }
-    svg {
+    .fav_button svg {
         width: 20px;
     }
 }

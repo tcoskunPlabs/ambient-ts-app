@@ -53,30 +53,33 @@ export default function initializeUserLocalStorage() {
         userUpdated = true;
     }
 
-    if (!user.slippage) {
-        user.slippage = {
-            swap: { stable: '0.1', volatile: '0.5' },
-            mint: { stable: '1', volatile: '3' },
-        };
+    // create a value to track whether the sidebar is open or closed
+    if (!user.sidebar) {
+        user.sidebar = 'open';
         userUpdated = true;
     }
 
-    // create a favorite pools value on the user object
-    if (!user.favePools) {
-        user.favePools = [];
+    if (!user.ackTokens) {
+        user.ackTokens = [];
         userUpdated = true;
     }
 
-    if (!user.termsOfService) {
-        user.termsOfService = {
-            agreed: false,
-            date: null,
-        };
+    if (!user.bypassConfirm) {
+        user.bypassConfirm = false;
         userUpdated = true;
     }
 
-    if (!user.theme) {
-        user.theme = 'purple_dark';
+    if (!user.bypassConfirm) {
+        const initialMap = new Map();
+        const initialPairs = [
+            ['global', false],
+            ['swap', false],
+            ['limit', false],
+            ['range', false],
+            ['repo', false],
+        ];
+        initialPairs.forEach((pair) => initialMap.set(pair[0], pair[1]));
+        user.bypassConfirm = JSON.stringify(Array.from(initialMap.entries()));
         userUpdated = true;
     }
 

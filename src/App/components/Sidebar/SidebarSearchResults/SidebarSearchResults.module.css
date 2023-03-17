@@ -1,7 +1,7 @@
 .container{
     /* background: var(--dark1); */
 margin-top: 3rem;
-background: #141922;
+background: var(--dark1);
 
 border-radius: 4px;
     width: 100%;
@@ -57,6 +57,7 @@ border-radius: 4px;
     padding: 5px 0;
 
     border-bottom: 1px solid var(--dark3);
+    color: var(--text-grey-dark)
 }
 
 .card_title{
@@ -68,17 +69,28 @@ border-radius: 4px;
     font-weight: 500;
 font-size: 12px;
 line-height: 15px;
-color: #CDC1FF;
+color: var(--text-highlight);
 
 }
 
 
 
 .search_result_title{
-    margin: 10px 2.2rem;
+    margin: 10px 0;
     color: #CDC1FF;
+    color: var(--text-grey-dark);
     font-weight: 200;
     font-size: 18px;
 line-height: 22px;
 letter-spacing: -0.02em;
+text-align: center;
+}
+
+.not_found_text{
+    height: 100px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    color: var(--text-grey-light);
+    padding: 0 2rem;
 }

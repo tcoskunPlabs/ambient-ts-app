@@ -1,0 +1,246 @@
+import { ambientPosSlot, concPosSlot } from '@crocswap-libs/sdk';
+
+import { useAppSelector } from '../../utils/hooks/reduxToolkit';
+import getUnicodeCharacter from '../../utils/functions/getUnicodeCharacter';
+import { formatAmountOld } from '../../utils/numbers';
+import { PositionIF } from '../../utils/interfaces/exports';
+import trimString from '../../utils/functions/trimString';
+import { useMemo } from 'react';
+import { getMoneynessRank } from '../functions/getMoneynessRank';
+
+export const useProcessRange = (
+    position: PositionIF,
+    account: string,
+    isOnPortfolioPage?: boolean,
+) => {
+    const blockExplorer = 'https://goerli.etherscan.io/';
+
+    const tradeData = useAppSelector((state) => state.tradeData);
+
+    const poolPriceNonDisplay = tradeData.poolPriceNonDisplay;
+
+    const isDenomBase = tradeData.isDenomBase;
+
+    const tokenAAddress = position.base;
+    const tokenBAddress = position.quote;
+    // const tokenAAddress = tradeData.tokenA.address;
+    // const tokenBAddress = tradeData.tokenB.address;
+
+    const isBaseTokenMoneynessGreaterOrEqual = useMemo(
+        () =>
+            getMoneynessRank(position.base.toLowerCase() + '_' + position.chainId) -
+                getMoneynessRank(position.quote.toLowerCase() + '_' + position.chainId) >=
+            0,
+        [position.base, position.base, position.chainId],
+    );
+
+    const baseQty = position.positionLiqBaseTruncated;
+
+    const quoteQty = position.positionLiqQuoteTruncated;
+
+    const baseTokenSymbol = position.baseSymbol;
+    const quoteTokenSymbol = position.quoteSymbol;
+
+    const quoteTokenLogo = position.quoteTokenLogoURI;
+    const baseTokenLogo = position.baseTokenLogoURI;
+
+    const apy = position.apy ?? undefined;
+    const apyString = apy
+        ? apy.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          }) + '%'
+        : undefined;
+
+    const apyClassname = apy > 0 ? 'apy_positive' : 'apy_negative';
+    const isAmbient = position.positionType === 'ambient';
+
+    const ensName = position.ensResolution ? position.ensResolution : null;
+    const ownerId = position.user.length === 40 ? '0x' + position.user : position.user;
+
+    const isOwnerActiveAccount = position.user.toLowerCase() === account?.toLowerCase();
+
+    // -------------------------------POSITION HASH------------------------
+
+    let posHash;
+    if (position.positionType == 'ambient') {
+        posHash = ambientPosSlot(ownerId, position.base, position.quote, 36000);
+    } else {
+        posHash =
+            position.user && position.base && position.quote && position.bidTick && position.askTick
+                ? concPosSlot(
+                      position.user,
+                      position.base,
+                      position.quote,
+                      position.bidTick,
+                      position.askTick,
+                      36000,
+                  ).toString()
+                : '…';
+    }
+
+    // -----------------------------POSITIONS RANGE--------------------
+    let isPositionInRange = position.isPositionInRange;
+
+    const poolPriceInTicks = Math.log(poolPriceNonDisplay) / Math.log(1.0001);
+
+    if (!isOnPortfolioPage)
+        isPositionInRange =
+            position.positionType === 'ambient' ||
+            (position.bidTick <= poolPriceInTicks && poolPriceInTicks <= position.askTick);
+
+    // --------------------SELECTED TOKEN FUNCTIONALITY---------------------------
+
+    const positionBaseAddressLowerCase = position.base.toLowerCase();
+    const positionQuoteAddressLowerCase = position.quote.toLowerCase();
+
+    const tokenAAddressLowerCase = tokenAAddress.toLowerCase();
+    const tokenBAddressLowerCase = tokenBAddress.toLowerCase();
+    const baseTokenAddressTruncated = trimString(tokenAAddressLowerCase, 6, 0, '…');
+    const quoteTokenAddressTruncated = trimString(tokenBAddressLowerCase, 6, 0, '…');
+
+    const positionMatchesSelectedTokens =
+        (positionBaseAddressLowerCase === tokenAAddressLowerCase ||
+            positionQuoteAddressLowerCase === tokenAAddressLowerCase) &&
+        (positionBaseAddressLowerCase === tokenBAddressLowerCase ||
+            positionQuoteAddressLowerCase === tokenBAddressLowerCase);
+
+    const accountAddress = account ? account.toLowerCase() : null;
+    const userMatchesConnectedAccount = accountAddress === position.user.toLowerCase();
+    // ---------------------------------POSITIONS MIN AND MAX RANGE--------------------
+
+    const baseTokenCharacter = position.baseSymbol ? getUnicodeCharacter(position.baseSymbol) : '';
+    const quoteTokenCharacter = position.quoteSymbol
+        ? getUnicodeCharacter(position.quoteSymbol)
+        : '';
+
+    const minRange = isDenomBase ? position.lowRangeDisplayInBase : position.lowRangeDisplayInQuote;
+    // const minRange = isDenomBase
+    //     ? quoteTokenCharacter + position.lowRangeDisplayInBase
+    //     : baseTokenCharacter + position.lowRangeDisplayInQuote;
+
+    const minRangeDenomByMoneyness = isBaseTokenMoneynessGreaterOrEqual
+        ? position.lowRangeDisplayInQuote
+        : position.lowRangeDisplayInBase;
+
+    const maxRangeDenomByMoneyness = isBaseTokenMoneynessGreaterOrEqual
+        ? position.highRangeDisplayInQuote
+        : position.highRangeDisplayInBase;
+
+    const maxRange = isDenomBase
+        ? position.highRangeDisplayInBase
+        : position.highRangeDisplayInQuote;
+    // const maxRange = isDenomBase
+    //     ? quoteTokenCharacter + position.highRangeDisplayInBase
+    //     : baseTokenCharacter + position.highRangeDisplayInQuote;
+
+    const ambientOrMin = position.positionType === 'ambient' ? '0.00' : minRange;
+    const ambientOrMax = position.positionType === 'ambient' ? '∞' : maxRange;
+
+    const width = (position.askTick - position.bidTick) / 100;
+
+    const usdValueNum = position.totalValueUSD || position.positionLiqTotalUSD;
+
+    const usdValueTruncated = !usdValueNum
+        ? undefined
+        : usdValueNum < 0.001
+        ? usdValueNum.toExponential(2) + ' '
+        : usdValueNum >= 100000
+        ? formatAmountOld(usdValueNum)
+        : // ? baseLiqDisplayNum.toExponential(2)
+          usdValueNum.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          }) + ' ';
+
+    const usdValueLocaleString = !usdValueNum
+        ? '…'
+        : usdValueNum < 0.01
+        ? usdValueNum.toPrecision(3)
+        : // ? baseLiqDisplayNum.toExponential(2)
+          usdValueNum.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          });
+
+    const quantitiesAvailable = baseQty !== undefined || quoteQty !== undefined;
+
+    const baseDisplayFrontend = quantitiesAvailable
+        ? `${baseTokenCharacter}${baseQty || '0.00'}`
+        : '…';
+    const baseDisplay = quantitiesAvailable ? baseQty || '0.00' : '…';
+
+    const quoteDisplayFrontend = quantitiesAvailable
+        ? `${quoteTokenCharacter}${quoteQty || '0.00'}`
+        : '…';
+    const quoteDisplay = quantitiesAvailable ? quoteQty || '0.00' : '…';
+
+    const usdValue = usdValueTruncated ? usdValueTruncated : '…';
+
+    const ensNameOrOwnerTruncated = ensName
+        ? ensName.length > 15
+            ? trimString(ensName, 9, 3, '…')
+            : ensName
+        : trimString(ownerId, 7, 4, '…');
+    const posHashTruncated = trimString(posHash.toString(), 6, 4, '…');
+
+    const userNameToDisplay = isOwnerActiveAccount ? 'You' : ensNameOrOwnerTruncated;
+
+    const isPositionEmpty = position.positionLiq === '0';
+
+    // if (!position) return null;
+
+    return {
+        // wallet and id data
+        ownerId,
+        posHash,
+        ensName,
+        userMatchesConnectedAccount,
+        posHashTruncated,
+        userNameToDisplay,
+
+        // Range min and max
+        ambientOrMin,
+        ambientOrMax,
+
+        // value
+        usdValue,
+        usdValueLocaleString,
+
+        // Token Qty data
+        baseQty,
+        quoteQty,
+        baseTokenCharacter,
+        quoteTokenCharacter,
+        baseTokenAddressTruncated,
+        quoteTokenAddressTruncated,
+        baseTokenLogo,
+        quoteTokenLogo,
+        baseDisplayFrontend,
+        quoteDisplayFrontend,
+        baseTokenSymbol,
+        quoteTokenSymbol,
+        baseDisplay,
+        quoteDisplay,
+        tokenAAddressLowerCase,
+        tokenBAddressLowerCase,
+
+        // apy
+        apy,
+        apyString,
+        apyClassname,
+        // range status
+        isPositionInRange,
+        isAmbient,
+        isOwnerActiveAccount,
+        isPositionEmpty,
+        // position matches select token data
+        positionMatchesSelectedTokens,
+        isDenomBase,
+        minRangeDenomByMoneyness,
+        maxRangeDenomByMoneyness,
+        isBaseTokenMoneynessGreaterOrEqual,
+        width,
+        blockExplorer,
+    };
+};

@@ -20,7 +20,7 @@
 }
 
 .welcome_back {
-    background: red;
+    
     width: 255px;
     padding: 1rem;
     font-size: var(--body-size);
@@ -45,7 +45,6 @@
     box-shadow: 0px 35px 20px rgba(0, 0, 0, 0.3);
     transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     right: 10px;
-    display: none;
 
     grid-template-rows: 24px auto 24px;
     opacity: 1;
@@ -104,7 +103,7 @@
 }
 /* chat input */
 .input_container {
-    background: #242f3f;
+    background: var(--dark2);
     padding: 0 8px;
     display: grid;
     grid-template-columns: auto 60px;

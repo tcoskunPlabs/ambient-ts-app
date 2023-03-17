@@ -7,23 +7,34 @@ import TransactionSettings from '../../Global/TransactionSettings/TransactionSet
 import styles from './SwapHeader.module.css';
 import { useModal } from '../../../components/Global/Modal/useModal';
 import settingsIcon from '../../../assets/images/icons/settings.svg';
-import { SlippagePairIF } from '../../../utils/interfaces/exports';
 import { useAppDispatch, useAppSelector } from '../../../utils/hooks/reduxToolkit';
 import { toggleDidUserFlipDenom } from '../../../utils/state/tradeDataSlice';
+import IconWithTooltip from '../../Global/IconWithTooltip/IconWithTooltip';
+import { AiOutlineShareAlt } from 'react-icons/ai';
+import ShareModal from '../../Global/ShareModal/ShareModal';
+import { SlippageMethodsIF } from '../../../App/hooks/useSlippage';
 
 // interface for props
-interface SwapHeaderPropsIF {
-    // tokenPair: TokenPairIF;
-    swapSlippage: SlippagePairIF;
+interface propsIF {
+    swapSlippage: SlippageMethodsIF;
     isPairStable: boolean;
     isOnTradeRoute?: boolean;
-    // isDenomBase: boolean;
-    // isTokenABase: boolean;
+    openGlobalModal: (content: React.ReactNode, title?: string) => void;
+    bypassConfirm: boolean;
+    toggleBypassConfirm: (item: string, pref: boolean) => void;
+    shareOptionsDisplay: JSX.Element;
 }
 
 // main react functional component
-export default function SwapHeader(props: SwapHeaderPropsIF) {
-    const { swapSlippage, isPairStable, isOnTradeRoute } = props;
+export default function SwapHeader(props: propsIF) {
+    const {
+        swapSlippage,
+        isPairStable,
+        isOnTradeRoute,
+        openGlobalModal,
+        bypassConfirm,
+        toggleBypassConfirm,
+    } = props;
     const [isModalOpen, openModal, closeModal] = useModal();
 
     const dispatch = useAppDispatch();
@@ -39,33 +50,64 @@ export default function SwapHeader(props: SwapHeaderPropsIF) {
         <Modal noHeader title='modal' onClose={closeModal}>
             <TransactionSettings
                 module={isOnTradeRoute ? 'Market Order' : 'Swap'}
+                toggleFor='swap'
                 slippage={swapSlippage}
                 isPairStable={isPairStable}
                 onClose={closeModal}
+                bypassConfirm={bypassConfirm}
+                toggleBypassConfirm={toggleBypassConfirm}
             />
         </Modal>
     ) : null;
 
     const tradeRouteHeader = (
         <ContentHeader>
-            <span />
+            <div
+                className={styles.share_button}
+                onClick={() => openGlobalModal(<ShareModal />, 'Share')}
+                id='swap_share_button'
+            >
+                <AiOutlineShareAlt />
+            </div>
             <div className={styles.token_info} onClick={() => dispatch(toggleDidUserFlipDenom())}>
                 {isDenomBase ? baseTokenSymbol : quoteTokenSymbol} /{' '}
                 {isDenomBase ? quoteTokenSymbol : baseTokenSymbol}
             </div>
-            <div onClick={openModal}>
-                <img src={settingsIcon} alt='settings' />
-            </div>
+
+            <IconWithTooltip title='Settings' placement='left'>
+                <div
+                    onClick={openModal}
+                    style={{ cursor: 'pointer' }}
+                    className={`${styles.settings_container} ${styles.settings_icon}`}
+                    id='swap_settings_button'
+                >
+                    <img src={settingsIcon} alt='settings' />
+                </div>
+            </IconWithTooltip>
         </ContentHeader>
     );
 
     const mainHeader = (
         <ContentHeader>
-            <div />
-            <span className={styles.title}>Swap</span>
-            <div className={styles.settings_container} onClick={openModal}>
-                <img src={settingsIcon} alt='settings' />
+            <div
+                className={styles.share_button}
+                id='swap_share_button'
+                onClick={() => openGlobalModal(<ShareModal />, 'Share')}
+            >
+                <AiOutlineShareAlt />
             </div>
+            <span className={styles.title}>Swap</span>
+            <IconWithTooltip title='Settings' placement='left'>
+                <div
+                    className={`${styles.settings_container}
+                    ${styles.settings_icon}`}
+                    onClick={openModal}
+                    style={{ cursor: 'pointer' }}
+                    id='swap_settings_button'
+                >
+                    <img src={settingsIcon} alt='settings' />
+                </div>
+            </IconWithTooltip>
         </ContentHeader>
     );
 

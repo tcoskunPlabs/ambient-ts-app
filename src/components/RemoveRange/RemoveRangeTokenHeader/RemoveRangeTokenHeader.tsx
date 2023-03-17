@@ -1,8 +1,10 @@
+import NoTokenIcon from '../../Global/NoTokenIcon/NoTokenIcon';
 import RangeStatus from '../../Global/RangeStatus/RangeStatus';
 import styles from './RemoveRangeTokenHeader.module.css';
-import { useAppDispatch } from '../../../utils/hooks/reduxToolkit';
-import { toggleDidUserFlipDenom } from '../../../utils/state/tradeDataSlice';
-interface IRemoveRangeTokenHeaderProps {
+import { RiListSettingsLine } from 'react-icons/ri';
+// import { useAppDispatch } from '../../../utils/hooks/reduxToolkit';
+// import { toggleDidUserFlipDenom } from '../../../utils/state/tradeDataSlice';
+interface propsIF {
     isPositionInRange: boolean;
     isAmbient: boolean;
     baseTokenSymbol: string;
@@ -10,35 +12,41 @@ interface IRemoveRangeTokenHeaderProps {
     baseTokenLogoURI: string;
     quoteTokenLogoURI: string;
     isDenomBase: boolean;
+
+    setShowSettings: (value: React.SetStateAction<boolean>) => void;
+    showSettings: boolean;
 }
 
-export default function RemoveRangeTokenHeader(props: IRemoveRangeTokenHeaderProps) {
-    const dispatch = useAppDispatch();
+export default function RemoveRangeTokenHeader(props: propsIF) {
+    // const dispatch = useAppDispatch();
+    const { showSettings, setShowSettings } = props;
 
     return (
         <div className={styles.container}>
-            <div
-                className={styles.token_info}
-                onClick={() => {
-                    dispatch(toggleDidUserFlipDenom());
-                }}
-            >
-                <img
-                    src={props.isDenomBase ? props.baseTokenLogoURI : props.quoteTokenLogoURI}
-                    // src='https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ethereum-icon-purple.svg/480px-Ethereum-icon-purple.svg.png'
-                    alt=''
-                />
-                <img
-                    src={props.isDenomBase ? props.quoteTokenLogoURI : props.baseTokenLogoURI}
-                    alt=''
-                />
-                {/* <img src='https://cryptologos.cc/logos/usd-coin-usdc-logo.png' alt='' /> */}
+            <div className={styles.token_info}>
+                {props.baseTokenLogoURI ? (
+                    <img src={props.baseTokenLogoURI} alt={props.baseTokenSymbol} />
+                ) : (
+                    <NoTokenIcon tokenInitial={props.baseTokenSymbol.charAt(0)} width='30px' />
+                )}
+                {props.quoteTokenLogoURI ? (
+                    <img src={props.quoteTokenLogoURI} alt={props.quoteTokenSymbol} />
+                ) : (
+                    <NoTokenIcon tokenInitial={props.quoteTokenSymbol.charAt(0)} width='30px' />
+                )}
+
                 <span>
-                    {props.isDenomBase ? props.baseTokenSymbol : props.quoteTokenSymbol} /
-                    {props.isDenomBase ? props.quoteTokenSymbol : props.baseTokenSymbol}
+                    {props.baseTokenSymbol} /{props.quoteTokenSymbol}
                 </span>
             </div>
-            <RangeStatus isInRange={props.isPositionInRange} isAmbient={props.isAmbient} />
+            <RangeStatus
+                isInRange={props.isPositionInRange}
+                isEmpty={false}
+                isAmbient={props.isAmbient}
+            />
+            <div onClick={() => setShowSettings(!showSettings)} className={styles.settings_icon}>
+                {showSettings ? null : <RiListSettingsLine size={20} />}
+            </div>
         </div>
     );
 }

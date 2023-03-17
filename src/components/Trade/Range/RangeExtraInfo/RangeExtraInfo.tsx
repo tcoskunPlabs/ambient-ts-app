@@ -7,66 +7,44 @@ import { RiArrowDownSLine } from 'react-icons/ri';
 import styles from './RangeExtraInfo.module.css';
 import { TokenPairIF } from '../../../../utils/interfaces/exports';
 import TooltipComponent from '../../../Global/TooltipComponent/TooltipComponent';
-import truncateDecimals from '../../../../utils/data/truncateDecimals';
+// import truncateDecimals from '../../../../utils/data/truncateDecimals';
 
 // interface for component props
-interface RangeExtraInfoPropsIF {
+interface propsIF {
     tokenPair: TokenPairIF;
     poolPriceDisplay: string;
-    slippageTolerance: string;
+    slippageTolerance: number;
     liquidityProviderFee: number;
     quoteTokenIsBuy?: boolean;
-    gasPriceinGwei: number | undefined;
+    rangeGasPriceinDollars: string | undefined;
     isDenomBase: boolean;
     isTokenABase: boolean;
-    daysInRangeEstimation: number;
+    isQtyEntered: boolean;
+    showExtraInfoDropdown: boolean;
+    isBalancedMode: boolean;
 }
 
 // central react functional component
-export default function RangeExtraInfo(props: RangeExtraInfoPropsIF) {
+export default function RangeExtraInfo(props: propsIF) {
     const {
         tokenPair,
-        gasPriceinGwei,
+        rangeGasPriceinDollars,
         // quoteTokenIsBuy,
         poolPriceDisplay,
         slippageTolerance,
         liquidityProviderFee,
         isDenomBase,
         isTokenABase,
-        daysInRangeEstimation,
+        // isQtyEntered,
+        showExtraInfoDropdown,
+        isBalancedMode,
     } = props;
 
     const [showExtraDetails, setShowExtraDetails] = useState<boolean>(false);
 
     const reverseDisplay = (isTokenABase && !isDenomBase) || (!isTokenABase && isDenomBase);
-    // const invertPrice = displayForBase;
 
-    // console.log({ isTokenABase });
-    // console.log({ displayForBase });
-    // console.log({ reverseDisplay });
-    // console.log({ invertPrice });
-    // console.log({ poolPriceDisplay });
-
-    // const displayPrice = invertPrice ? 1 / poolPriceDisplay : poolPriceDisplay;
-    // const displayPriceStringTruncated =
-    //     displayPrice < 2
-    //         ? truncateDecimals(displayPrice, 6).toString()
-    //         : truncateDecimals(displayPrice, 2).toString();
-
-    // const priceLimitAfterSlippageAndFee = quoteTokenIsBuy
-    //     ? truncateDecimals(
-    //           (1 / poolPriceDisplay) *
-    //               (1 - slippageTolerance / 100) *
-    //               (1 - liquidityProviderFee / 100),
-    //           4,
-    //       )
-    //     : truncateDecimals(
-    //           (1 / poolPriceDisplay) * (1 + slippageTolerance) * (1 + liquidityProviderFee / 100),
-    //           4,
-    //       );
-    const truncatedGasInGwei = gasPriceinGwei ? truncateDecimals(gasPriceinGwei, 2) : undefined;
-
-    const extraInfoData = [
+    const extraInfoDataAdvanced = [
         {
             title: 'Spot Price',
             tooltipTitle: 'spot price explanation',
@@ -77,19 +55,36 @@ export default function RangeExtraInfo(props: RangeExtraInfoPropsIF) {
         {
             title: 'Slippage Tolerance',
             tooltipTitle: 'slippage tolerance explanation',
-            data: `${slippageTolerance}%`,
+            data: `±${slippageTolerance}%`,
         },
         {
             title: 'Current Provider Fee',
             tooltipTitle: 'liquidity provider fee explanation',
             data: `${liquidityProviderFee}%`,
         },
+    ];
+
+    const extraInfoDataBalanced = [
         {
-            title: 'Estimated Range Duration',
-            tooltipTitle: 'range duration explanation',
-            data: `${daysInRangeEstimation} Days`,
+            title: 'Spot Price',
+            tooltipTitle: 'spot price explanation',
+            data: reverseDisplay
+                ? `${poolPriceDisplay} ${tokenPair.dataTokenA.symbol} per ${tokenPair.dataTokenB.symbol}`
+                : `${poolPriceDisplay} ${tokenPair.dataTokenB.symbol} per ${tokenPair.dataTokenA.symbol}`,
+        },
+        {
+            title: 'Slippage Tolerance',
+            tooltipTitle: 'slippage tolerance explanation',
+            data: `±${slippageTolerance}%`,
+        },
+        {
+            title: 'Current Provider Fee',
+            tooltipTitle: 'liquidity provider fee explanation',
+            data: `${liquidityProviderFee}%`,
         },
     ];
+
+    const extraInfoData = isBalancedMode ? extraInfoDataBalanced : extraInfoDataAdvanced;
 
     const RangeExtraInfoDetails = (
         <div className={styles.extra_details}>
@@ -107,31 +102,30 @@ export default function RangeExtraInfo(props: RangeExtraInfoPropsIF) {
 
     const extraDetailsOrNull = showExtraDetails ? RangeExtraInfoDetails : null;
 
-    // const [baseTokenData, quoteTokenData] = isTokenABase
-    //     ? [tokenPair.dataTokenA, tokenPair.dataTokenB]
-    //     : [tokenPair.dataTokenB, tokenPair.dataTokenA];
-
-    // const defaultDisplay = `1 ${tokenPair.dataTokenA.symbol} ≈ ${displayPriceStringTruncated} ${tokenPair.dataTokenB.symbol}`;
-
-    // const flippedDisplay = `1 ${tokenPair.dataTokenB.symbol} ≈ ${displayPriceStringTruncated} ${tokenPair.dataTokenA.symbol}`;
+    const extraInfoSection = (
+        <div
+            className={styles.extra_info_content}
+            onClick={
+                showExtraInfoDropdown
+                    ? () => setShowExtraDetails(!showExtraDetails)
+                    : () => setShowExtraDetails(false)
+            }
+        >
+            <div className={styles.gas_pump}>
+                <FaGasPump size={15} /> {rangeGasPriceinDollars ? rangeGasPriceinDollars : '…'}
+            </div>
+            <div className={styles.token_amount}>
+                {reverseDisplay
+                    ? `1 ${tokenPair.dataTokenB.symbol} ≈ ${poolPriceDisplay} ${tokenPair.dataTokenA.symbol}`
+                    : `1 ${tokenPair.dataTokenA.symbol} ≈ ${poolPriceDisplay} ${tokenPair.dataTokenB.symbol}`}
+                {showExtraInfoDropdown && <RiArrowDownSLine size={27} />}
+            </div>
+        </div>
+    );
 
     return (
         <>
-            <div
-                className={styles.extra_info_content}
-                onClick={() => setShowExtraDetails(!showExtraDetails)}
-            >
-                <div className={styles.gas_pump}>
-                    <FaGasPump size={15} />{' '}
-                    {truncatedGasInGwei ? `${truncatedGasInGwei} gwei` : '…'}
-                </div>
-                <div className={styles.token_amount}>
-                    {reverseDisplay
-                        ? `1 ${tokenPair.dataTokenB.symbol} ≈ ${poolPriceDisplay} ${tokenPair.dataTokenA.symbol}`
-                        : `1 ${tokenPair.dataTokenA.symbol} ≈ ${poolPriceDisplay} ${tokenPair.dataTokenB.symbol}`}
-                    <RiArrowDownSLine size={27} />{' '}
-                </div>
-            </div>
+            {extraInfoSection}
             {extraDetailsOrNull}
         </>
     );

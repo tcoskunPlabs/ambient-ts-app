@@ -1,41 +1,102 @@
-import ResultSkeleton from '../ResultSkeleton/ResultSkeleton';
+import { Dispatch, SetStateAction } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../SidebarSearchResults.module.css';
+import { LimitOrderIF } from '../../../../../utils/interfaces/exports';
+import getUnicodeCharacter from '../../../../../utils/functions/getUnicodeCharacter';
+import { getDisplayPrice, getValueUSD } from './functions/exports';
 
-interface OrdersSearchResultPropsIF {
-    loading: boolean;
-    searchInput: React.ReactNode;
+interface propsIF {
+    chainId: string;
+    searchedLimitOrders: LimitOrderIF[];
+    isDenomBase: boolean;
+    setOutsideControl: Dispatch<SetStateAction<boolean>>;
+    setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
+    setCurrentPositionActive: Dispatch<SetStateAction<string>>;
+    setIsShowAllEnabled: Dispatch<SetStateAction<boolean>>;
 }
-export default function OrdersSearchResults(props: OrdersSearchResultPropsIF) {
-    function OrderSearchResult() {
-        return (
-            <div className={styles.card_container}>
-                <div>Pool</div>
-                <div>Price</div>
-                <div>Change</div>
-            </div>
+interface limitOrderPropsIF {
+    limitOrder: LimitOrderIF;
+    isDenomBase: boolean;
+    handleClick: (limitOrder: LimitOrderIF) => void;
+}
+
+function LimitOrderLI(props: limitOrderPropsIF) {
+    const { limitOrder, isDenomBase, handleClick } = props;
+
+    const symbols = {
+        base: limitOrder.baseSymbol ? getUnicodeCharacter(limitOrder.baseSymbol) : '',
+        quote: limitOrder.quoteSymbol ? getUnicodeCharacter(limitOrder.quoteSymbol) : '',
+    };
+
+    const displayPrice = isDenomBase
+        ? getDisplayPrice(symbols.quote, limitOrder.invLimitPriceDecimalCorrected)
+        : getDisplayPrice(symbols.base, limitOrder.limitPriceDecimalCorrected);
+
+    const valueUSD = getValueUSD(limitOrder.totalValueUSD);
+
+    return (
+        <li className={styles.card_container} onClick={() => handleClick(limitOrder)}>
+            <p>
+                {limitOrder.baseSymbol} / {limitOrder.quoteSymbol}
+            </p>
+            <p style={{ textAlign: 'center' }}>{displayPrice}</p>
+            <p style={{ textAlign: 'center' }}>{valueUSD}</p>
+        </li>
+    );
+}
+
+export default function OrdersSearchResults(props: propsIF) {
+    const {
+        chainId,
+        searchedLimitOrders,
+        isDenomBase,
+        setOutsideControl,
+        setSelectedOutsideTab,
+        setCurrentPositionActive,
+        setIsShowAllEnabled,
+    } = props;
+
+    const navigate = useNavigate();
+
+    const handleClick = (limitOrder: LimitOrderIF): void => {
+        setOutsideControl(true);
+        setSelectedOutsideTab(1);
+        setCurrentPositionActive(limitOrder.limitOrderIdentifier);
+        setIsShowAllEnabled(false);
+        navigate(
+            '/trade/limit/chain=' +
+                chainId +
+                '&tokenA=' +
+                limitOrder.base +
+                '&tokenB=' +
+                limitOrder.quote,
         );
-    }
+    };
 
-    const header = (
-        <div className={styles.header}>
-            <div>Pool</div>
-            <div>Price</div>
-            <div>Qty</div>
-        </div>
-    );
-
-    const exampleContent = (
-        <div className={styles.main_result_container}>
-            {new Array(5).fill(null).map((item, idx) => (
-                <OrderSearchResult key={idx} />
-            ))}
-        </div>
-    );
     return (
         <div>
-            <div className={styles.card_title}>Limit Orders</div>
-            {header}
-            {props.loading ? <ResultSkeleton /> : exampleContent}
+            <h6 className={styles.card_title}>My Limit Orders</h6>
+            {searchedLimitOrders.length ? (
+                <>
+                    <header className={styles.header}>
+                        <div>Pool</div>
+                        <div>Price</div>
+                        <div>Value</div>
+                    </header>
+                    <ol className={styles.main_result_container}>
+                        {searchedLimitOrders.slice(0, 4).map((limitOrder: LimitOrderIF) => (
+                            <LimitOrderLI
+                                key={`order-search-result-${JSON.stringify(limitOrder)}`}
+                                limitOrder={limitOrder}
+                                isDenomBase={isDenomBase}
+                                handleClick={handleClick}
+                            />
+                        ))}
+                    </ol>
+                </>
+            ) : (
+                <h5 className={styles.not_found_text}>No Orders Found</h5>
+            )}
         </div>
     );
 }

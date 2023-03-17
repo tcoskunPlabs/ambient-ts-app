@@ -2,7 +2,7 @@ import styles from './TokenInfo.module.css';
 import { querySpotPrice } from '../../../App/functions/querySpotPrice';
 // import { memoizePromiseFn } from '../../../App/functions/memoizePromiseFn';
 import { useEffect, useState } from 'react';
-import { toDisplayPrice } from '@crocswap-libs/sdk';
+import { CrocEnv, toDisplayPrice } from '@crocswap-libs/sdk';
 import { ethers } from 'ethers';
 import { get24hChange } from '../../../App/functions/getPoolStats';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
@@ -10,7 +10,7 @@ import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 // const cachedQuerySpotPrice = memoizePromiseFn(querySpotPrice);
 
 interface ITokenInfoProps {
-    provider: ethers.providers.Provider | undefined;
+    crocEnv: CrocEnv;
     chainId: string;
     baseTokenAddress: string;
     baseTokenDecimals: number;
@@ -23,7 +23,7 @@ interface ITokenInfoProps {
 
 export default function TokenInfo(props: ITokenInfoProps) {
     const {
-        provider,
+        crocEnv,
         chainId,
         baseTokenAddress,
         baseTokenDecimals,
@@ -42,7 +42,7 @@ export default function TokenInfo(props: ITokenInfoProps) {
 
     const positionApyString =
         positionApy !== undefined
-            ? `APY | ${positionApy.toLocaleString(undefined, {
+            ? `APR | ${positionApy.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
               })}%`
@@ -93,44 +93,46 @@ export default function TokenInfo(props: ITokenInfoProps) {
 
     // useEffect to get spot price when tokens change and block updates
     useEffect(() => {
-        if (provider && baseTokenAddress && quoteTokenAddress && lastBlockNumber) {
+        if (crocEnv && baseTokenAddress && quoteTokenAddress && lastBlockNumber) {
             (async () => {
                 const spotPrice = await querySpotPrice(
-                    provider,
+                    crocEnv,
                     baseTokenAddress,
                     quoteTokenAddress,
                     chainId,
                     lastBlockNumber,
                 );
-                const displayPrice = toDisplayPrice(
-                    spotPrice,
-                    baseTokenDecimals,
-                    quoteTokenDecimals,
-                );
+                if (spotPrice) {
+                    const displayPrice = toDisplayPrice(
+                        spotPrice,
+                        baseTokenDecimals,
+                        quoteTokenDecimals,
+                    );
 
-                const displayPriceWithDenom = isDenomBase ? 1 / displayPrice : displayPrice;
+                    const displayPriceWithDenom = isDenomBase ? 1 / displayPrice : displayPrice;
 
-                const displayPriceString =
-                    displayPriceWithDenom === Infinity || displayPriceWithDenom === 0
-                        ? '…'
-                        : displayPriceWithDenom < 2
-                        ? displayPriceWithDenom.toPrecision(4)
-                        : displayPriceWithDenom.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                          });
+                    const displayPriceString =
+                        displayPriceWithDenom === Infinity || displayPriceWithDenom === 0
+                            ? '…'
+                            : displayPriceWithDenom < 2
+                            ? displayPriceWithDenom.toPrecision(4)
+                            : displayPriceWithDenom.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                              });
 
-                setDisplayPrice(displayPriceString);
+                    setDisplayPrice(displayPriceString);
+                }
             })();
         }
-    }, [provider, isDenomBase, lastBlockNumber, baseTokenAddress, quoteTokenAddress]);
+    }, [crocEnv, isDenomBase, lastBlockNumber, baseTokenAddress, quoteTokenAddress]);
 
-    const apyColor =
+    const aprColor =
         positionApy !== undefined
             ? positionApy > 0
-                ? styles.apy_green
-                : styles.apy_red
-            : styles.apy_green;
+                ? styles.apr_green
+                : styles.apr_red
+            : styles.apr_green;
 
     return (
         <div className={styles.token_info_container}>
@@ -146,7 +148,7 @@ export default function TokenInfo(props: ITokenInfoProps) {
                     {poolPriceChangePercent === undefined ? '…' : poolPriceChangePercent + ' | 24h'}
                 </span>
             </div>
-            <div className={apyColor}>{positionApyString}</div>
+            <div className={aprColor}>{positionApyString}</div>
         </div>
     );
 }

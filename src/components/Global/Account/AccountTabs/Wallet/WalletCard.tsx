@@ -1,28 +1,24 @@
-import { toDisplayQty } from '@crocswap-libs/sdk';
-// import { useTokenMap } from '../../../../../App/components/Sidebar/useTokenMap';
 import { testTokenMap } from '../../../../../utils/data/testTokenMap';
-import { fetchTokenPrice } from '../../../../../App/functions/fetchTokenPrice';
-import { TokenIF } from '../../../../../utils/interfaces/TokenIF';
+import { TokenIF } from '../../../../../utils/interfaces/exports';
 import styles from './WalletCard.module.css';
 import { useEffect, useState } from 'react';
-interface WalletPropsIF {
+import { TokenPriceFn } from '../../../../../App/functions/fetchTokenPrice';
+import { ZERO_ADDRESS } from '../../../../../constants';
+import { DefaultTooltip } from '../../../StyledTooltip/StyledTooltip';
+
+interface propsIF {
+    cachedFetchTokenPrice: TokenPriceFn;
     token?: TokenIF;
     chainId: string;
     tokenMap: Map<string, TokenIF>;
 }
 
-export default function WalletCard(props: WalletPropsIF) {
-    const { token, chainId, tokenMap } = props;
+export default function WalletCard(props: propsIF) {
+    const { token, chainId, tokenMap, cachedFetchTokenPrice } = props;
 
-    // const tokenMap = useTokenMap();
+    const tokenAddress = token?.address?.toLowerCase() + '_' + chainId;
 
-    const tokenAddress = token?.token_address
-        ? token?.token_address?.toLowerCase() + '_' + chainId
-        : token?.address
-        ? token?.address?.toLowerCase() + '_' + chainId
-        : '';
-
-    const tokenFromMap = tokenMap && token?.token_address ? tokenMap.get(tokenAddress) : null;
+    const tokenFromMap = tokenMap && tokenAddress ? tokenMap.get(tokenAddress) : null;
 
     const [tokenPrice, setTokenPrice] = useState<{
         nativePrice?:
@@ -43,7 +39,7 @@ export default function WalletCard(props: WalletPropsIF) {
             try {
                 const mainnetAddress = testTokenMap.get(tokenAddress)?.split('_')[0];
                 if (mainnetAddress) {
-                    const price = await fetchTokenPrice(mainnetAddress, '0x1');
+                    const price = await cachedFetchTokenPrice(mainnetAddress, '0x1');
                     if (price) setTokenPrice(price);
                 }
             } catch (err) {
@@ -54,43 +50,73 @@ export default function WalletCard(props: WalletPropsIF) {
 
     const tokenUsdPrice = tokenPrice?.usdPrice ?? 0;
 
-    if (!tokenFromMap) {
-        return null;
-    }
+    const walletBalanceNum = token?.walletBalanceDisplay
+        ? parseFloat(token?.walletBalanceDisplay)
+        : 0;
 
-    const tokenBalance =
-        // token && token.symbol === 'ETH'
-        //     ? token.balance
-        //     :
-        token && token.balance && token?.decimals
-            ? toDisplayQty(token.balance, token.decimals)
+    const walletBalanceTruncated =
+        token && token.walletBalanceDisplayTruncated && walletBalanceNum !== 0
+            ? token.walletBalanceDisplayTruncated
             : '0';
 
-    const tokenBalanceNum = tokenBalance ? parseFloat(tokenBalance) : 0;
-
-    const truncatedTokenBalance = tokenBalanceNum.toLocaleString();
-
-    const tokenInfo = (
-        <div className={styles.token_info}>
+    const iconAndSymbolWithTooltip = (
+        <DefaultTooltip
+            interactive
+            title={`${tokenFromMap?.symbol}: ${tokenFromMap?.address}`}
+            disableHoverListener={tokenFromMap?.address === ZERO_ADDRESS}
+            placement={'right'}
+            arrow
+            enterDelay={400}
+            leaveDelay={200}
+        >
             <div className={styles.token_icon}>
                 <img
                     src={
-                        tokenFromMap?.logoURI ??
-                        'https://icons.iconarchive.com/icons/cjdowner/cryptocurrency-flat/1024/Ethereum-ETH-icon.png'
+                        tokenFromMap?.logoURI
+                            ? tokenFromMap?.logoURI
+                            : token?.logoURI
+                            ? token?.logoURI
+                            : 'https://icons.iconarchive.com/icons/cjdowner/cryptocurrency-flat/1024/Ethereum-ETH-icon.png'
                     }
                     alt=''
                     width='30px'
                 />
-                <p className={styles.token_key}>{tokenFromMap?.symbol}</p>
+                <p className={styles.token_key}>
+                    {tokenFromMap?.symbol
+                        ? tokenFromMap?.symbol
+                        : token?.symbol
+                        ? token?.symbol
+                        : '???'}
+                </p>
             </div>
-            <p>{tokenFromMap?.name}</p>
+        </DefaultTooltip>
+    );
+
+    const tokenInfo = (
+        <div className={styles.token_info}>
+            {iconAndSymbolWithTooltip}
+            <p>{tokenFromMap?.name ? tokenFromMap?.name : token?.name ? token?.name : '???'}</p>
         </div>
     );
+
+    if (
+        !token ||
+        !tokenFromMap ||
+        (token?.address !== ZERO_ADDRESS && (!token.walletBalance || token.walletBalance === '0'))
+    )
+        return <></>;
+
     return (
         <div className={styles.wallet_row}>
             {tokenInfo}
-            <p className={styles.value}>${(tokenUsdPrice * tokenBalanceNum).toLocaleString()}</p>
-            <p className={styles.amount}>{truncatedTokenBalance}</p>
+            <p className={styles.value}>
+                $
+                {(tokenUsdPrice * walletBalanceNum).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}
+            </p>
+            <p className={styles.amount}>{walletBalanceTruncated}</p>
         </div>
     );
 }

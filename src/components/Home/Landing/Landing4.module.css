@@ -25,6 +25,10 @@
     gap: 10px;
 }
 
+.content_container img{
+    display: none;
+}
+
 .header_content {
     display: flex;
     flex-direction: column;
@@ -36,7 +40,7 @@
 }
 
 .header_text {
-    color: #cdc1ff;
+    color: var(--text-highlight);
     font-weight: 100;
 }
 
@@ -49,18 +53,18 @@
 }
 
 .highlight_text {
-    color: #7371fc;
+    color: var(--text-highlight);
     font-weight: 300;
     margin: 0 5px;
 }
 .amm_pools {
     font-size: 16px;
-    color: #bdbdbd;
+    color: var(--text-grey-light);
 }
 
 .row {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     gap: 10px;
 }
@@ -69,15 +73,21 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+   
     padding: 8px 16px;
     gap: 8px;
 
-    background: rgba(23, 29, 39, 0.3);
+    background: var(--dark3);
     backdrop-filter: blur(20px);
 
     border-radius: var(--border-radius);
 }
 
+
+.half_content{
+   text-align: center;
+
+}
 .liquidity_content img {
     max-width: 100%;
 }
@@ -86,12 +96,37 @@
     font-weight: 300;
     font-size: 16px;
     line-height: 20px;
-    color: #cdc1ff;
+    color: var(--text-highlight);
 }
 .content_text {
     font-weight: 100;
     font-size: 12px;
     line-height: 15px;
-    color: #bdbdbd;
+    text-align: center;
+    color: var(--text-grey-light);
     word-wrap: break-word;
+}
+
+
+@media only screen and (min-width: 768px) {
+    .row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .content_container img{
+        display: flex;
+    }
+    .half_content{
+        width: 442.14px;
+    height: 177px;
+    text-align: justify;
+    
+    }
+
+    .content_text{
+        text-align: justify;
+    }
 }

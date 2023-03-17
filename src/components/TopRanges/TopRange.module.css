@@ -28,7 +28,7 @@
     justify-content: flex-end;
 }
 
-.apy {
+.apr {
     font-weight: 200;
 
     font-size: 12px;
@@ -43,7 +43,7 @@
 }
 
 /* Mobile Landscape Screen Sizes */
-@media only screen and (min-width: 480px) {
+@media only screen and (min-width: 580px) {
     .tokens_container {
         display: flex;
     }

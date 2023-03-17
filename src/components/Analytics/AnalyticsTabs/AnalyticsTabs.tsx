@@ -1,75 +1,85 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import styles from './AnalyticsTabs.module.css';
 import { useMemo, SetStateAction, Dispatch, useState } from 'react';
 // import Positions from '../../Trade/TradeTabs/Positions/Positions';
 import TopTokens from '../../TopTokens/TopTokens';
 import Pools from '../../Pools/Pools';
 import TopRanges from '../../TopRanges/TopRanges';
-import { useAllTokenData } from '../../../state/tokens/hooks';
 import { notEmpty } from '../../../utils';
-import { useAllPoolData } from '../../../state/pools/hooks';
-import { TokenData } from '../../../state/tokens/models';
-import { PoolData } from '../../../state/pools/models';
 import TabComponent from '../../Global/TabComponent/TabComponent';
-import { PoolIF } from '../../../utils/interfaces/PoolIF';
-import { TokenIF } from '../../../utils/interfaces/TokenIF';
+import { BiSearch } from 'react-icons/bi';
+import { favePoolsMethodsIF } from '../../../App/hooks/useFavePools';
 // import { useAppSelector } from '../../../utils/hooks/reduxToolkit';
 
-interface AnalyticsProps {
+interface propsIF {
     setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
     setOutsideControl: Dispatch<SetStateAction<boolean>>;
-    favePools: PoolIF[];
-    addPoolToFaves: (tokenA: TokenIF, tokenB: TokenIF, chainId: string, poolId: number) => void;
-    removePoolFromFaves: (
-        tokenA: TokenIF,
-        tokenB: TokenIF,
-        chainId: string,
-        poolId: number,
-    ) => void;
-}
-export default function AnalyticsTabs(props: AnalyticsProps) {
-    const allTokens = useAllTokenData();
-    const allPoolData = useAllPoolData();
+    favePools: favePoolsMethodsIF;
 
-    const [tokens] = useState<TokenData[]>([]);
-    const [pools] = useState<PoolData[]>([]);
-    const [searchWord] = useState('');
+}
+export default function AnalyticsTabs(props: propsIF) {
+    const {setSelectedOutsideTab, setOutsideControl, favePools} = props;
+
+    const allTokens: any = [];
+    const allPoolData: any = [];
+
+    const [tokens, setTokens] = useState<any[]>([]);
+    const [pools, setPools] = useState<any[]>([]);
+    const [searchWord, setSearchWord] = useState('');
+
+    const searchContainer = (
+        <div className={styles.search_container}>
+            <div className={styles.search_icon}>
+                <BiSearch size={20} color='#bdbdbd' />
+            </div>
+            <input
+                type='text'
+                id='box'
+                style={{ height: 40 }}
+                size={20}
+                onChange={(e) => search(e.target.value)}
+                placeholder='Search...'
+                className={styles.search__box}
+            />
+        </div>
+    );
 
     const tokensResult = useMemo(() => {
         return Object.values(allTokens)
-            .map((t) => t.data)
+            .map((t: any) => t.data)
             .filter(notEmpty);
     }, [allTokens]);
 
     const poolsResult = useMemo(() => {
         return Object.values(allPoolData)
-            .map((p) => p.data)
+            .map((p: any) => p.data)
             .filter(notEmpty);
     }, [allPoolData]);
 
-    // const search = (value: string) => {
-    //     setSearchWord(value);
-    //     if (value.length > 0) {
-    //         setTokens(
-    //             tokensResult.filter(
-    //                 (item) =>
-    //                     item.name.toLowerCase().includes(value.toLowerCase()) ||
-    //                     item.symbol.toLowerCase().includes(value.toLowerCase()) ||
-    //                     item.address.toLowerCase().includes(value.toLowerCase()),
-    //             ),
-    //         );
-    //         setPools(
-    //             poolsResult.filter(
-    //                 (item) =>
-    //                     item.token0.name.toLowerCase().includes(value.toLowerCase()) ||
-    //                     item.token1.name.toLowerCase().includes(value.toLowerCase()) ||
-    //                     item.token0.symbol.toLowerCase().includes(value.toLowerCase()) ||
-    //                     item.token1.symbol.toLowerCase().includes(value.toLowerCase()) ||
-    //                     item.token0.address.toLowerCase().includes(value.toLowerCase()) ||
-    //                     item.token1.address.toLowerCase().includes(value.toLowerCase()),
-    //             ),
-    //         );
-    //     }
-    // };
+    const search = (value: string) => {
+        setSearchWord(value);
+        if (value.length > 0) {
+            setTokens(
+                tokensResult.filter(
+                    (item) =>
+                        item.name.toLowerCase().includes(value.toLowerCase()) ||
+                        item.symbol.toLowerCase().includes(value.toLowerCase()) ||
+                        item.address.toLowerCase().includes(value.toLowerCase()),
+                ),
+            );
+            setPools(
+                poolsResult.filter(
+                    (item) =>
+                        item.token0.name.toLowerCase().includes(value.toLowerCase()) ||
+                        item.token1.name.toLowerCase().includes(value.toLowerCase()) ||
+                        item.token0.symbol.toLowerCase().includes(value.toLowerCase()) ||
+                        item.token1.symbol.toLowerCase().includes(value.toLowerCase()) ||
+                        item.token0.address.toLowerCase().includes(value.toLowerCase()) ||
+                        item.token1.address.toLowerCase().includes(value.toLowerCase()),
+                ),
+            );
+        }
+    };
 
     const analyticTabData = [
         {
@@ -82,9 +92,7 @@ export default function AnalyticsTabs(props: AnalyticsProps) {
                 <Pools
                     poolType='top'
                     pools={searchWord.length > 0 ? pools : poolsResult}
-                    favePools={props.favePools}
-                    removePoolFromFaves={props.removePoolFromFaves}
-                    addPoolToFaves={props.addPoolToFaves}
+                    favePools={favePools}
                 />
             ),
         },
@@ -94,9 +102,7 @@ export default function AnalyticsTabs(props: AnalyticsProps) {
                 <Pools
                     poolType='trend'
                     pools={searchWord.length > 0 ? pools : poolsResult}
-                    favePools={props.favePools}
-                    removePoolFromFaves={props.removePoolFromFaves}
-                    addPoolToFaves={props.addPoolToFaves}
+                    favePools={favePools}
                 />
             ),
         },
@@ -107,12 +113,11 @@ export default function AnalyticsTabs(props: AnalyticsProps) {
         <div className={styles.tabs_container}>
             <TabComponent
                 data={analyticTabData}
-                rightTabOptions={false}
+                rightTabOptions={searchContainer}
                 selectedOutsideTab={0}
                 outsideControl={false}
-                setOutsideControl={props.setOutsideControl}
-                setSelectedOutsideTab={props.setSelectedOutsideTab}
-                // search={search}
+                setOutsideControl={setOutsideControl}
+                setSelectedOutsideTab={setSelectedOutsideTab}
             />
         </div>
     );

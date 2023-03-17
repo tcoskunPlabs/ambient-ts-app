@@ -1,51 +1,36 @@
 import styles from './SidebarRangePositions.module.css';
 import SidebarRangePositionsCard from './SidebarRangePositionsCard';
-import { PositionIF } from '../../../../utils/interfaces/PositionIF';
+import { PositionIF } from '../../../../utils/interfaces/exports';
 import { SetStateAction, Dispatch } from 'react';
-import { TokenIF } from '../../../../utils/interfaces/TokenIF';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-interface SidebarRangeProps {
+interface propsIF {
+    chainId: string;
     isDenomBase: boolean;
     userPositions?: PositionIF[];
-    selectedOutsideTab: number;
     setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
-    outsideControl: boolean;
     setOutsideControl: Dispatch<SetStateAction<boolean>>;
-    tokenMap: Map<string, TokenIF>;
-
-    currentPositionActive: string;
     setCurrentPositionActive: Dispatch<SetStateAction<string>>;
-
-    isShowAllEnabled: boolean;
     setIsShowAllEnabled: Dispatch<SetStateAction<boolean>>;
-
-    expandTradeTable: boolean;
-    setExpandTradeTable: Dispatch<SetStateAction<boolean>>;
+    isUserLoggedIn: boolean | undefined;
+    setShowSidebar: Dispatch<SetStateAction<boolean>>;
 }
 
-export default function SidebarRangePositions(props: SidebarRangeProps) {
-    const location = useLocation();
-    const navigate = useNavigate();
-
+export default function SidebarRangePositions(props: propsIF) {
     const {
-        tokenMap,
+        chainId,
         isDenomBase,
         userPositions,
-        currentPositionActive,
         setCurrentPositionActive,
-        expandTradeTable,
+        isUserLoggedIn,
+        setShowSidebar,
+        setOutsideControl,
+        setSelectedOutsideTab,
+        setIsShowAllEnabled,
     } = props;
 
-    const header = (
-        <div className={styles.header}>
-            <div>Pool</div>
-            <div>Range</div>
-            <div>Value</div>
-        </div>
-    );
-
-    // const mapItems = [1, 2, 3, 4, 5, 6, 7];
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const onTradeRoute = location.pathname.includes('trade');
     const onAccountRoute = location.pathname.includes('account');
@@ -53,36 +38,32 @@ export default function SidebarRangePositions(props: SidebarRangeProps) {
     const tabToSwitchToBasedOnRoute = onTradeRoute ? 2 : onAccountRoute ? 2 : 2;
 
     function redirectBasedOnRoute() {
-        if (onTradeRoute || onAccountRoute) return;
-        navigate('/trade');
+        if (onAccountRoute) return;
+        navigate('/account');
     }
 
-    const handleViewMoreClick = () => {
-        props.setOutsideControl(true);
-        props.setSelectedOutsideTab(2);
-        redirectBasedOnRoute();
-
-        props.setIsShowAllEnabled(true);
-        props.setExpandTradeTable(true);
+    const handleRangePositionClick = (pos: PositionIF): void => {
+        setOutsideControl(true);
+        setSelectedOutsideTab(tabToSwitchToBasedOnRoute);
+        setCurrentPositionActive(pos.positionStorageSlot);
+        setIsShowAllEnabled(false);
+        navigate('/trade/range/chain=' + chainId + '&tokenA=' + pos.base + '&tokenB=' + pos.quote);
     };
 
-    const sidebarRangePositionCardProps = {
-        tokenMap: tokenMap,
-        selectedOutsideTab: props.selectedOutsideTab,
-        setSelectedOutsideTab: props.setSelectedOutsideTab,
-        outsideControl: props.outsideControl,
-        setOutsideControl: props.setOutsideControl,
-        currentPositionActive: currentPositionActive,
-        setCurrentPositionActive: setCurrentPositionActive,
-        isShowAllEnabled: props.isShowAllEnabled,
-        setIsShowAllEnabled: props.setIsShowAllEnabled,
-
-        tabToSwitchToBasedOnRoute: tabToSwitchToBasedOnRoute,
+    const handleViewMoreClick = () => {
+        redirectBasedOnRoute();
+        setOutsideControl(true);
+        setSelectedOutsideTab(tabToSwitchToBasedOnRoute);
+        setShowSidebar(false);
     };
 
     return (
         <div className={styles.container}>
-            {header}
+            <header className={styles.header}>
+                <div>Pool</div>
+                <div>Range</div>
+                <div>Value</div>
+            </header>
             <div className={styles.content}>
                 {userPositions &&
                     userPositions.map((position, idx) => (
@@ -90,11 +71,11 @@ export default function SidebarRangePositions(props: SidebarRangeProps) {
                             key={idx}
                             position={position}
                             isDenomBase={isDenomBase}
-                            {...sidebarRangePositionCardProps}
+                            handleClick={handleRangePositionClick}
                         />
                     ))}
             </div>
-            {!expandTradeTable && (
+            {isUserLoggedIn && (
                 <div className={styles.view_more} onClick={handleViewMoreClick}>
                     View More
                 </div>

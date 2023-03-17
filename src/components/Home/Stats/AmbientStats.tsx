@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatAmount } from '../../../utils/numbers';
+import { getDexStatsFresh } from '../../../utils/functions/getDexStats';
+import { formatAmountOld } from '../../../utils/numbers';
+import { userData } from '../../../utils/state/userDataSlice';
 import styles from './Stats.module.css';
 
 interface StatCardProps {
@@ -9,8 +11,11 @@ interface StatCardProps {
 }
 
 interface StatsProps {
+    isServerEnabled: boolean;
+    userData: userData;
     lastBlockNumber: number;
 }
+
 function StatCard(props: StatCardProps) {
     const { title, value } = props;
 
@@ -22,23 +27,10 @@ function StatCard(props: StatCardProps) {
     );
 }
 
-const getDexStatsFresh = async () => {
-    return fetch(
-        'https://809821320828123.de:5000/dex_stats_fresh?' +
-            new URLSearchParams({
-                lookback: '10000000',
-            }),
-    )
-        .then((response) => response?.json())
-        .then((json) => {
-            const dexStats = json?.data;
-            return dexStats;
-        })
-        .catch(console.log);
-};
-
 export default function Stats(props: StatsProps) {
-    const { lastBlockNumber } = props;
+    const { isServerEnabled, userData, lastBlockNumber } = props;
+
+    const isUserIdle = userData.isUserIdle;
 
     const { t } = useTranslation();
 
@@ -47,12 +39,13 @@ export default function Stats(props: StatsProps) {
     const [totalFeesString, setTotalFeesString] = useState<string | undefined>();
 
     useEffect(() => {
-        getDexStatsFresh().then((dexStats) => {
-            if (dexStats.tvl) setTotalTvlString('$' + formatAmount(dexStats.tvl));
-            if (dexStats.volume) setTotalVolumeString('$' + formatAmount(dexStats.volume));
-            if (dexStats.fees) setTotalFeesString('$' + formatAmount(dexStats.fees));
-        });
-    }, [lastBlockNumber]);
+        if (isServerEnabled && !isUserIdle)
+            getDexStatsFresh().then((dexStats) => {
+                if (dexStats.tvl) setTotalTvlString('$' + formatAmountOld(dexStats.tvl));
+                if (dexStats.volume) setTotalVolumeString('$' + formatAmountOld(dexStats.volume));
+                if (dexStats.fees) setTotalFeesString('$' + formatAmountOld(dexStats.fees));
+            });
+    }, [isServerEnabled, isUserIdle, lastBlockNumber]);
 
     const statCardData = [
         {

@@ -18,7 +18,7 @@
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 .currency_quantity::placeholder {
-    color: var(--text-grey-dark);
+    color: var(--text-grey-light);
     font-weight: 200;
     font-size: 18px;
     line-height: 22px;
@@ -68,6 +68,7 @@
     justify-content: space-between;
     align-items: center;
     width: 30%;
+    gap: 4px;
 }
 
 .token_select img {

@@ -4,8 +4,19 @@
     gap: 1rem;
     padding: 1rem;
 }
-.info_text {
+
+.hex_address {
+    user-select: all;
+}
+
+.info_text_non_clickable {
     font-size: var(--body-size);
     line-height: var(--body-lh);
-    color: var(--text-grey-dark);
+    color: var(--text-grey-light);
+}
+.info_text_clickable {
+    font-size: var(--body-size);
+    line-height: var(--body-lh);
+    color: var(--text-grey-light);
+    cursor: pointer;
 }

@@ -1,44 +1,36 @@
 import styles from './SidebarLimitOrdersCard.module.css';
-import { SetStateAction, Dispatch } from 'react';
-import { useLocation } from 'react-router-dom';
+import { LimitOrderIF, TokenIF } from '../../../../utils/interfaces/exports';
+import { getLimitPrice, getLimitValue } from './functions/exports';
 
-interface SidebarLimitOrdersCardProps {
-    selectedOutsideTab: number;
-    setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
-    outsideControl: boolean;
-    setOutsideControl: Dispatch<SetStateAction<boolean>>;
+interface propsIF {
+    isDenomBase: boolean;
+    tokenMap: Map<string, TokenIF>;
+    order: LimitOrderIF;
+    handleClick: (limitOrder: LimitOrderIF) => void
 }
-export default function SidebarLimitOrdersCard(props: SidebarLimitOrdersCardProps) {
-    const location = useLocation();
+export default function SidebarLimitOrdersCard(props: propsIF) {
+    const {
+        tokenMap,
+        order,
+        isDenomBase,
+        handleClick
+    } = props;
 
-    const { setOutsideControl, setSelectedOutsideTab } = props;
-    const onTradeRoute = location.pathname.includes('trade');
-    const onAccountRoute = location.pathname.includes('account');
+    // human-readable limit price to display in the DOM
+    const price = getLimitPrice(order, tokenMap, isDenomBase);
 
-    const tabToSwitchToBasedOnRoute = onTradeRoute ? 1 : onAccountRoute ? 3 : 0;
-
-    const tokenDisplay = (
-        <div className={styles.token_container}>
-            <img
-                src='https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ethereum-icon-purple.svg/2048px-Ethereum-icon-purple.svg.png'
-                alt='token image'
-            />
-        </div>
-    );
-
-    function handleLimitOrderClick() {
-        setOutsideControl(true);
-        setSelectedOutsideTab(tabToSwitchToBasedOnRoute);
-    }
+    // human-readable limit order value to display in the DOM
+    const value = getLimitValue(order);
 
     return (
-        <div className={styles.container} onClick={handleLimitOrderClick}>
-            <div>Pool</div>
-            <div>Price</div>
-            <div className={styles.status_display}>
-                Amount
-                {tokenDisplay}
+        <div className={styles.container} onClick={() => handleClick(order)}>
+            <div>
+                {isDenomBase
+                    ? `${order?.baseSymbol}/${order?.quoteSymbol}`
+                    : `${order?.quoteSymbol}/${order?.baseSymbol}`}
             </div>
+            <div>{price}</div>
+            <div className={styles.status_display}>{value}</div>
         </div>
     );
 }

@@ -1,65 +1,74 @@
-import { useEffect, useState } from 'react';
+// START: Import React and Dongles
+import { useState } from 'react';
 
-export const useTermsOfService = (): {
-    tosText: string;
-    agreement: boolean;
-    agreementDate: string;
+// exportable interface for Terms of Service data object
+export interface tosIF {
+    for: string;
+    viewAt: string;
+    cid: string;
+    acceptedOn?: string | Date;
+}
+
+// exportable interface for methods to interact with Terms of Service
+// this is the object returned by this hook
+export interface tosMethodsIF {
+    isAgreed: boolean;
+    tos: tosIF;
+    lastAgreement: tosIF | undefined;
     acceptToS: () => void;
-    rejectToS: () => void;
-} => {
-    // user data object from local storage
-    const [userData, setUserData] = useState(JSON.parse(localStorage.getItem('user') as string));
-    // boolean agreement status whether user has accepted ToS
-    const [agreement, setAgreement] = useState(userData?.termsOfService?.agreed);
-    // ISO date string representing when the user accepted or rejected ToS
-    const [agreementDate, setAgreementDate] = useState(userData?.termsOfService?.date);
-    // recursive function to query local storage until current user agreement is returned
-    useEffect(() => {
-        function getUserData() {
-            localStorage.user
-                ? setUserData(JSON.parse(localStorage.getItem('user') as string))
-                : setTimeout(() => getUserData(), 500);
-        }
-        getUserData();
-    }, []);
-    // recursive function to set agreement details once user object is received
-    useEffect(() => {
-        userData && setAgreement(userData.termsOfService.agreed);
-        userData && setAgreementDate(userData.termsOfService.date);
-    }, [userData]);
+}
 
-    // text of the ToS
-    // we may want to put this in its own data file and import it
-    const tosText = 'By connecting a wallet you agree to the Terms of Service.';
+// central react hook in this file
+// PARAMS EXPLANATION!!
+// termsFor ➔ human-readable label for this ToS instance (plz_use_snake_case)
+// cid: resource URI endpoint to locate the ToS on IPFS (from environmental variables)
+export const useTermsOfService = (
+    termsFor: string,
+    cid: string,
+): tosMethodsIF => {
+    // unique key for data to be stored in local storage
+    const localStorageSlug: string = 'tos_' + termsFor;
 
-    // meta functions to reflect user accepting or rejecting ToS
-    const acceptToS = () => updateUserAgreement(true);
-    const rejectToS = () => updateUserAgreement(false);
+    // base URL to combine with resource hash to make valid link
+    const agreementUriBase = 'https://gateway.ipfs.io/ipfs/';
 
-    // function to update the app for ToS being rejected or accepted
-    function updateUserAgreement(didUserAgree: boolean) {
-        // data conformed to shape used in local storage
-        const details = {
-            agreed: didUserAgree,
-            date: new Date().toISOString(),
-        };
-        // update agreement status in local state
-        setAgreement(details.agreed);
-        // update agreement date in local state
-        setAgreementDate(details.date);
-        // make a local copy of the userData value from local state
-        const newUserData = userData;
-        // update terms of service in copy of user data object
-        newUserData.termsOfService = details;
-        // send updated user data to local storage
-        localStorage.setItem('user', JSON.stringify(newUserData));
-    }
+    // current terms of service metadata
+    const tos: tosIF = {
+        for: termsFor,
+        cid: cid,
+        viewAt: agreementUriBase + cid,
+    };
 
+    // fn to get the current user agreement from local storage
+    const getLastAgreement = () => {
+        const agreement = JSON.parse(
+            localStorage.getItem(localStorageSlug) as string,
+        );
+        return agreement;
+    };
+
+    // hook to memoize most recent user agreement data in local state
+    // will be `undefined` if user has not yet agreed
+    const [agreement, setAgreement] = useState<tosIF | undefined>(
+        getLastAgreement(),
+    );
+
+    // fn to accept terms of service to be called on demand
+    const acceptToS = () => {
+        const newAgreement = { ...tos, acceptedOn: new Date().toISOString() };
+        setAgreement(newAgreement);
+        localStorage.setItem(localStorageSlug, JSON.stringify(newAgreement));
+    };
+
+    // RETURN VALUES
+    // isAgreed ➔ boolean representation whether user is agreed to current ToS
+    // tos ➔ metadata about the current active ToS
+    // lastAgreement ➔ metadata about ToS version user last agreed to
+    // acceptToS ➔ function to record agreement to the current ToS
     return {
-        tosText,
-        agreement,
-        agreementDate,
+        isAgreed: tos.cid === agreement?.cid,
+        tos: tos,
+        lastAgreement: agreement,
         acceptToS,
-        rejectToS,
     };
 };

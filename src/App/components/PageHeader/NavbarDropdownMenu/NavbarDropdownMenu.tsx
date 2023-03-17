@@ -4,14 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { CSSTransition } from 'react-transition-group';
-import { AiFillTwitterCircle, AiFillInfoCircle } from 'react-icons/ai';
-import { BiArrowBack } from 'react-icons/bi';
+import { AiFillTwitterCircle } from 'react-icons/ai';
+import { BiArrowBack, BiMessageCheck } from 'react-icons/bi';
 import { BsBook, BsMedium } from 'react-icons/bs';
-import { FiSettings, FiMoreHorizontal } from 'react-icons/fi';
-import { FaDiscord, FaSun, FaGithub, FaDotCircle } from 'react-icons/fa';
+import { FiSettings } from 'react-icons/fi';
+import { FaDiscord, FaGithub, FaDotCircle } from 'react-icons/fa';
 import { GoRequestChanges } from 'react-icons/go';
-import { HiOutlineDocumentText } from 'react-icons/hi';
+import { HiOutlineDocumentText, HiDocumentDuplicate } from 'react-icons/hi';
 import { MdHelp, MdArrowForwardIos, MdLanguage, MdReportProblem } from 'react-icons/md';
+import { RiErrorWarningLine } from 'react-icons/ri';
 
 // START: Import Local Files
 import '../../../App.css';
@@ -24,21 +25,40 @@ interface NavbarDropdownItemPropsIF {
     goBackItem?: boolean;
     imageIcon?: string;
     onClick?: () => void;
+
     children: ReactNode;
     rightIcon?: ReactNode;
 }
 
 interface NavbarDropdownMenuPropsIF {
-    isAuthenticated?: boolean;
-    isWeb3Enabled?: boolean;
+    isUserLoggedIn: boolean | undefined;
+    // isWeb3Enabled?: boolean;
     clickLogout: () => void;
-    openModal: () => void;
+    // openModal: () => void;
     closeMenu?: () => void;
     chainId: string;
+    isAppOverlayActive: boolean;
+    setIsAppOverlayActive: React.Dispatch<React.SetStateAction<boolean>>;
+    isTutorialMode: boolean;
+    setIsTutorialMode: React.Dispatch<React.SetStateAction<boolean>>;
+
+    setIsNavbarMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    switchTheme: () => void;
+    theme: string;
 }
 
 export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
-    const { isAuthenticated, isWeb3Enabled, clickLogout, openModal, closeMenu } = props;
+    const {
+        isUserLoggedIn,
+        // isWeb3Enabled,
+        clickLogout,
+        // openModal,
+        closeMenu,
+        // setIsAppOverlayActive,
+        setIsNavbarMenuOpen,
+        isTutorialMode,
+        setIsTutorialMode,
+    } = props;
 
     const navigate = useNavigate();
 
@@ -91,6 +111,9 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
             <NavbarDropdownItem leftIcon={<FaDiscord size={20} />}>Discord</NavbarDropdownItem>
             <NavbarDropdownItem leftIcon={<BsMedium size={20} />}>Medium</NavbarDropdownItem>
             <NavbarDropdownItem leftIcon={<FaGithub size={20} />}>Github</NavbarDropdownItem>
+            <NavbarDropdownItem leftIcon={<HiDocumentDuplicate size={20} />}>
+                Docs
+            </NavbarDropdownItem>
         </>
     );
 
@@ -98,31 +121,40 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
         clickLogout();
         closeMenu ? closeMenu() : null;
     }
-    function handleLoginWithEmail() {
-        openModal();
-        closeMenu ? closeMenu() : null;
-    }
+    // function handleLoginWithEmail() {
+    // openModal();
+    // closeMenu ? closeMenu() : null;
+    // }
 
     const logoutButton = (
         <div className={styles.button_container} onClick={handleLogout}>
             <button className={styles.authenticate_button}>Logout</button>
         </div>
     );
-    const magicButton = (
-        <div className={styles.button_container} onClick={handleLoginWithEmail}>
-            <button className={styles.authenticate_button}>Log in with Email</button>
-        </div>
-    );
+    // const magicButton = (
+    //     <div className={styles.button_container} onClick={handleLoginWithEmail}>
+    //         <button className={styles.authenticate_button}>Log in with Email</button>
+    //     </div>
+    // );
 
     const settingsItems = (
         <>
-            <NavbarDropdownItem leftIcon={<FaSun size={20} />}>Light Mode</NavbarDropdownItem>
+            {/* <NavbarDropdownItem leftIcon={<FaSun size={20} />} onClick={switchTheme}>
+                {theme === 'dark' ? 'Light' : 'Dark'} Mode
+            </NavbarDropdownItem> */}
             <NavbarDropdownItem
                 leftIcon={<MdLanguage size={20} />}
                 rightIcon={<MdArrowForwardIos />}
                 goToMenu='languages'
             >
                 Language
+            </NavbarDropdownItem>
+            <NavbarDropdownItem
+                leftIcon={<RiErrorWarningLine size={20} />}
+                rightIcon={<MdArrowForwardIos />}
+                goToMenu='warnings'
+            >
+                Warnings
             </NavbarDropdownItem>
             <NavbarDropdownItem
                 onClick={() => {
@@ -133,11 +165,15 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
             >
                 Terms of Service
             </NavbarDropdownItem>
-            {isAuthenticated && isWeb3Enabled && logoutButton}
-            {(!isAuthenticated || !isWeb3Enabled) && magicButton}
+            {isUserLoggedIn && logoutButton}
+            {/* {!isUserLoggedIn && magicButton} */}
         </>
     );
 
+    const handleWalkthroughClick = () => {
+        setIsTutorialMode(!isTutorialMode);
+        setIsNavbarMenuOpen(false);
+    };
     const supportItems = (
         <>
             <NavbarDropdownItem leftIcon={<MdHelp size={20} />}>Help Center</NavbarDropdownItem>
@@ -146,6 +182,9 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
             </NavbarDropdownItem>
             <NavbarDropdownItem leftIcon={<GoRequestChanges size={20} />}>
                 Request Features
+            </NavbarDropdownItem>
+            <NavbarDropdownItem leftIcon={<BiMessageCheck size={20} />}>
+                <div onClick={handleWalkthroughClick}>Show Walkthrough</div>
             </NavbarDropdownItem>
         </>
     );
@@ -174,13 +213,18 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
             ))}
         </>
     );
-
-    const moreItems = (
+    const warningItems = (
         <>
-            <NavbarDropdownItem leftIcon={<AiFillInfoCircle size={20} />}>About</NavbarDropdownItem>
-            <NavbarDropdownItem leftIcon={<BsBook size={20} />}>Docs</NavbarDropdownItem>
+            <p>Warning Items</p>
         </>
     );
+
+    // const moreItems = (
+    //     <>
+    //         <NavbarDropdownItem leftIcon={<AiFillInfoCircle size={20} />}>About</NavbarDropdownItem>
+    //         <NavbarDropdownItem leftIcon={<BsBook size={20} />}>Docs</NavbarDropdownItem>
+    //     </>
+    // );
 
     const NavbardropdownItemData = [
         {
@@ -198,11 +242,11 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
             data: socialsItems,
             leftIcon: <FaDiscord size={20} />,
         },
-        {
-            title: 'More',
-            data: moreItems,
-            leftIcon: <FiMoreHorizontal size={20} />,
-        },
+        // {
+        //     title: 'More',
+        //     data: moreItems,
+        //     leftIcon: <FiMoreHorizontal size={20} />,
+        // },
     ];
 
     return (
@@ -232,6 +276,7 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
                             {item.title}
                         </NavbarDropdownItem>
                     ))}
+                    <NavbarDropdownItem leftIcon={<BsBook size={18} />}>Docs</NavbarDropdownItem>
                 </motion.div>
             </CSSTransition>
 
@@ -269,6 +314,27 @@ export default function NavbarDropdownMenu(props: NavbarDropdownMenuPropsIF) {
                             <h3>{'Languages'}</h3>
                         </NavbarDropdownItem>
                         {languagesItems}
+                    </div>
+                </CSSTransition>
+            </div>
+            {/* warnings */}
+            <div>
+                <CSSTransition
+                    in={activeMenu === 'warnings'}
+                    unmountOnExit
+                    timeout={500}
+                    classNames='menu-secondary'
+                    onEnter={calcHeight}
+                >
+                    <div className={styles.menu}>
+                        <NavbarDropdownItem
+                            goToMenu='Settings & Privacy'
+                            leftIcon={<BiArrowBack />}
+                            goBackItem
+                        >
+                            <h3>{'Warnings'}</h3>
+                        </NavbarDropdownItem>
+                        {warningItems}
                     </div>
                 </CSSTransition>
             </div>

@@ -1,94 +1,29 @@
-import { TokenIF } from '../../../../utils/interfaces/TokenIF';
-import { ISwap } from '../../../../utils/state/graphDataSlice';
-
+import { TransactionIF } from '../../../../utils/interfaces/exports';
 import styles from './SidebarRecentTransactionsCard.module.css';
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { useAppDispatch } from '../../../../utils/hooks/reduxToolkit';
-import { setTokenA, setTokenB } from '../../../../utils/state/tradeDataSlice';
-// import { toDisplayQty } from '@crocswap-libs/sdk';
-import { formatAmount } from '../../../../utils/numbers';
-// import getUnicodeCharacter from '../../../../utils/functions/getUnicodeCharacter';
+import { getTxType, getTxValue } from './functions/exports';
 
-interface TransactionProps {
-    tx: ISwap;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    coinGeckoTokenMap?: Map<string, TokenIF>;
-    chainId: string;
-    currentTxActiveInTransactions: string;
-    setCurrentTxActiveInTransactions: Dispatch<SetStateAction<string>>;
-    isShowAllEnabled: boolean;
-    setIsShowAllEnabled: Dispatch<SetStateAction<boolean>>;
-
-    selectedOutsideTab: number;
-    setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
-    outsideControl: boolean;
-    setOutsideControl: Dispatch<SetStateAction<boolean>>;
-
-    tabToSwitchToBasedOnRoute: number;
+interface propsIF {
+    tx: TransactionIF;
+    handleClick: (tx: TransactionIF) => void;
 }
 
-export default function SidebarRecentTransactionsCard(props: TransactionProps) {
-    const {
-        tx,
-        coinGeckoTokenMap,
-        chainId,
-        // currentTxActiveInTransactions,
-        setCurrentTxActiveInTransactions,
-        // isShowAllEnabled,
-        setIsShowAllEnabled,
+export default function SidebarRecentTransactionsCard(props: propsIF) {
+    const { tx, handleClick } = props;
 
-        // selectedOutsideTab,
-        setSelectedOutsideTab,
-        // outsideControl,
-        setOutsideControl,
+    // human-readable form of transaction type to display in DOM
+    const txType = getTxType(tx.entityType);
 
-        tabToSwitchToBasedOnRoute,
-    } = props;
-
-    const dispatch = useAppDispatch();
-
-    // console.log(tx.source);
-    // console.log(tx.block);
-
-    const baseId = tx.base + '_' + chainId;
-    const quoteId = tx.quote + '_' + chainId;
-
-    const baseToken = coinGeckoTokenMap ? coinGeckoTokenMap.get(baseId.toLowerCase()) : null;
-    const quoteToken = coinGeckoTokenMap ? coinGeckoTokenMap.get(quoteId.toLowerCase()) : null;
-
-    // const [baseFlowDisplay, setBaseFlowDisplay] = useState<string | undefined>(undefined);
-    const [valueUSD, setValueUSD] = useState<string | undefined>(undefined);
-    //  const [quoteFlowDisplay, setQuoteFlowDisplay] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
-        if (tx.valueUSD) {
-            setValueUSD(formatAmount(tx.valueUSD));
-        } else {
-            setValueUSD(undefined);
-        }
-    }, [JSON.stringify(tx)]);
-
-    function handleRecentTransactionClick(tx: ISwap) {
-        setOutsideControl(true);
-        setSelectedOutsideTab(tabToSwitchToBasedOnRoute);
-        setIsShowAllEnabled(false);
-
-        setCurrentTxActiveInTransactions(tx.id);
-        if (baseToken) dispatch(setTokenA(baseToken));
-        if (quoteToken) dispatch(setTokenB(quoteToken));
-    }
-    // const baseTokenCharacter = baseToken ? getUnicodeCharacter(baseToken?.symbol) : null;
+    // human-readable form of transaction value to display in DOM
+    const txValue = getTxValue(tx);
 
     return (
-        <div className={styles.container} onClick={() => handleRecentTransactionClick(tx)}>
+        <div className={styles.container} onClick={() => handleClick(tx)}>
             <div>
-                {baseToken?.symbol} / {quoteToken?.symbol}
+                {tx.baseSymbol} / {tx.quoteSymbol}
             </div>
-            <div>Market</div>
-            <div className={styles.status_display}>
-                {valueUSD ? `$${valueUSD}` : '…'}
-                {/* {baseTokenDisplay} / {quoteTokenDisplay} */}
-            </div>
+            <div>{txType}</div>
+            <div className={styles.status_display}>{txValue}</div>
         </div>
     );
 }
+3

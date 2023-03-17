@@ -38,7 +38,7 @@
     font-size: 16px;
     width: auto;
     outline: none;
-    color: rgb(255, 255, 255);
+    color: var(--text-grey-white);
     text-align: left;
 }
 
@@ -57,7 +57,7 @@
     min-width: 3.5rem;
 
     margin-right: 8px;
-    border: 1px solid #242F3F;
+    border: 1px solid var(--border);
 border-radius: 50px;
 
     font-size: var(--body-size);
@@ -65,6 +65,7 @@ border-radius: 50px;
     color: var(--text-grey-light);
 
     padding: 0.5rem 1rem;
+    transition: all var(--animation-speed) ease-in-out;
 
     /* border: solid 1px transparent;
     background-image: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0)),

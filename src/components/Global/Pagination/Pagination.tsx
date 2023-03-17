@@ -1,6 +1,6 @@
 import styles from './Pagination.module.css';
 import { useRef, useEffect, useState } from 'react';
-import { BiDotsHorizontal } from 'react-icons/bi';
+// import { BiDotsHorizontal } from 'react-icons/bi';
 import { IoMdArrowDropleft, IoMdArrowDropright } from 'react-icons/io';
 import { motion } from 'framer-motion';
 interface PaginationPropsIF {
@@ -11,7 +11,7 @@ interface PaginationPropsIF {
 }
 export default function Pagination(props: PaginationPropsIF) {
     const { itemsPerPage, totalItems, paginate, currentPage } = props;
-    const pageNumbers = [];
+    const pageNumbers: number[] = [];
 
     for (let i = 1; i <= Math.ceil(totalItems / itemsPerPage); i++) {
         pageNumbers.push(i);
@@ -41,10 +41,12 @@ export default function Pagination(props: PaginationPropsIF) {
 
     function handleUpdatePageShow() {
         if (itemsPerPage < totalItems) {
-            setEnd(itemsPerPage * currentPage);
-
-            if (end > totalItems) {
+            if (totalItems > currentPage * itemsPerPage) {
+                setEnd(itemsPerPage * currentPage);
+            } else if (totalItems % itemsPerPage === 0) {
                 setEnd(totalItems);
+            } else {
+                setEnd(itemsPerPage * (currentPage - 1) + (totalItems % itemsPerPage));
             }
         }
     }
@@ -57,7 +59,8 @@ export default function Pagination(props: PaginationPropsIF) {
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    const [expandPaginationContainer, setExpandPaginationContainer] = useState(false);
+    const [expandPaginationContainer] = useState(true);
+    // const [expandPaginationContainer, setExpandPaginationContainer] = useState(false);
     const expandStyle = expandPaginationContainer ? styles.expand : styles.not_expanded;
 
     const handleLeftButtonClick = () => {
@@ -98,15 +101,15 @@ export default function Pagination(props: PaginationPropsIF) {
         </div>
     );
 
-    const lastPageClick = (
-        <div
-            onClick={() => paginate(totalPages)}
-            className={totalPages === currentPage ? styles.page_active : styles.page}
-            style={{ cursor: 'pointer' }}
-        >
-            {totalPages > 10 && totalPages}
-        </div>
-    );
+    // const lastPageClick = (
+    //     <div
+    //         onClick={() => paginate(totalPages)}
+    //         className={totalPages === currentPage ? styles.page_active : styles.page}
+    //         style={{ cursor: 'pointer' }}
+    //     >
+    //         {totalPages > 10 && totalPages}
+    //     </div>
+    // );
 
     return (
         <>
@@ -117,12 +120,12 @@ export default function Pagination(props: PaginationPropsIF) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className={`${styles.pagination_inside_container} ${expandStyle}`}
-                    onMouseLeave={() => setExpandPaginationContainer(false)}
+                    // onMouseLeave={() => setExpandPaginationContainer(false)}
                 >
                     {currentPage > 1 && leftButton}
-                    <ul
+                    <div
                         className={styles.pagination_content}
-                        onMouseEnter={() => setExpandPaginationContainer(true)}
+                        // onMouseEnter={() => setExpandPaginationContainer(true)}
                         ref={containerRef}
                     >
                         {pageNumbers.map((number) => (
@@ -135,14 +138,14 @@ export default function Pagination(props: PaginationPropsIF) {
                                 <button onClick={() => handleNumberClick(number)}>{number}</button>
                             </li>
                         ))}
-                    </ul>
-                    {expandPaginationContainer && (
+                    </div>
+                    {/* {expandPaginationContainer && (
                         <div className={styles.dot}>
                             <BiDotsHorizontal />
                         </div>
-                    )}
+                    )} */}
 
-                    {expandPaginationContainer && lastPageClick}
+                    {/* {expandPaginationContainer && currentPage !== totalPages && lastPageClick} */}
                     {currentPage !== totalPages && rightButton}
                 </motion.div>
             </nav>

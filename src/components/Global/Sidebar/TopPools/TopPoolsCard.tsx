@@ -1,54 +1,99 @@
+import { Link, useLocation } from 'react-router-dom';
 import styles from './TopPoolsCard.module.css';
-import { useAppDispatch } from '../../../../utils/hooks/reduxToolkit';
-import { setTokenA, setTokenB } from '../../../../utils/state/tradeDataSlice';
 import { PoolIF } from '../../../../utils/interfaces/exports';
-import { getPoolStatsFresh } from '../../../../App/functions/getPoolStats';
-import { useEffect, useState } from 'react';
-import { formatAmount } from '../../../../utils/numbers';
-interface TopPoolsCardProps {
+import { PoolStatsFn } from '../../../../App/functions/getPoolStats';
+import { useEffect, useState, useMemo } from 'react';
+import { formatAmountOld } from '../../../../utils/numbers';
+import { tradeData } from '../../../../utils/state/tradeDataSlice';
+
+interface propsIF {
+    tradeData: tradeData;
     pool: PoolIF;
     chainId: string;
+    cachedPoolStatsFetch: PoolStatsFn;
     lastBlockNumber: number;
 }
 
-export default function TopPoolsCard(props: TopPoolsCardProps) {
-    const { pool, lastBlockNumber } = props;
+export default function TopPoolsCard(props: propsIF) {
+    const { tradeData, pool, lastBlockNumber, cachedPoolStatsFetch } = props;
 
-    const dispatch = useAppDispatch();
+    const { pathname } = useLocation();
+
+    const locationSlug = useMemo(() => {
+        if (pathname.startsWith('/trade/market') || pathname.startsWith('/account')) {
+            return '/trade/market';
+        } else if (pathname.startsWith('/trade/limit')) {
+            return '/trade/limit';
+        } else if (pathname.startsWith('/trade/range')) {
+            return '/trade/range';
+        } else {
+            console.warn(
+                'Could not identify the correct URL path for redirect. Using /trade/market as a fallback value. Refer to TopPoolsCard.tsx for troubleshooting.',
+            );
+            return '/trade/market';
+        }
+    }, [pathname]);
 
     const [poolVolume, setPoolVolume] = useState<string | undefined>();
     const [poolTvl, setPoolTvl] = useState<string | undefined>();
 
-    useEffect(() => {
+    const fetchPoolStats = () => {
         (async () => {
-            const poolStatsFresh = await getPoolStatsFresh(
+            const poolStatsFresh = await cachedPoolStatsFetch(
                 pool.chainId,
                 pool.base.address,
                 pool.quote.address,
                 pool.poolId,
+                Math.floor(lastBlockNumber / 4),
             );
-            const volume = poolStatsFresh?.volume;
-            const volumeString = volume ? '$' + formatAmount(volume) : undefined;
+            const volume = poolStatsFresh?.volumeTotal; // display the total volume for all time
+            const volumeString = volume ? '$' + formatAmountOld(volume) : undefined;
             setPoolVolume(volumeString);
             const tvl = poolStatsFresh?.tvl;
-            const tvlString = tvl ? '$' + formatAmount(tvl) : undefined;
+            const tvlString = tvl ? '$' + formatAmountOld(tvl) : undefined;
             setPoolTvl(tvlString);
         })();
-    }, [JSON.stringify(pool), lastBlockNumber]);
+    };
+
+    useEffect(() => {
+        fetchPoolStats();
+
+        // // fetch every minute
+        // const timerId = setInterval(() => {
+        //     fetchPoolStats();
+        // }, 60000);
+
+        // // after 1 hour stop
+        // setTimeout(() => {
+        //     clearInterval(timerId);
+        // }, 3600000);
+
+        // // clear interval when component unmounts
+        // return () => clearInterval(timerId);
+    }, [lastBlockNumber]);
+
+    const chainString = '0x5';
+
+    const tokenAString =
+        pool.base.address.toLowerCase() === tradeData.tokenA.address.toLowerCase()
+            ? pool.base.address
+            : pool.quote.address;
+
+    const tokenBString =
+        pool.base.address.toLowerCase() === tradeData.tokenA.address.toLowerCase()
+            ? pool.quote.address
+            : pool.base.address;
 
     return (
-        <div
+        <Link
             className={styles.container}
-            onClick={() => {
-                dispatch(setTokenA(props.pool.base));
-                dispatch(setTokenB(props.pool.quote));
-            }}
+            to={`${locationSlug}/chain=${chainString}&tokenA=${tokenAString}&tokenB=${tokenBString}`}
         >
             <div>
                 {pool.base.symbol} / {pool.quote.symbol}
             </div>
             <div>{poolVolume ?? '…'}</div>
             <div>{poolTvl ?? '…'}</div>
-        </div>
+        </Link>
     );
 }

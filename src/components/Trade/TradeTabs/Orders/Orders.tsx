@@ -1,131 +1,535 @@
+/* eslint-disable no-irregular-whitespace */
 // START: Import React and Dongles
-import { useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 
 // START: Import JSX Elements
 import styles from './Orders.module.css';
-import OrderCard from './OrderCard';
-import OrderCardHeader from './OrderCardHeader';
 
 // START: Import Local Files
-import { useAppSelector } from '../../../../utils/hooks/reduxToolkit';
-import { graphData } from '../../../../utils/state/graphDataSlice';
+import { useAppDispatch, useAppSelector } from '../../../../utils/hooks/reduxToolkit';
+import {
+    addLimitOrderChangesByPool,
+    CandleData,
+    graphData,
+    setDataLoadingStatus,
+    setLimitOrdersByPool,
+} from '../../../../utils/state/graphDataSlice';
+import { fetchPoolLimitOrderStates } from '../../../../App/functions/fetchPoolLimitOrderStates';
+import { ChainSpec, CrocEnv } from '@crocswap-libs/sdk';
+import useWebSocket from 'react-use-websocket';
+import useMediaQuery from '../../../../utils/hooks/useMediaQuery';
+import OrderHeader from './OrderTable/OrderHeader';
+import OrderRow from './OrderTable/OrderRow';
+import getUnicodeCharacter from '../../../../utils/functions/getUnicodeCharacter';
+import TableSkeletons from '../TableSkeletons/TableSkeletons';
+import { useSortedLimits } from '../useSortedLimits';
+import { LimitOrderIF, TokenIF } from '../../../../utils/interfaces/exports';
+import { getLimitOrderData } from '../../../../App/functions/getLimitOrderData';
+import useDebounce from '../../../../App/hooks/useDebounce';
+import NoTableData from '../NoTableData/NoTableData';
+import Pagination from '../../../Global/Pagination/Pagination';
+import useWindowDimensions from '../../../../utils/hooks/useWindowDimensions';
+
+// import OrderAccordions from './OrderAccordions/OrderAccordions';
 
 // interface for props for react functional component
 interface propsIF {
+    activeAccountLimitOrderData?: LimitOrderIF[];
+    importedTokens: TokenIF[];
+    connectedAccountActive?: boolean;
+    crocEnv: CrocEnv | undefined;
     expandTradeTable: boolean;
+    chainData: ChainSpec;
     account: string;
     graphData: graphData;
+    isShowAllEnabled: boolean;
+    setIsShowAllEnabled?: Dispatch<SetStateAction<boolean>>;
+    openGlobalModal: (content: React.ReactNode) => void;
+    closeGlobalModal: () => void;
+    currentPositionActive: string;
+    setCurrentPositionActive: Dispatch<SetStateAction<string>>;
+    isOnPortfolioPage: boolean;
+    changeState?: (isOpen: boolean | undefined, candleData: CandleData | undefined) => void;
+    lastBlockNumber: number;
+    showSidebar: boolean;
+    handlePulseAnimation?: (type: string) => void;
 }
 
 // main react functional component
 export default function Orders(props: propsIF) {
-    const { expandTradeTable, account, graphData } = props;
+    const {
+        activeAccountLimitOrderData,
+        importedTokens,
+        connectedAccountActive,
+        crocEnv,
+        chainData,
+        expandTradeTable,
+        account,
+        graphData,
+        isShowAllEnabled,
+        setCurrentPositionActive,
+        currentPositionActive,
+        showSidebar,
+        isOnPortfolioPage,
+        handlePulseAnimation,
+        setIsShowAllEnabled,
+        changeState,
+        lastBlockNumber,
+    } = props;
 
-    const limitOrders = graphData.limitOrdersByUser.limitOrders;
+    const limitOrdersByUser = graphData.limitOrdersByUser.limitOrders;
+    const limitOrdersByPool = graphData.limitOrdersByPool.limitOrders;
+    const dataLoadingStatus = graphData?.dataLoadingStatus;
+
+    // allow a local environment variable to be defined in [app_repo]/.env.local to turn off connections to the cache server
+    const isServerEnabled =
+        process.env.REACT_APP_CACHE_SERVER_IS_ENABLED !== undefined
+            ? process.env.REACT_APP_CACHE_SERVER_IS_ENABLED === 'true'
+            : true;
+
+    // const poolSwapsCacheEndpoint = httpGraphCacheServerDomain + '/pool_recent_changes?';
 
     const tradeData = useAppSelector((state) => state.tradeData);
 
-    const selectedBaseToken = tradeData.baseToken.address.toLowerCase();
-    const selectedQuoteToken = tradeData.quoteToken.address.toLowerCase();
+    const baseTokenAddress = tradeData.baseToken.address;
+    const quoteTokenAddress = tradeData.quoteToken.address;
 
-    const isDenomBase = tradeData.isDenomBase;
+    const baseTokenAddressLowerCase = tradeData.baseToken.address.toLowerCase();
+    const quoteTokenAddressLowerCase = tradeData.quoteToken.address.toLowerCase();
 
-    const columnHeaders = [
+    const isConnectedUserOrderDataLoading = dataLoadingStatus?.isConnectedUserOrderDataLoading;
+    const isLookupUserOrderDataLoading = dataLoadingStatus?.isLookupUserOrderDataLoading;
+    const isPoolOrderDataLoading = dataLoadingStatus?.isPoolOrderDataLoading;
+
+    const isOrderDataLoadingForPortfolio =
+        (connectedAccountActive && isConnectedUserOrderDataLoading) ||
+        (!connectedAccountActive && isLookupUserOrderDataLoading);
+
+    const isOrderDataLoadingForTradeTable =
+        (isShowAllEnabled && isPoolOrderDataLoading) ||
+        (!isShowAllEnabled && isConnectedUserOrderDataLoading);
+
+    const shouldDisplayLoadingAnimation =
+        (isOnPortfolioPage && isOrderDataLoadingForPortfolio) ||
+        (!isOnPortfolioPage && isOrderDataLoadingForTradeTable);
+
+    const debouncedShouldDisplayLoadingAnimation = useDebounce(shouldDisplayLoadingAnimation, 1000); // debounce 1/4 second
+
+    const ordersByUserMatchingSelectedTokens = limitOrdersByUser.filter((tx) => {
+        if (
+            tx.base.toLowerCase() === baseTokenAddressLowerCase &&
+            tx.quote.toLowerCase() === quoteTokenAddressLowerCase
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+
+    const dispatch = useAppDispatch();
+
+    // const isDenomBase = tradeData.isDenomBase;
+
+    const [limitOrderData, setLimitOrderData] = useState(
+        isOnPortfolioPage ? activeAccountLimitOrderData || [] : limitOrdersByPool,
+    );
+
+    const [debouncedIsShowAllEnabled, setDebouncedIsShowAllEnabled] = useState(false);
+
+    useEffect(() => {
+        if (isOnPortfolioPage) {
+            setLimitOrderData(activeAccountLimitOrderData || []);
+        } else if (!isShowAllEnabled) {
+            setLimitOrderData(ordersByUserMatchingSelectedTokens);
+        } else if (limitOrdersByPool) {
+            setLimitOrderData(limitOrdersByPool);
+        }
+    }, [
+        isShowAllEnabled,
+        connectedAccountActive,
+        JSON.stringify(activeAccountLimitOrderData),
+        JSON.stringify(ordersByUserMatchingSelectedTokens),
+        JSON.stringify(limitOrdersByPool),
+    ]);
+
+    // wait 5 seconds to open a subscription to pool changes
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedIsShowAllEnabled(isShowAllEnabled), 5000);
+        return () => clearTimeout(handler);
+    }, [isShowAllEnabled]);
+
+    const nonEmptyOrders = isShowAllEnabled
+        ? limitOrdersByPool.filter((limitOrder) => limitOrder.totalValueUSD !== 0)
+        : limitOrderData.filter((limitOrder) => limitOrder.totalValueUSD !== 0);
+
+    const [sortBy, setSortBy, reverseSort, setReverseSort, sortedLimits] = useSortedLimits(
+        'time',
+        nonEmptyOrders,
+    );
+    useEffect(() => {
+        if (isServerEnabled && isShowAllEnabled) {
+            fetchPoolLimitOrderStates({
+                chainId: chainData.chainId,
+                base: tradeData.baseToken.address,
+                quote: tradeData.quoteToken.address,
+                poolIdx: chainData.poolIndex,
+                ensResolution: true,
+            })
+                .then((orderJsonData) => {
+                    if (orderJsonData) {
+                        Promise.all(
+                            orderJsonData.map((limitOrder: LimitOrderIF) => {
+                                return getLimitOrderData(limitOrder, importedTokens);
+                            }),
+                        ).then((updatedLimitOrderStates) => {
+                            dispatch(
+                                setLimitOrdersByPool({
+                                    dataReceived: true,
+                                    limitOrders: updatedLimitOrderStates,
+                                }),
+                            );
+                        });
+                    }
+                    dispatch(
+                        setDataLoadingStatus({
+                            datasetName: 'poolOrderData',
+                            loadingStatus: false,
+                        }),
+                    );
+                })
+                .catch(console.log);
+        }
+    }, [isServerEnabled, isShowAllEnabled]);
+
+    const wssGraphCacheServerDomain = 'wss://809821320828123.de:5000';
+
+    const poolLimitOrderChangesCacheSubscriptionEndpoint = useMemo(
+        () =>
+            wssGraphCacheServerDomain +
+            '/subscribe_pool_recent_changes?' +
+            new URLSearchParams({
+                chainId: chainData.chainId,
+                base: tradeData.baseToken.address,
+                quote: tradeData.quoteToken.address,
+                poolIdx: chainData.poolIndex.toString(),
+                ensResolution: 'true',
+            }),
+        [
+            chainData.chainId,
+            account,
+            tradeData.baseToken.address,
+            tradeData.quoteToken.address,
+            chainData.poolIndex,
+        ],
+    );
+
+    const {
+        //  sendMessage,
+        lastMessage: lastPoolLimitOrderChangeMessage,
+        //  readyState
+    } = useWebSocket(
+        poolLimitOrderChangesCacheSubscriptionEndpoint,
+        {
+            // share:  true,
+            onOpen: () => {
+                console.log('pool limit orders subscription opened');
+            },
+            onClose: (event: CloseEvent) => console.log({ event }),
+            shouldReconnect: () => true,
+        },
+        // only connect if user is viewing pool changes
+        isServerEnabled && debouncedIsShowAllEnabled,
+    );
+
+    useEffect(() => {
+        if (lastPoolLimitOrderChangeMessage !== null) {
+            const lastMessageData = JSON.parse(lastPoolLimitOrderChangeMessage.data).data;
+            // console.log({ lastMessageData });
+            if (lastMessageData) {
+                console.log({ lastMessageData });
+                Promise.all(
+                    lastMessageData.map((limitOrder: LimitOrderIF) => {
+                        return getLimitOrderData(limitOrder, importedTokens);
+                    }),
+                ).then((updatedLimitOrderStates) => {
+                    dispatch(addLimitOrderChangesByPool(updatedLimitOrderStates));
+                });
+            }
+        }
+    }, [lastPoolLimitOrderChangeMessage]);
+
+    const ipadView = useMediaQuery('(max-width: 580px)');
+    const showPair = useMediaQuery('(min-width: 768px)') || !showSidebar;
+    const view2 = useMediaQuery('(max-width: 1568px)');
+    const showColumns = useMediaQuery('(max-width: 1800px)');
+
+    const quoteTokenSymbol = tradeData.quoteToken?.symbol;
+    const baseTokenSymbol = tradeData.baseToken?.symbol;
+
+    const baseTokenCharacter = baseTokenSymbol ? getUnicodeCharacter(baseTokenSymbol) : '';
+    const quoteTokenCharacter = quoteTokenSymbol ? getUnicodeCharacter(quoteTokenSymbol) : '';
+
+    const walID = (
+        <>
+            <p>ID</p>
+            <p>Wallet</p>
+        </>
+    );
+    const sideType = (
+        <>
+            <p>Type</p>
+            <p>Side</p>
+        </>
+    );
+    const tokens = isOnPortfolioPage ? (
+        <>Tokens</>
+    ) : (
+        <>
+            <p>{`${baseTokenSymbol} ( ${baseTokenCharacter} )`}</p>
+            <p>{`${quoteTokenSymbol} ( ${quoteTokenCharacter} )`}</p>
+        </>
+    );
+    const headerColumns = [
+        {
+            name: 'Last Updated',
+            className: '',
+            show: !showColumns,
+            slug: 'time',
+            sortable: true,
+        },
+        // {
+        //     name: '',
+        //     className: '',
+        //     show: isOnPortfolioPage,
+        //     slug: 'token_images',
+        //     sortable: false,
+        // },
+        {
+            name: 'Pair',
+            className: '',
+            show: isOnPortfolioPage && showPair,
+            slug: 'pool',
+            sortable: true,
+        },
         {
             name: 'ID',
-            sortable: true,
-            className: '',
+            className: 'ID',
+            show: !showColumns,
+            slug: 'id',
+            sortable: false,
         },
         {
             name: 'Wallet',
-            sortable: true,
             className: 'wallet',
+            show: !isOnPortfolioPage && !showColumns,
+            slug: 'wallet',
+            sortable: isShowAllEnabled,
         },
         {
-            name: 'Price',
+            name: walID,
+            className: 'wallet_it',
+            show: showColumns,
+            slug: 'walletid',
+            sortable: false,
+        },
+        {
+            name: 'Limit Price',
+
+            show: !ipadView,
+            slug: 'price',
             sortable: true,
-            className: 'price',
+            alignRight: true,
         },
         {
             name: 'Side',
-            sortable: true,
             className: 'side',
+            show: !showColumns,
+            slug: 'side',
+            sortable: true,
+            alignCenter: true,
         },
         {
             name: 'Type',
-            sortable: true,
             className: 'type',
-        },
-        {
-            name: 'Value',
+            show: !showColumns,
+            slug: 'type',
             sortable: true,
+            alignCenter: true,
+        },
+        {
+            name: sideType,
+            className: 'side_type',
+            show: showColumns && !ipadView,
+            slug: 'sidetype',
+            sortable: false,
+            alignCenter: true,
+        },
+
+        {
+            name: 'Value (USD)',
+            className: 'value',
+            show: true,
+            slug: 'value',
+            sortable: true,
+            alignRight: true,
+        },
+        {
+            name: isOnPortfolioPage ? '' : `${baseTokenSymbol}`,
+
+            show: !showColumns,
+            slug: baseTokenSymbol,
+            sortable: false,
+            alignRight: true,
+        },
+        {
+            name: isOnPortfolioPage ? '' : `${quoteTokenSymbol}`,
+
+            show: !showColumns,
+            slug: quoteTokenSymbol,
+            sortable: false,
+            alignRight: true,
+        },
+        {
+            name: tokens,
+            className: 'tokens',
+            show: showColumns,
+            slug: 'tokens',
+            sortable: false,
+            alignRight: true,
+        },
+        {
+            name: 'Claimable',
+            // name: ' ',
             className: '',
+            show: !ipadView,
+            slug: 'status',
+            sortable: false,
+            alignCenter: true,
         },
         {
-            name: tradeData.baseToken.symbol,
+            name: '',
+            className: '',
+            show: true,
+            slug: 'menu',
             sortable: false,
-            className: 'token',
-        },
-        {
-            name: tradeData.quoteToken.symbol,
-            sortable: false,
-            className: 'token',
         },
     ];
+    const headerStyle = isOnPortfolioPage ? styles.portfolio_header : styles.trade_header;
 
-    // TODO:   currently the values to determine sort order are not
-    // TODO:   ... being used productively because there is only
-    // TODO:   ... placeholder data, we will revisit this later on
+    // ---------------------
+    const [currentPage, setCurrentPage] = useState(1);
+    // orders per page media queries
 
-    const [sortBy, setSortBy] = useState('default');
-    const [reverseSort, setReverseSort] = useState(false);
+    const { height } = useWindowDimensions();
+
+    // const ordersPerPage = Math.round(((0.7 * height) / 33) )
+    // height => current height of the viewport
+    // 250 => Navbar, header, and footer. Everything that adds to the height not including the pagination contents
+    // 30 => Height of each paginated row item
+
+    const regularOrdersItems = Math.round((height - 250) / 30);
+    const showColumnOrdersItems = Math.round((height - 250) / 50);
+    const ordersPerPage = showColumns ? showColumnOrdersItems : regularOrdersItems;
+
     useEffect(() => {
-        console.log({ sortBy, reverseSort });
-    }, [sortBy, reverseSort]);
+        setCurrentPage(1);
+    }, [account, isShowAllEnabled, JSON.stringify({ baseTokenAddress, quoteTokenAddress })]);
 
-    const ItemContent = (
-        <div className={styles.item_container}>
-            {limitOrders.map((order, idx) => (
-                <OrderCard
-                    key={idx}
-                    account={account}
-                    limitOrder={order}
-                    isDenomBase={isDenomBase}
-                    selectedBaseToken={selectedBaseToken}
-                    selectedQuoteToken={selectedQuoteToken}
+    // Get current tranges
+    const indexOfLastRanges = currentPage * ordersPerPage;
+    const indexOfFirstRanges = indexOfLastRanges - ordersPerPage;
+    const currentRangess = sortedLimits?.slice(indexOfFirstRanges, indexOfLastRanges);
+    const paginate = (pageNumber: number) => {
+        setCurrentPage(pageNumber);
+    };
+    const largeScreenView = useMediaQuery('(min-width: 1200px)');
+
+    const usePaginateDataOrNull =
+        expandTradeTable && largeScreenView ? currentRangess : sortedLimits;
+
+    const footerDisplay = (
+        <div className={styles.footer}>
+            {expandTradeTable && sortedLimits.length > 30 && (
+                <Pagination
+                    itemsPerPage={ordersPerPage}
+                    totalItems={sortedLimits.length}
+                    paginate={paginate}
+                    currentPage={currentPage}
                 />
-            ))}
+            )}
         </div>
     );
 
+    // ----------------------
+
+    const headerColumnsDisplay = (
+        <ul className={`${styles.header} ${headerStyle}`}>
+            {headerColumns.map((header, idx) => (
+                <OrderHeader
+                    key={idx}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    reverseSort={reverseSort}
+                    setReverseSort={setReverseSort}
+                    header={header}
+                />
+            ))}
+        </ul>
+    );
+
+    const rowItemContent = usePaginateDataOrNull?.map((order, idx) => (
+        <OrderRow
+            crocEnv={crocEnv}
+            chainData={chainData}
+            tradeData={tradeData}
+            expandTradeTable={expandTradeTable}
+            showPair={showPair}
+            showSidebar={showSidebar}
+            showColumns={showColumns}
+            ipadView={ipadView}
+            view2={view2}
+            key={idx}
+            limitOrder={order}
+            openGlobalModal={props.openGlobalModal}
+            closeGlobalModal={props.closeGlobalModal}
+            currentPositionActive={currentPositionActive}
+            setCurrentPositionActive={setCurrentPositionActive}
+            isShowAllEnabled={isShowAllEnabled}
+            isOnPortfolioPage={isOnPortfolioPage}
+            handlePulseAnimation={handlePulseAnimation}
+            lastBlockNumber={lastBlockNumber}
+            account={account}
+        />
+    ));
+
+    const orderDataOrNull = rowItemContent.length ? (
+        rowItemContent
+    ) : (
+        <NoTableData
+            isShowAllEnabled={isShowAllEnabled}
+            type='orders'
+            setIsShowAllEnabled={setIsShowAllEnabled}
+            changeState={changeState}
+            isOnPortfolioPage={isOnPortfolioPage}
+            // setIsCandleSelected={setIsCandleSelected}
+        />
+    );
+
+    const mobileView = useMediaQuery('(max-width: 1200px)');
+
+    const mobileViewHeight = mobileView ? '70vh' : '250px';
+
+    const expandStyle = expandTradeTable ? 'calc(100vh - 10rem)' : mobileViewHeight;
+
+    const portfolioPageStyle = props.isOnPortfolioPage ? 'calc(100vh - 19.5rem)' : expandStyle;
+
     return (
-        <div className={styles.container}>
-            {/* <header >
-                {columnHeaders.map((header) => (
-                    <OrderCardHeader
-                        key={`orderDataHeaderField${header.name}`}
-                        data={header}
-                        sortBy={sortBy}
-                        setSortBy={setSortBy}
-                        reverseSort={reverseSort}
-                        setReverseSort={setReverseSort}
-                        columnHeaders={columnHeaders}
-                    />
-                ))}
-            </header> */}
-            <OrderCardHeader
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                reverseSort={reverseSort}
-                setReverseSort={setReverseSort}
-                columnHeaders={columnHeaders}
-            />
-            <div
-                className={styles.item_container}
-                style={{ height: expandTradeTable ? '100%' : '170px' }}
-            >
-                {ItemContent}
-            </div>
-        </div>
+        <section className={styles.main_list_container} style={{ height: portfolioPageStyle }}>
+            {headerColumnsDisplay}
+            {debouncedShouldDisplayLoadingAnimation ? <TableSkeletons /> : orderDataOrNull}
+            {footerDisplay}
+
+            {/* {isDataLoading ? <TableSkeletons /> : orderDataOrNull} */}
+        </section>
     );
 }

@@ -1,0 +1,81 @@
+.order_details_container {
+    min-width: 340px;
+    width: auto;
+    max-width: 1000px;
+}
+
+.main_content {
+    transition: all var(--animation-speed) ease-in-out;
+    background: url(../../assets/images/backgrounds/background.png) no-repeat;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+
+    display: flex;
+    flex-direction: column;
+    /* justify-content: center; */
+    cursor: default;
+
+    padding: 1rem 2rem;
+
+    /* width: 800px; */
+    /* align-items: center; */
+}
+
+/* .share_container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+} */
+
+.control_display_container {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+}
+
+.left_container {
+    /* width: 350px; */
+    padding-right: 2rem;
+}
+.right_container {
+    /* width: 450px; */
+    background: rgba(23, 29, 39, 0.3);
+    backdrop-filter: blur(10px);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.ambi_copyright {
+    display: flex;
+    justify-content: center;
+    font-family: var(--font-logo);
+    font-weight: 100;
+    font-size: 24px;
+    line-height: 30px;
+    color: var(--text-grey-dark);
+    padding: 4px 0;
+    cursor: default;
+}
+
+@media only screen and (min-width: 720px) {
+    .order_details_container {
+        height: 500px;
+        width: 1000px;
+    }
+
+    .main_content {
+        display: grid;
+        grid-template-columns: 244px auto;
+
+        animation: fadeIn ease 1s;
+        -webkit-animation: fadeIn ease 1s;
+        -moz-animation: fadeIn ease 1s;
+        -o-animation: fadeIn ease 1s;
+        -ms-animation: fadeIn ease 1s;
+    }
+}

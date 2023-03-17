@@ -1,96 +1,89 @@
-import { TokenIF } from '../../../../utils/interfaces/TokenIF';
-import { ISwap } from '../../../../utils/state/graphDataSlice';
-import styles from './SidebarRecentTransactions.module.css';
-import SidebarRecentTransactionsCard from './SidebarRecentTransactionsCard';
+// START: Import React and Dongles
 import { Dispatch, SetStateAction } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-interface SidebarRecentTransactionsPropsIF {
-    // showSidebar: boolean;
-    mostRecentTransactions: ISwap[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    coinGeckoTokenMap?: Map<string, TokenIF>;
+// START: Import Local Files
+import { TokenIF, TransactionIF } from '../../../../utils/interfaces/exports';
+import styles from './SidebarRecentTransactions.module.css';
+
+// START: Import JSX Components
+import SidebarRecentTransactionsCard from './SidebarRecentTransactionsCard';
+
+interface propsIF {
+    mostRecentTransactions: TransactionIF[];
+    coinGeckoTokenMap: Map<string, TokenIF>;
     chainId: string;
     currentTxActiveInTransactions: string;
     setCurrentTxActiveInTransactions: Dispatch<SetStateAction<string>>;
     isShowAllEnabled: boolean;
     setIsShowAllEnabled: Dispatch<SetStateAction<boolean>>;
-
     expandTradeTable: boolean;
     setExpandTradeTable: Dispatch<SetStateAction<boolean>>;
-
     selectedOutsideTab: number;
     setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
     outsideControl: boolean;
     setOutsideControl: Dispatch<SetStateAction<boolean>>;
+    setShowSidebar: Dispatch<SetStateAction<boolean>>;
+    isUserLoggedIn: boolean | undefined;
 }
 
-export default function SidebarRecentTransactions(props: SidebarRecentTransactionsPropsIF) {
-    const location = useLocation();
-    const navigate = useNavigate();
+export default function SidebarRecentTransactions(props: propsIF) {
     const {
         mostRecentTransactions,
-        coinGeckoTokenMap,
         chainId,
-        currentTxActiveInTransactions,
         setCurrentTxActiveInTransactions,
-        isShowAllEnabled,
         setIsShowAllEnabled,
-
-        expandTradeTable,
+        setOutsideControl,
+        setSelectedOutsideTab,
+        isUserLoggedIn,
+        setShowSidebar,
     } = props;
 
-    const header = (
-        <div className={styles.header}>
-            <div>Pool</div>
-            <div>Type</div>
-            <div>Value</div>
-        </div>
-    );
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const onTradeRoute = location.pathname.includes('trade');
     const onAccountRoute = location.pathname.includes('account');
 
-    const tabToSwitchToBasedOnRoute = onTradeRoute ? 0 : onAccountRoute ? 4 : 0;
+    const tabToSwitchToBasedOnRoute = onTradeRoute ? 0 : onAccountRoute ? 0 : 0;
 
     function redirectBasedOnRoute() {
-        if (onTradeRoute || onAccountRoute) return;
-        navigate('/trade');
+        if (onAccountRoute) return;
+        navigate('/account');
     }
 
-    const handleViewMoreClick = () => {
-        redirectBasedOnRoute();
-        props.setOutsideControl(true);
-        props.setSelectedOutsideTab(tabToSwitchToBasedOnRoute);
-
-        props.setIsShowAllEnabled(true);
-        props.setExpandTradeTable(true);
+    const handleCardClick = (tx: TransactionIF): void => {
+        setOutsideControl(true);
+        setSelectedOutsideTab(tabToSwitchToBasedOnRoute);
+        setIsShowAllEnabled(false);
+        setCurrentTxActiveInTransactions(tx.id);
+        navigate('/trade/market/chain=' + chainId + '&tokenA=' + tx.base + '&tokenB=' + tx.quote);
     };
 
-    // // const mapItems = [1, 2, 3, 4, 5, 6, 7];
+    const handleViewMoreClick = (): void => {
+        redirectBasedOnRoute();
+        setOutsideControl(true);
+        setSelectedOutsideTab(tabToSwitchToBasedOnRoute);
+        setShowSidebar(false);
+    };
+
     return (
         <div className={styles.container}>
-            {header}
+            <header className={styles.header}>
+                <div>Pool</div>
+                <div>Type</div>
+                <div>Value</div>
+            </header>
             <div className={styles.content}>
-                {mostRecentTransactions.map((tx, idx) => (
+                {mostRecentTransactions.map((tx: TransactionIF) => (
                     <SidebarRecentTransactionsCard
+                        key={'Sidebar-Recent-Transactions-Card-' + JSON.stringify(tx)}
                         tx={tx}
-                        key={idx}
-                        coinGeckoTokenMap={coinGeckoTokenMap}
-                        chainId={chainId}
-                        currentTxActiveInTransactions={currentTxActiveInTransactions}
-                        setCurrentTxActiveInTransactions={setCurrentTxActiveInTransactions}
-                        isShowAllEnabled={isShowAllEnabled}
-                        setIsShowAllEnabled={setIsShowAllEnabled}
-                        selectedOutsideTab={props.selectedOutsideTab}
-                        setSelectedOutsideTab={props.setSelectedOutsideTab}
-                        outsideControl={props.outsideControl}
-                        setOutsideControl={props.setOutsideControl}
-                        tabToSwitchToBasedOnRoute={tabToSwitchToBasedOnRoute}
+                        handleClick={handleCardClick}
                     />
                 ))}
             </div>
-            {!expandTradeTable && (
+            {isUserLoggedIn && (
                 <div className={styles.view_more} onClick={handleViewMoreClick}>
                     View More
                 </div>

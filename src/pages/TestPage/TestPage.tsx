@@ -1,44 +1,38 @@
-import React from 'react';
-import { useTermsOfService } from '../../App/hooks/useTermsOfService';
+// import React, { useState } from 'react';
+// import Medal from '../../components/Global/Medal/Medal';
+// import { MenuButton } from '../../components/Global/MenuButton/MenuButton';
+// import PulseLoading from '../../components/Global/PulseLoading/PulseLoading';
 import styles from './TestPage.module.css';
+// import { useAppDispatch, useAppSelector } from '../../utils/hooks/reduxToolkit';
+// import { Steps, Hints } from 'intro.js-react';
+import 'intro.js/introjs.css';
+import { tosMethodsIF } from '../../App/hooks/useTermsOfService';
+import { chartSettingsMethodsIF } from '../../App/hooks/useChartSettings';
 
 interface TestPageProps {
     openGlobalModal: (content: React.ReactNode, title?: string) => void;
+    openSidebar: () => void;
+    closeSidebar: () => void;
+    togggggggleSidebar: () => void;
+    walletToS: tosMethodsIF;
+    chartSettings: chartSettingsMethodsIF;
 }
+// eslint-disable-next-line
 export default function TestPage(props: TestPageProps) {
-    const { openGlobalModal } = props;
-    const { tosText, agreement, agreementDate } = useTermsOfService();
-
-    const exampleTest = (
-        <div className={styles.example_container}>
-            <h1>Please work</h1>
-            <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae perspiciatis
-                veritatis necessitatibus quam eius ipsum illo cupiditate nobis dignissimos delectus
-                quae quibusdam quas ratione ducimus laborum odio dolorum nesciunt, a natus provident
-                vero quo voluptates dolore. Modi culpa id velit ipsa cumque corporis aut, aperiam,
-                harum incidunt illo, repellat dolor blanditiis cum vitae perspiciatis eaque non quia
-                quae. Porro vero odit dolorum at quae soluta atque, excepturi quod id, odio,
-                repudiandae pariatur ipsum maiores? Minima nam sed ex nihil nostrum modi fuga nisi
-                animi autem blanditiis iure a repudiandae voluptatibus eveniet odit, doloremque
-                temporibus est incidunt molestias ratione ut. Reprehenderit!
-            </p>
-        </div>
-    );
+    const { walletToS } = props;
 
     return (
-        <main className={styles.main}>
-            <h1>Hi there!</h1>
-            <p>{tosText}</p>
+        <section className={styles.main}>
             <p>
-                You {agreement ? 'accepted' : 'rejected'} the Terms of Service on {agreementDate}
+                {walletToS.isAgreed
+                    ? `You agreed to ToS on ${walletToS.lastAgreement?.acceptedOn}`
+                    : 'Please agree to our ToS'}
             </p>
-            {/* <button onClick={() => acceptToS()}>Agree to ToS</button>
-            <button onClick={() => rejectToS()}>Reject ToS</button> */}
-
-            <button onClick={() => openGlobalModal(exampleTest, 'this is title')}>
-                Test Modal
-            </button>
-        </main>
+            {!walletToS.isAgreed && (
+                <button onClick={() => walletToS.acceptToS()}>
+                    Accept the ToS!
+                </button>
+            )}
+        </section>
     );
 }

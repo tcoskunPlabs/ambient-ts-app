@@ -1,32 +1,53 @@
 import styles from './DepositCurrencySelector.module.css';
 import { RiArrowDownSLine } from 'react-icons/ri';
+import { TokenIF } from '../../../../../utils/interfaces/exports';
+import { Dispatch, SetStateAction } from 'react';
+import { fromDisplayQty } from '@crocswap-libs/sdk';
+import uriToHttp from '../../../../../utils/functions/uriToHttp';
+import NoTokenIcon from '../../../../Global/NoTokenIcon/NoTokenIcon';
 
-interface DepositCurrencySelectorProps {
+interface propsIF {
     fieldId: string;
-
+    onClick: () => void;
     sellToken?: boolean;
     disable?: boolean;
-
-    // updateOtherQuantity: (evt: ChangeEvent<HTMLInputElement>) => void;
+    selectedToken: TokenIF;
+    setDepositQty: Dispatch<SetStateAction<string | undefined>>;
+    inputValue: string;
+    setInputValue: Dispatch<SetStateAction<string>>;
 }
 
-export default function DepositCurrencySelector(props: DepositCurrencySelectorProps) {
-    const { fieldId, disable } = props;
+export default function DepositCurrencySelector(props: propsIF) {
+    const { fieldId, disable, onClick, selectedToken, setDepositQty, inputValue, setInputValue } =
+        props;
 
-    const rateInput = (
+    const qtyInput = (
         <div className={styles.token_amount}>
             <input
-                id={`${fieldId}-exchange-balance-deposit-quantity`}
+                id={`${fieldId}-quantity`}
                 className={styles.currency_quantity}
-                placeholder='0'
-                // onChange={(event) => updateOtherQuantity(event)}
+                placeholder='0.00'
+                onChange={(event) => {
+                    const isValid = event.target.value === '' || event.target.validity.valid;
+                    isValid ? setInputValue(event.target.value) : null;
+                    if (parseFloat(event.target.value) > 0) {
+                        const nonDisplayQty = fromDisplayQty(
+                            event.target.value.replaceAll(',', ''),
+                            selectedToken.decimals,
+                        );
+                        setDepositQty(nonDisplayQty.toString());
+                    } else {
+                        setDepositQty(undefined);
+                    }
+                }}
+                value={inputValue}
                 type='string'
                 inputMode='decimal'
                 autoComplete='off'
                 autoCorrect='off'
                 min='0'
                 minLength={1}
-                pattern='^[0-9]*[.,]?[0-9]*$'
+                pattern='^[0-9,]*[.]?[0-9]*$'
                 disabled={disable}
                 required
             />
@@ -37,15 +58,21 @@ export default function DepositCurrencySelector(props: DepositCurrencySelectorPr
         <div className={styles.swapbox}>
             <span className={styles.direction}>Select Token</span>
             <div className={styles.swapbox_top}>
-                <div className={styles.swap_input}>{rateInput}</div>
-                <div className={styles.token_select}>
-                    <img
-                        className={styles.token_list_img}
-                        src='https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ethereum-icon-purple.svg/480px-Ethereum-icon-purple.svg.png'
-                        alt='ethreum'
-                        width='30px'
-                    />
-                    <span className={styles.token_list_text}>ETH</span>
+                <div className={styles.swap_input}>{qtyInput}</div>
+                <div className={styles.token_select} onClick={onClick}>
+                    {selectedToken.logoURI ? (
+                        <img
+                            className={styles.token_list_img}
+                            src={uriToHttp(selectedToken.logoURI)}
+                            alt={selectedToken.symbol.charAt(0)}
+                            // alt={`logo for token ${token.name}`}
+                            width='30px'
+                        />
+                    ) : (
+                        <NoTokenIcon tokenInitial={selectedToken.symbol.charAt(0)} width='30px' />
+                    )}
+
+                    <span className={styles.token_list_text}>{selectedToken.symbol}</span>
                     <RiArrowDownSLine size={27} />
                 </div>
             </div>

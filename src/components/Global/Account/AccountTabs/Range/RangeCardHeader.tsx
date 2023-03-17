@@ -5,14 +5,15 @@ export default function RangeCardHeader() {
             <div className={styles.token_logos}></div>
             <div className={styles.row_container}>
                 <p className={styles.pool}>Pool</p>
-                <p>ID</p>
-                <p className={styles.wallet}>Wallet</p>
-                <p className={styles.range}>Range</p>
+                {/* <p>ID</p> */}
+                {/* <p className={styles.wallet}>Wallet</p> */}
+                {/* <p className={styles.range}>Range</p> */}
                 <p className={styles.range_sing}>Range Min</p>
                 <p className={styles.range_sing}>Range Max</p>
-                <p className={styles.token}>ETH</p>
-                <p className={styles.token}>DAI</p>
-                <p>APY</p>
+                <p className={styles.range_sing}>Value</p>
+                <p className={styles.token}>Token A Qty</p>
+                <p className={styles.token}>Token B Qty</p>
+                <p>APR</p>
                 <p>Status</p>
             </div>
 

@@ -1,79 +1,220 @@
 // START: Import React and Dongles
-import { useState, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, ReactNode, useRef, useEffect } from 'react';
+// import { Link } from 'react-router-dom';
 import { FiMoreHorizontal } from 'react-icons/fi';
 
 // START: Import JSX Functional Components
-import SnackbarComponent from '../../../../../components/Global/SnackbarComponent/SnackbarComponent';
+// import SnackbarComponent from '../../../../../components/Global/SnackbarComponent/SnackbarComponent';
 import Modal from '../../../../Global/Modal/Modal';
 
 // START: Import Local Files
-import styles from './TableMenuComponents.module.css';
+import styles from './TableMenus.module.css';
 import { useModal } from '../../../../Global/Modal/useModal';
-import { DefaultTooltip } from '../../../StyledTooltip/StyledTooltip';
-import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
+// import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
+import OrderDetails from '../../../../OrderDetails/OrderDetails';
+import OrderRemoval from '../../../../OrderRemoval/OrderRemoval';
+import UseOnClickOutside from '../../../../../utils/hooks/useOnClickOutside';
+import { ChainSpec, CrocEnv } from '@crocswap-libs/sdk';
+import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
+import ClaimOrder from '../../../../ClaimOrder/ClaimOrder';
+import { LimitOrderIF } from '../../../../../utils/interfaces/exports';
+import { useAppDispatch } from '../../../../../utils/hooks/reduxToolkit';
+import {
+    setIsTokenAPrimary,
+    setLimitTick,
+    setLimitTickCopied,
+    setShouldLimitConverterUpdate,
+    tradeData,
+} from '../../../../../utils/state/tradeDataSlice';
+import { useNavigate } from 'react-router-dom';
 
 // interface for React functional component props
-interface OrdersMenuIF {
-    userPosition: boolean | undefined;
+interface propsIF {
+    chainData: ChainSpec;
+    tradeData: tradeData;
+    crocEnv: CrocEnv | undefined;
+    limitOrder: LimitOrderIF;
+    openGlobalModal: (content: React.ReactNode, title?: string) => void;
+    closeGlobalModal: () => void;
+    isOwnerActiveAccount?: boolean;
+    isShowAllEnabled: boolean;
+    showSidebar: boolean;
+    isOrderFilled: boolean;
+    handlePulseAnimation?: (type: string) => void;
+    // orderDetailsProps: any;
+    account: string;
+    lastBlockNumber: number;
+    showHighlightedButton: boolean;
+    isOnPortfolioPage: boolean;
+    isBaseTokenMoneynessGreaterOrEqual: boolean;
 }
 
 // React functional component
-export default function OrdersMenu(props: OrdersMenuIF) {
-    const { userPosition } = props;
-    const [value, copy] = useCopyToClipboard();
-    const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
+export default function OrdersMenu(props: propsIF) {
+    const menuItemRef = useRef<HTMLDivElement>(null);
 
-    const [isModalOpen, openModal, closeModal] = useModal();
-    const [currentModal, setCurrentModal] = useState<string>('edit');
+    const {
+        // isShowAllEnabled,
+        crocEnv,
+        chainData,
+        tradeData,
+        limitOrder,
+        openGlobalModal,
+        isOrderFilled,
+        isOwnerActiveAccount,
+        closeGlobalModal,
+        showSidebar,
+        handlePulseAnimation,
+        lastBlockNumber,
+        account,
+        isBaseTokenMoneynessGreaterOrEqual,
+        // showHighlightedButton,
+        isOnPortfolioPage,
+    } = props;
+    // const [value, copy] = useCopyToClipboard();
+    // const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
 
-    const [openMenuTooltip, setOpenMenuTooltip] = useState(false);
+    const [
+        isModalOpen,
+        //  openModal,
+        closeModal,
+    ] = useModal();
 
     // ---------------------MODAL FUNCTIONALITY----------------
     let modalContent: ReactNode;
-
     let modalTitle;
 
-    function openRemoveModal() {
-        setCurrentModal('remove');
-        openModal();
-    }
+    const dispatch = useAppDispatch();
 
-    function openDetailsModal() {
-        setCurrentModal('details');
-        openModal();
-    }
+    const navigate = useNavigate();
 
     // -----------------SNACKBAR----------------
-    function handleCopyAddress() {
-        copy('example data');
-        setOpenSnackbar(true);
+    function handleCopyOrder() {
+        handlePulseAnimation ? handlePulseAnimation('limitOrder') : null;
+        dispatch(setLimitTickCopied(true));
+        // console.log('limit order copy clicked');
+        console.log({ tradeData });
+        console.log({ limitOrder });
+        const shouldMovePrimaryQuantity =
+            tradeData.tokenA.address.toLowerCase() ===
+            (limitOrder.isBid ? limitOrder.quote.toLowerCase() : limitOrder.base.toLowerCase());
+
+        console.log({ shouldMovePrimaryQuantity });
+        const shouldClearNonPrimaryQty =
+            tradeData.limitTick !== limitOrder.askTick &&
+            (tradeData.isTokenAPrimary
+                ? tradeData.tokenA.address.toLowerCase() ===
+                  (limitOrder.isBid
+                      ? limitOrder.base.toLowerCase()
+                      : limitOrder.quote.toLowerCase())
+                    ? true
+                    : false
+                : tradeData.tokenB.address.toLowerCase() ===
+                  (limitOrder.isBid
+                      ? limitOrder.quote.toLowerCase()
+                      : limitOrder.base.toLowerCase())
+                ? true
+                : false);
+        if (shouldMovePrimaryQuantity) {
+            console.log('flipping primary');
+            // setTimeout(() => {
+            const sellQtyField = document.getElementById('sell-limit-quantity') as HTMLInputElement;
+            const buyQtyField = document.getElementById('buy-limit-quantity') as HTMLInputElement;
+
+            if (tradeData.isTokenAPrimary) {
+                if (buyQtyField) {
+                    buyQtyField.value = sellQtyField.value;
+                }
+                if (sellQtyField) {
+                    sellQtyField.value = '';
+                    // tradeData.primaryQuantity === 'NaN' ? '' : tradeData.primaryQuantity;
+                }
+            } else {
+                if (sellQtyField) {
+                    sellQtyField.value = buyQtyField.value;
+                    // tradeData.primaryQuantity === 'NaN' ? '' : tradeData.primaryQuantity;
+                }
+                if (buyQtyField) {
+                    buyQtyField.value = '';
+                }
+            }
+            // }, 500);
+            dispatch(setIsTokenAPrimary(!tradeData.isTokenAPrimary));
+            dispatch(setShouldLimitConverterUpdate(true));
+        } else if (shouldClearNonPrimaryQty) {
+            if (!tradeData.isTokenAPrimary) {
+                const sellQtyField = document.getElementById(
+                    'sell-limit-quantity',
+                ) as HTMLInputElement;
+                if (sellQtyField) {
+                    sellQtyField.value = '';
+                    // tradeData.primaryQuantity === 'NaN' ? '' : tradeData.primaryQuantity;
+                }
+            } else {
+                const buyQtyField = document.getElementById(
+                    'buy-limit-quantity',
+                ) as HTMLInputElement;
+                if (buyQtyField) {
+                    buyQtyField.value = '';
+                }
+            }
+            console.log('resetting');
+            // dispatch(setPrimaryQuantity(''));
+        }
+        setTimeout(() => {
+            dispatch(setLimitTick(limitOrder.isBid ? limitOrder.bidTick : limitOrder.askTick));
+        }, 500);
+
+        // dispatch(
+        //     setIsTokenAPrimary((limitOrder.isBid && limitOrder.inBaseQty) || (!limitOrder.isBid && !limitOrder.inBaseQty)),
+        // );
+
+        setShowDropdownMenu(false);
     }
 
-    const snackbarContent = (
-        <SnackbarComponent
-            severity='info'
-            setOpenSnackbar={setOpenSnackbar}
-            openSnackbar={openSnackbar}
-        >
-            {value} copied
-        </SnackbarComponent>
-    );
+    // const snackbarContent = (
+    //     <SnackbarComponent
+    //         severity='info'
+    //         setOpenSnackbar={setOpenSnackbar}
+    //         openSnackbar={openSnackbar}
+    //     >
+    //         {value}
+    //     </SnackbarComponent>
+    // );
     // -----------------END OF SNACKBAR----------------
 
-    switch (currentModal) {
-        case 'remove':
-            // modalContent = <RemoveRange {...removeRangeProps} />;
-            modalContent = 'Remove';
-            modalTitle = 'Remove Position';
-            break;
+    const openRemoveModal = () =>
+        openGlobalModal(
+            <OrderRemoval
+                account={account}
+                chainData={chainData}
+                crocEnv={crocEnv}
+                limitOrder={limitOrder}
+                closeGlobalModal={closeGlobalModal}
+            />,
+        );
+    const openClaimModal = () =>
+        openGlobalModal(
+            <ClaimOrder
+                account={account}
+                chainData={chainData}
+                crocEnv={crocEnv}
+                limitOrder={limitOrder}
+                closeGlobalModal={closeGlobalModal}
+            />,
+        );
 
-        case 'details':
-            // modalContent = <RangeDetails {...removeRangeProps} />;
-            modalContent = 'details';
-            modalTitle = '';
-            break;
-    }
+    const openDetailsModal = () =>
+        openGlobalModal(
+            <OrderDetails
+                account={account}
+                limitOrder={limitOrder}
+                closeGlobalModal={closeGlobalModal}
+                lastBlockNumber={lastBlockNumber}
+                isBaseTokenMoneynessGreaterOrEqual={isBaseTokenMoneynessGreaterOrEqual}
+                isOnPortfolioPage={isOnPortfolioPage}
+            />,
+        );
 
     const mainModal = (
         <Modal onClose={closeModal} title={modalTitle}>
@@ -85,77 +226,129 @@ export default function OrdersMenu(props: OrdersMenuIF) {
 
     // ------------------  END OF MODAL FUNCTIONALITY-----------------
 
-    const repositionButton = userPosition ? (
-        <Link className={styles.reposition_button} to={'/trade/reposition'}>
-            Reposition
-        </Link>
-    ) : null;
+    const minView = useMediaQuery('(min-width: 720px)');
+    // const view1 = useMediaQuery('(min-width: 1280px)');
+    // const view2 = useMediaQuery('(min-width: 1680px)');
+    const view3 = useMediaQuery('(min-width: 2300px)');
 
-    const removeButton = userPosition ? (
-        <button className={styles.option_button} onClick={openRemoveModal}>
-            Remove
-        </button>
-    ) : null;
-    const copyButton = userPosition ? (
-        <button className={styles.option_button} onClick={handleCopyAddress}>
+    // const view1NoSidebar = useMediaQuery('(min-width: 1200px)') && !showSidebar;
+    const view2WithNoSidebar = useMediaQuery('(min-width: 1680px)') && !showSidebar;
+
+    const removeButtonOnClick = () => {
+        setShowDropdownMenu(false);
+        openRemoveModal();
+    };
+    const claimButtonOnClick = () => {
+        setShowDropdownMenu(false);
+        openClaimModal();
+    };
+
+    const detailsButtonOnClick = () => {
+        setShowDropdownMenu(false);
+        openDetailsModal();
+    };
+
+    const removeButton =
+        limitOrder && isOwnerActiveAccount && !isOrderFilled ? (
+            <button className={styles.option_button} onClick={removeButtonOnClick}>
+                Remove
+            </button>
+        ) : null;
+    const claimButton =
+        limitOrder && isOwnerActiveAccount && isOrderFilled ? (
+            <button className={styles.option_button} onClick={claimButtonOnClick}>
+                Claim
+            </button>
+        ) : null;
+    const copyButton = limitOrder ? (
+        // limitOrder && isShowAllEnabled && !isOwnerActiveAccount ? (
+        <button
+            style={{ opacity: '1' }}
+            // style={{ opacity: showHighlightedButton ? '1' : '0.2' }}
+            className={styles.option_button}
+            onClick={() => {
+                dispatch(setLimitTickCopied(true));
+                dispatch(setLimitTick(undefined));
+                navigate(
+                    '/trade/limit/' +
+                        'chain=' +
+                        limitOrder.chainId +
+                        '&tokenA=' +
+                        (limitOrder.isBid ? limitOrder.base : limitOrder.quote) +
+                        '&tokenB=' +
+                        (limitOrder.isBid ? limitOrder.quote : limitOrder.base) +
+                        '&limitTick=' +
+                        (limitOrder.isBid ? limitOrder.bidTick : limitOrder.askTick),
+                );
+                handleCopyOrder();
+            }}
+        >
             Copy Trade
         </button>
     ) : null;
     const detailsButton = (
-        <button className={styles.option_button} onClick={openDetailsModal}>
+        <button className={styles.option_button} onClick={detailsButtonOnClick}>
             Details
         </button>
     );
-    const editButton = userPosition ? (
-        <Link className={styles.option_button} to={'/trade/edit'}>
-            Edit
-        </Link>
-    ) : null;
 
     const ordersMenu = (
         <div className={styles.actions_menu}>
-            {repositionButton}
-            {editButton}
-            {removeButton}
-            {detailsButton}
-            {copyButton}
+            {minView && claimButton}
+            {minView && removeButton}
+            {/* {view1 && removeButton} */}
+            {/* {(view2 || (view1NoSidebar && !isOnPortfolioPage)) && copyButton} */}
+            {(view3 || view2WithNoSidebar) && detailsButton}
+            {!isOwnerActiveAccount && copyButton}
+            {/* {view1 && !isOwnerActiveAccount && copyButton} */}
+            {/* {view1 && !isOrderFilled && copyButton} */}
         </div>
     );
 
     const menuContent = (
         <div className={styles.menu_column}>
-            {editButton}
-            {removeButton}
             {detailsButton}
-            {copyButton}
+            {isOwnerActiveAccount && copyButton}
+            {/* {!view1 && copyButton} */}
+            {/* {!(view1 && !isOrderFilled) && copyButton} */}
+            {!minView && removeButton}
         </div>
     );
 
+    const [showDropdownMenu, setShowDropdownMenu] = useState(false);
+
+    const wrapperStyle = showDropdownMenu
+        ? styles.dropdown_wrapper_active
+        : styles.dropdown_wrapper;
+
+    const clickOutsideHandler = () => {
+        setShowDropdownMenu(false);
+    };
+
+    UseOnClickOutside(menuItemRef, clickOutsideHandler);
     const dropdownOrdersMenu = (
-        <div className={styles.dropdown_menu}>
-            <DefaultTooltip
-                open={openMenuTooltip}
-                onOpen={() => setOpenMenuTooltip(true)}
-                onClose={() => setOpenMenuTooltip(false)}
-                interactive
-                placement='left'
-                title={menuContent}
-            >
-                <div
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setOpenMenuTooltip(!openMenuTooltip)}
-                >
-                    <FiMoreHorizontal size={20} />
-                </div>
-            </DefaultTooltip>
+        <div className={styles.dropdown_menu} ref={menuItemRef}>
+            <div onClick={() => setShowDropdownMenu(!showDropdownMenu)}>
+                <FiMoreHorizontal />
+            </div>
+            <div className={wrapperStyle}>{menuContent}</div>
         </div>
     );
+
+    useEffect(() => {
+        if (showDropdownMenu) {
+            const interval = setTimeout(() => {
+                setShowDropdownMenu(false);
+            }, 5000);
+            return () => clearTimeout(interval);
+        } else return;
+    }, [showDropdownMenu]);
     return (
-        <>
+        <div className={styles.main_container}>
             {ordersMenu}
             {dropdownOrdersMenu}
             {modalOrNull}
-            {snackbarContent}
-        </>
+            {/* {snackbarContent} */}
+        </div>
     );
 }

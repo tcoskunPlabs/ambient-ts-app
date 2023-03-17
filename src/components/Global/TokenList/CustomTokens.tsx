@@ -10,15 +10,17 @@ import uriToHttp from '../../../utils/functions/uriToHttp';
 import { AiOutlineDelete } from 'react-icons/ai';
 import { FiExternalLink } from 'react-icons/fi';
 
-interface CustomTokensPropsIF {
+interface propsIF {
     chainId: string;
     tokenToUpdate: string;
     undeletableTokens: string[];
     closeModal: () => void;
+
+    justTokensDisplay?: boolean;
 }
 
-export default function CustomTokens(props: CustomTokensPropsIF) {
-    const { chainId, tokenToUpdate, undeletableTokens, closeModal } = props;
+export default function CustomTokens(props: propsIF) {
+    const { chainId, tokenToUpdate, undeletableTokens, closeModal, justTokensDisplay } = props;
 
     const dispatch = useAppDispatch();
 
@@ -46,6 +48,10 @@ export default function CustomTokens(props: CustomTokensPropsIF) {
         );
         localStorage.setItem('user', JSON.stringify(user));
     }
+
+    // TODO:  circle back and refactor this function later to navigate with URL params
+    // TODO:  ... can't do this until we have Doug's token universe code in place and
+    // TODO:  ... and this exists to handle tokens for which we have no internal reference
 
     function importToken(newToken: TokenIF) {
         switch (tokenToUpdate) {
@@ -77,13 +83,15 @@ export default function CustomTokens(props: CustomTokensPropsIF) {
             transition={{ duration: 0.3 }}
             className={styles.search_container}
         >
-            <div className={styles.search_input}>
-                <input
-                    type='text'
-                    placeholder='0x000'
-                    onChange={(e) => setSearchInput(e.target.value.trim().toLowerCase())}
-                />
-            </div>
+            {!justTokensDisplay && (
+                <div className={styles.search_input}>
+                    <input
+                        type='text'
+                        placeholder='0x000'
+                        onChange={(e) => setSearchInput(e.target.value.trim().toLowerCase())}
+                    />
+                </div>
+            )}
 
             <p className={styles.query_error_text}>{errorText}</p>
 
@@ -103,11 +111,16 @@ export default function CustomTokens(props: CustomTokensPropsIF) {
                     ))}
             </div>
 
-            <Divider />
-            <div className={styles.custom_tokens_header}>
-                <span>{importedTokens.length} Custom Tokens</span>
-                <span className={styles.clear_all_button}>Clear all</span>
-            </div>
+            {!justTokensDisplay && (
+                <>
+                    <Divider />
+
+                    <div className={styles.custom_tokens_header}>
+                        <span>{importedTokens.length} Custom Tokens</span>
+                        <span className={styles.clear_all_button}>Clear all</span>
+                    </div>
+                </>
+            )}
             <div className={styles.imported_token_container}>
                 {importedTokens.map((token: TokenIF) => (
                     <div key={`imported_token_${token.address}`} className={styles.token_result}>

@@ -1,10 +1,12 @@
 import styles from './PriceInfo.module.css';
-import Row from '../../Global/Row/Row';
 
-import { useAppDispatch } from '../../../utils/hooks/reduxToolkit';
-import { toggleDidUserFlipDenom } from '../../../utils/state/tradeDataSlice';
-import Divider from '../../Global/Divider/Divider';
-import { motion } from 'framer-motion';
+// import { useAppDispatch } from '../../../utils/hooks/reduxToolkit';
+// import { toggleDidUserFlipDenom } from '../../../utils/state/tradeDataSlice';
+
+import NoTokenIcon from '../../Global/NoTokenIcon/NoTokenIcon';
+import Apy from '../../Global/Tabs/Apy/Apy';
+import DividerDark from '../../Global/DividerDark/DividerDark';
+import { useLocation } from 'react-router-dom';
 
 type ItemIF = {
     slug: string;
@@ -12,170 +14,155 @@ type ItemIF = {
     checked: boolean;
 };
 interface IPriceInfoProps {
+    usdValue: string;
     lowRangeDisplay: string;
     highRangeDisplay: string;
-    baseLiquidityDisplay: string | undefined;
-    quoteLiquidityDisplay: string | undefined;
+    baseCollateralDisplay: string | undefined;
+    quoteCollateralDisplay: string | undefined;
     baseFeesDisplay: string | undefined;
     quoteFeesDisplay: string | undefined;
     baseTokenLogoURI: string;
     quoteTokenLogoURI: string;
     baseTokenSymbol: string;
     quoteTokenSymbol: string;
-
+    isAmbient: boolean;
     isDenomBase: boolean;
-
+    poolPriceDisplay: number;
     controlItems: ItemIF[];
+    positionApy: number | undefined;
+    minRangeDenomByMoneyness: string;
+    maxRangeDenomByMoneyness: string;
 }
 
 export default function PriceInfo(props: IPriceInfoProps) {
-    const dispatch = useAppDispatch();
+    // const dispatch = useAppDispatch();
     const {
+        usdValue,
         lowRangeDisplay,
         highRangeDisplay,
-        baseLiquidityDisplay,
-        quoteLiquidityDisplay,
+        baseCollateralDisplay,
+        quoteCollateralDisplay,
         baseFeesDisplay,
         quoteFeesDisplay,
         baseTokenLogoURI,
         quoteTokenLogoURI,
         baseTokenSymbol,
         quoteTokenSymbol,
-
+        isAmbient,
         isDenomBase,
-
-        controlItems,
+        // poolPriceDisplay,
+        // controlItems,
+        positionApy,
+        minRangeDenomByMoneyness,
+        maxRangeDenomByMoneyness,
     } = props;
-    const collateralContent = (
-        <motion.div
-            layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={styles.info_container}
-        >
-            <Row>
-                <span>Pooled {baseTokenSymbol}</span>
-                <div className={styles.info_text}>
-                    {baseLiquidityDisplay || '…'}
-                    <img src={baseTokenLogoURI} alt='' />
-                </div>
-            </Row>
-            {/*  */}
-            <Row>
-                <span>Pooled {quoteTokenSymbol}</span>
-                <div className={styles.info_text}>
-                    {quoteLiquidityDisplay || '…'}
-                    <img src={quoteTokenLogoURI} alt='' />
-                </div>
-            </Row>
-            {/*  */}
-            <Divider />
-            {/* <div className={styles.divider}></div> */}
-            <Row>
-                <span> Earned {baseTokenSymbol}</span>
-                <div className={styles.info_text}>
-                    {baseFeesDisplay || '…'}
-                    <img src={baseTokenLogoURI} alt='' />
-                </div>
-            </Row>
-            {/*  */}
-            <Row>
-                <span>Earned {quoteTokenSymbol} </span>
-                <div className={styles.info_text}>
-                    {quoteFeesDisplay || '…'}
-                    <img src={quoteTokenLogoURI} alt='' />
-                </div>
-            </Row>
-        </motion.div>
+
+    const { pathname } = useLocation();
+
+    const isOnTradeRoute = pathname.includes('trade');
+
+    const baseTokenLogoDisplay = baseTokenLogoURI ? (
+        <img src={baseTokenLogoURI} alt={baseTokenSymbol} />
+    ) : (
+        <NoTokenIcon tokenInitial={baseTokenSymbol.charAt(0)} width='15px' />
+    );
+    const quoteTokenLogoDisplay = quoteTokenLogoURI ? (
+        <img src={quoteTokenLogoURI} alt={quoteTokenSymbol} />
+    ) : (
+        <NoTokenIcon tokenInitial={quoteTokenSymbol.charAt(0)} width='15px' />
     );
 
-    const timesContent = (
-        <motion.div
-            layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={styles.info_container}
-        >
-            <Row>
-                <span>Open Time</span>
-                <div className={styles.info_text}>25/08/22</div>
-            </Row>
-
-            <Row>
-                <span>Close Time</span>
-                <div className={styles.info_text}>30/08/22</div>
-            </Row>
-        </motion.div>
+    const totalValue = (
+        <div className={styles.value_content}>
+            <p>Total Value:</p>
+            <p>${usdValue}</p>
+        </div>
     );
 
-    const totalValueContent = (
-        <motion.div
-            layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={styles.info_container}
-        >
-            <Row>
-                <span>Total Value</span>
-                <div className={styles.info_text}>$4,200.00</div>
-            </Row>
-        </motion.div>
+    const pooledContent = <div className={styles.pooled_container}></div>;
+    const earnedContent = (
+        <div className={styles.earned_container}>
+            <section>
+                <div>
+                    <p>{`Pooled ${baseTokenSymbol}`}</p>
+                    <p>
+                        {baseCollateralDisplay || '…'}
+                        {baseTokenLogoDisplay}
+                    </p>
+                </div>
+
+                <div>
+                    <p>{`Pooled ${quoteTokenSymbol}`}</p>
+                    <p>
+                        {quoteCollateralDisplay || '…'}
+                        {quoteTokenLogoDisplay}
+                    </p>
+                </div>
+            </section>
+            <DividerDark />
+
+            <section>
+                <div>
+                    <p>{`Earned ${baseTokenSymbol}`}</p>
+                    <p>
+                        {baseFeesDisplay || '…'}
+                        {baseTokenLogoDisplay}
+                    </p>
+                </div>
+
+                <div>
+                    <p>{`Earned ${quoteTokenSymbol}`}</p>
+                    <p>
+                        {quoteFeesDisplay || '…'}
+                        {quoteTokenLogoDisplay}
+                    </p>
+                </div>
+            </section>
+        </div>
+    );
+
+    const priceStatusContent = (
+        <div className={styles.price_status_content}>
+            <section>
+                <p>Range Min:</p>
+                <h2 className={styles.low_range}>
+                    {isAmbient ? '0' : isOnTradeRoute ? lowRangeDisplay : minRangeDenomByMoneyness}
+                </h2>
+            </section>
+
+            <section>
+                <p>Range Max:</p>
+                <h2 className={styles.high_range}>
+                    {isAmbient ? '∞' : isOnTradeRoute ? highRangeDisplay : maxRangeDenomByMoneyness}
+                </h2>
+            </section>
+        </div>
     );
 
     const tokenPairDetails = (
         <div
             className={styles.token_pair_details_container}
             onClick={() => {
-                dispatch(toggleDidUserFlipDenom());
+                // dispatch(toggleDidUserFlipDenom());
             }}
         >
-            <div className={styles.token_pair_images}>
-                <img
-                    src={isDenomBase ? baseTokenLogoURI : quoteTokenLogoURI}
-                    alt={baseTokenSymbol}
-                />
-                <img
-                    src={isDenomBase ? quoteTokenLogoURI : baseTokenLogoURI}
-                    alt={quoteTokenSymbol}
-                />
-            </div>
             <p>
-                {' '}
                 {isDenomBase ? baseTokenSymbol : quoteTokenSymbol} /{' '}
                 {isDenomBase ? quoteTokenSymbol : baseTokenSymbol}
             </p>
         </div>
     );
 
-    const minMaxPriceDipslay = (
-        <div className={styles.min_max_price}>
-            <div className={styles.min_max_content}>
-                Min Price
-                <span className={styles.min_price}>{lowRangeDisplay ?? 0}</span>
-            </div>
-            <div className={styles.min_max_content}>
-                Max Price
-                <span className={styles.max_price}>{highRangeDisplay ?? 'Infinity'}</span>
-            </div>
-        </div>
-    );
-    // console.log(controlItems);
-
     return (
         <div className={styles.main_container}>
-            {/* <div className={styles.price_info_container}> */}
-            {tokenPairDetails}
-            {controlItems[2].checked && totalValueContent}
-            {controlItems[0].checked && timesContent}
-            {controlItems[1].checked && collateralContent}
-            {minMaxPriceDipslay}
-            {/* <div className={styles.graph_image_container}>
-                    <img src={graphImage} alt='chart' />
-                </div> */}
-            {/* </div> */}
+            <div className={styles.price_info_container}>
+                {tokenPairDetails}
+                {totalValue}
+                {pooledContent}
+                {earnedContent}
+                {priceStatusContent}
+                <Apy amount={positionApy || undefined} fs='48px' lh='60px' center showTitle />
+            </div>
         </div>
     );
 }

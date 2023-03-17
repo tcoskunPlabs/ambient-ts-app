@@ -1,5 +1,5 @@
 // START: Import React and Dongles
-import { useState } from 'react';
+import { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import { FiMoreHorizontal } from 'react-icons/fi';
 
@@ -9,75 +9,131 @@ import RangeDetails from '../../../../RangeDetails/RangeDetails';
 import SnackbarComponent from '../../../../../components/Global/SnackbarComponent/SnackbarComponent';
 
 // START: Import Local Files
-import styles from './TableMenuComponents.module.css';
-import useCopyToClipboard from '../../../../../utils/hooks/useCopyToClipboard';
-import { DefaultTooltip } from '../../../StyledTooltip/StyledTooltip';
-import { PositionIF } from '../../../../../utils/interfaces/PositionIF';
+import styles from './TableMenus.module.css';
+import { PositionIF } from '../../../../../utils/interfaces/exports';
 import HarvestPosition from '../../../../HarvestPosition/HarvestPosition';
 import { ChainSpec, CrocEnv } from '@crocswap-libs/sdk';
+import UseOnClickOutside from '../../../../../utils/hooks/useOnClickOutside';
+import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
+import {
+    useAppDispatch,
+    useAppSelector,
+} from '../../../../../utils/hooks/reduxToolkit';
+import {
+    setAdvancedHighTick,
+    setAdvancedLowTick,
+    setAdvancedMode,
+} from '../../../../../utils/state/tradeDataSlice';
+import { allDexBalanceMethodsIF } from '../../../../../App/hooks/useExchangePrefs';
+import { useModal } from '../../../Modal/useModal';
+import Modal from '../../../Modal/Modal';
 
 // interface for React functional component props
-interface RangesMenuIF {
+interface propsIF {
     crocEnv: CrocEnv | undefined;
     chainData: ChainSpec;
+    baseTokenBalance: string;
+    quoteTokenBalance: string;
+    baseTokenDexBalance: string;
+    quoteTokenDexBalance: string;
     userMatchesConnectedAccount: boolean | undefined;
     // todoFromJr: Assign the correct types to these data -Jr
     // eslint-disable-next-line
     rangeDetailsProps: any;
-    positionData: PositionIF;
+    position: PositionIF;
     posHash: string;
+    showSidebar: boolean;
+    isOnPortfolioPage: boolean;
+    isPositionEmpty: boolean;
+    handlePulseAnimation?: (type: string) => void;
+    showHighlightedButton: boolean;
+    isEmpty: boolean;
+    setSimpleRangeWidth: Dispatch<SetStateAction<number>>;
+    dexBalancePrefs: allDexBalanceMethodsIF;
 }
 
 // React functional component
-export default function RangesMenu(props: RangesMenuIF) {
+export default function RangesMenu(props: propsIF) {
+    const menuItemRef = useRef<HTMLDivElement>(null);
+
     const {
         crocEnv,
-        // chainData,
+        isEmpty,
+        // isPositionEmpty,
         userMatchesConnectedAccount,
         rangeDetailsProps,
         posHash,
-        positionData,
-        // eslint-disable-next-line
+        position,
+        handlePulseAnimation,
+        setSimpleRangeWidth,
+        dexBalancePrefs,
     } = props;
 
     const { openGlobalModal } = rangeDetailsProps;
 
-    const currentLocation = location.pathname;
-    const { isAmbient, isPositionInRange } = rangeDetailsProps;
-    // eslint-disable-next-line
-    const [value, copy] = useCopyToClipboard();
+    const { isAmbient } = rangeDetailsProps;
     const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
 
-    const [openMenuTooltip, setOpenMenuTooltip] = useState(false);
-
-    const feesGreaterThanZero =
-        (positionData.feesLiqBaseDecimalCorrected || 0) +
-            (positionData.feesLiqQuoteDecimalCorrected || 0) >
-        0;
-
-    const positionHasLiquidity =
-        (positionData.positionLiqBaseDecimalCorrected || 0) +
-            (positionData.positionLiqQuoteDecimalCorrected || 0) >
-        0;
+    const dispatch = useAppDispatch();
 
     // ---------------------MODAL FUNCTIONALITY----------------
+    const [
+        isRemoveRangeModalOpen,
+        openRemoveRangeModal,
+        closeRemoveRangeModal,
+    ] = useModal();
+    const [isHarvestModalOpen, openHarvestModal, closeHarvestModal] =
+        useModal();
 
-    const openRemoveModal = () =>
-        openGlobalModal(<RemoveRange position={positionData} {...rangeDetailsProps} />);
+    const handleModalClose = () => {
+        console.log('CLOSING THE MODAL!!!!');
+        closeHarvestModal();
+        closeRemoveRangeModal();
+        setShowDropdownMenu(false);
+    };
 
-    const openDetailsModal = () =>
-        openGlobalModal(<RangeDetails position={positionData} {...rangeDetailsProps} />);
-
-    const openHarvestModal = () =>
+    const openDetailsModal = () => {
+        setShowDropdownMenu(false);
         openGlobalModal(
-            <HarvestPosition crocEnv={crocEnv} position={positionData} {...rangeDetailsProps} />,
+            <RangeDetails position={position} {...rangeDetailsProps} />,
         );
+    };
+
+    // const openHarvestModal = () => {
+    //     setShowDropdownMenu(false);
+    //     openGlobalModal(
+    //         <HarvestPosition
+    //             crocEnv={crocEnv}
+    //             position={position}
+    //             dexBalancePrefs={dexBalancePrefs}
+    //             {...rangeDetailsProps}
+    //         />,
+    //     );
+    // };
+
+    const isUserLoggedIn = useAppSelector((state) => state.userData).isLoggedIn;
+
+    const positionMatchesLoggedInUser =
+        userMatchesConnectedAccount && isUserLoggedIn;
+
+    const handleCopyClick = () => {
+        {
+            handlePulseAnimation ? handlePulseAnimation('range') : null;
+        }
+
+        if (position.positionType === 'ambient') {
+            setSimpleRangeWidth(100);
+            dispatch(setAdvancedMode(false));
+        } else {
+            console.log({ position });
+            dispatch(setAdvancedLowTick(position.bidTick));
+            dispatch(setAdvancedHighTick(position.askTick));
+            dispatch(setAdvancedMode(true));
+        }
+        setShowDropdownMenu(false);
+    };
 
     // -----------------SNACKBAR----------------
-    function handleCopyAddress() {
-        copy(posHash);
-        setOpenSnackbar(true);
-    }
 
     const snackbarContent = (
         <SnackbarComponent
@@ -90,24 +146,76 @@ export default function RangesMenu(props: RangesMenuIF) {
     );
     // -----------------END OF SNACKBAR----------------
 
-    const repositionButton =
-        !isAmbient && userMatchesConnectedAccount && !isPositionInRange ? (
-            <Link className={styles.reposition_button} to={'/trade/reposition'}>
-                Reposition
-            </Link>
-        ) : null;
+    const repositionButton = (
+        <Link
+            className={styles.reposition_button}
+            to={
+                '/trade/reposition/chain=' +
+                position.chainId +
+                '&tokenA=' +
+                position.base +
+                '&tokenB=' +
+                position.quote +
+                '&lowTick=' +
+                position.bidTick +
+                '&highTick=' +
+                position.askTick
+            }
+            state={{ position: position }}
+        >
+            Reposition
+        </Link>
+    );
 
-    const removeButton =
-        userMatchesConnectedAccount && positionHasLiquidity ? (
-            <button className={styles.option_button} onClick={openRemoveModal}>
-                Remove
-            </button>
-        ) : null;
-    const copyButton = isPositionInRange ? (
-        <button className={styles.option_button} onClick={handleCopyAddress}>
-            Copy Trade
+    const removeButton = positionMatchesLoggedInUser ? (
+        <button className={styles.option_button} onClick={openRemoveRangeModal}>
+            Remove
         </button>
     ) : null;
+
+    const copyButton = position ? (
+        <Link
+            style={{ opacity: '1' }}
+            className={styles.option_button}
+            to={
+                '/trade/range/chain=' +
+                position.chainId +
+                '&tokenA=' +
+                position.base +
+                '&tokenB=' +
+                position.quote +
+                '&lowTick=' +
+                position.bidTick +
+                '&highTick=' +
+                position.askTick
+            }
+            onClick={handleCopyClick}
+        >
+            Copy Trade
+        </Link>
+    ) : null;
+
+    const addButton = (
+        <Link
+            style={{ opacity: '1' }}
+            className={styles.option_button}
+            to={
+                '/trade/range/chain=' +
+                position.chainId +
+                '&tokenA=' +
+                position.base +
+                '&tokenB=' +
+                position.quote +
+                '&lowTick=' +
+                position.bidTick +
+                '&highTick=' +
+                position.askTick
+            }
+            onClick={handleCopyClick}
+        >
+            Add
+        </Link>
+    );
 
     const detailsButton = (
         <button className={styles.option_button} onClick={openDetailsModal}>
@@ -115,72 +223,103 @@ export default function RangesMenu(props: RangesMenuIF) {
         </button>
     );
     const harvestButton =
-        !isAmbient && feesGreaterThanZero && userMatchesConnectedAccount ? (
+        !isAmbient && positionMatchesLoggedInUser ? (
             <button className={styles.option_button} onClick={openHarvestModal}>
                 Harvest
             </button>
         ) : null;
 
-    const editButton =
-        userMatchesConnectedAccount && positionHasLiquidity ? (
-            <Link
-                className={styles.option_button}
-                to={`/trade/edit/${posHash}`}
-                state={{ position: positionData }}
-                replace={currentLocation.startsWith('/trade/edit')}
-            >
-                Edit
-            </Link>
-        ) : null;
+    // ----------------------
+
+    const view1 = useMediaQuery('(min-width: 720px)');
+    const view2 = useMediaQuery('(min-width: 1380px)');
+    const view3 = useMediaQuery('(min-width: 2300px)');
+
+    const showRepositionButton =
+        // !isPositionInRange &&
+        // !isPositionEmpty &&
+        // userMatchesConnectedAccount &&
+        view1;
+    // ----------------------
 
     const rangesMenu = (
         <div className={styles.actions_menu}>
-            {repositionButton}
-            {editButton}
-            {harvestButton}
-            {removeButton}
-            {detailsButton}
-            {copyButton}
+            {showRepositionButton && repositionButton}
+            {!showRepositionButton && userMatchesConnectedAccount && addButton}
+            {view2 && !isEmpty && removeButton}
+            {view3 && !isEmpty && harvestButton}
+            {!userMatchesConnectedAccount && copyButton}
         </div>
     );
-
-    // console.log(posHash);
 
     const menuContent = (
         <div className={styles.menu_column}>
-            {userMatchesConnectedAccount && editButton}
-            {userMatchesConnectedAccount && harvestButton}
-            {userMatchesConnectedAccount && removeButton}
+            {!view3 && !isEmpty && harvestButton}
+            {!view2 && !isEmpty && removeButton}
             {detailsButton}
-            {copyButton}
+            {userMatchesConnectedAccount && copyButton}
         </div>
     );
 
+    const [showDropdownMenu, setShowDropdownMenu] = useState(false);
+
+    const wrapperStyle = showDropdownMenu
+        ? styles.dropdown_wrapper_active
+        : styles.dropdown_wrapper;
+
+    const clickOutsideHandler = () => {
+        setShowDropdownMenu(false);
+    };
+
+    UseOnClickOutside(menuItemRef, clickOutsideHandler);
     const dropdownRangesMenu = (
-        <div className={styles.dropdown_menu}>
-            <DefaultTooltip
-                open={openMenuTooltip}
-                onOpen={() => setOpenMenuTooltip(true)}
-                onClose={() => setOpenMenuTooltip(false)}
-                interactive
-                placement='left'
-                title={menuContent}
-            >
-                <div
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setOpenMenuTooltip(!openMenuTooltip)}
-                >
-                    <FiMoreHorizontal size={20} />
-                </div>
-            </DefaultTooltip>
+        <div className={styles.dropdown_menu} ref={menuItemRef}>
+            <div onClick={() => setShowDropdownMenu(!showDropdownMenu)}>
+                <FiMoreHorizontal />
+            </div>
+            <div className={wrapperStyle}>{menuContent}</div>
         </div>
     );
+
+    useEffect(() => {
+        if (showDropdownMenu) {
+            const interval = setTimeout(() => {
+                setShowDropdownMenu(false);
+            }, 5000);
+            return () => clearTimeout(interval);
+        } else return;
+    }, [showDropdownMenu]);
 
     return (
-        <>
+        <div className={styles.main_container}>
             {rangesMenu}
             {dropdownRangesMenu}
             {snackbarContent}
-        </>
+            {isHarvestModalOpen && (
+                <Modal onClose={handleModalClose} title='Harvest Fees' noHeader>
+                    <HarvestPosition
+                        handleModalClose={handleModalClose}
+                        crocEnv={crocEnv}
+                        position={position}
+                        dexBalancePrefs={dexBalancePrefs}
+                        {...rangeDetailsProps}
+                    />
+                </Modal>
+            )}
+            {isRemoveRangeModalOpen && (
+                <Modal
+                    onClose={handleModalClose}
+                    title='Remove Position'
+                    noHeader
+                >
+                    <RemoveRange
+                        position={position}
+                        handleModalClose={handleModalClose}
+                        dexBalancePrefs={dexBalancePrefs}
+                        {...rangeDetailsProps}
+                    />
+                </Modal>
+            )}
+        </div>
     );
 }

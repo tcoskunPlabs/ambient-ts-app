@@ -26,6 +26,7 @@
 .main{
     background: var(--dark1);
     height: 100vh;
+   
 }
 
 .menu_container {
@@ -41,4 +42,13 @@
 
 .example_container{
     max-width: 400px;
+}
+
+.rectangle{
+    width: 300px;
+    margin: 1rem;
+    background: rgb(3, 3, 96);
+    height: 50px;
+    color: white;
+    font-size: 20px;
 }

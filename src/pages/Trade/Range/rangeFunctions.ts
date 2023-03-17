@@ -7,6 +7,7 @@ import {
 } from '@crocswap-libs/sdk';
 
 import truncateDecimals from '../../../utils/data/truncateDecimals';
+import { formatAmountOld } from '../../../utils/numbers';
 
 export function roundDownTick(lowTick: number, nTicksGrid: number): number {
     const tickGrid = Math.floor(lowTick / nTicksGrid) * nTicksGrid;
@@ -32,6 +33,8 @@ export function getPinnedPriceValuesFromTicks(
     pinnedMaxPriceDisplay: string;
     pinnedMinPriceDisplayTruncated: string;
     pinnedMaxPriceDisplayTruncated: string;
+    pinnedMinPriceDisplayTruncatedWithCommas: string;
+    pinnedMaxPriceDisplayTruncatedWithCommas: string;
     pinnedLowTick: number;
     pinnedHighTick: number;
     pinnedMinPriceNonDisplay: number;
@@ -58,53 +61,105 @@ export function getPinnedPriceValuesFromTicks(
     const lowPriceDisplayInBase = 1 / highPriceDisplayInQuote;
     const highPriceDisplayInBase = 1 / lowPriceDisplayInQuote;
 
-    const lowPriceDisplay = isDenomInBase ? lowPriceDisplayInBase : lowPriceDisplayInQuote;
-    const highPriceDisplay = isDenomInBase ? highPriceDisplayInBase : highPriceDisplayInQuote;
+    const lowPriceDisplay = isDenomInBase
+        ? lowPriceDisplayInBase
+        : lowPriceDisplayInQuote;
+    const highPriceDisplay = isDenomInBase
+        ? highPriceDisplayInBase
+        : highPriceDisplayInQuote;
 
     const lowPriceDisplayTruncated =
         lowPriceDisplay < 2
-            ? truncateDecimals(lowPriceDisplay, 4)
+            ? lowPriceDisplay > 0.1
+                ? truncateDecimals(lowPriceDisplay, 4)
+                : truncateDecimals(lowPriceDisplay, 6)
             : truncateDecimals(lowPriceDisplay, 2);
 
     const highPriceDisplayTruncated =
         highPriceDisplay < 2
-            ? truncateDecimals(highPriceDisplay, 4)
+            ? highPriceDisplay > 0.1
+                ? truncateDecimals(highPriceDisplay, 4)
+                : truncateDecimals(highPriceDisplay, 6)
             : truncateDecimals(highPriceDisplay, 2);
 
-    // const pinnedMinPriceDisplay = isDenomInBase
-    //     ? 1 / toDisplayPrice(pinnedMaxPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false)
-    //     : toDisplayPrice(pinnedMinPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false);
+    const lowPriceDisplayTruncatedWithCommas: string = !lowPriceDisplay
+        ? ''
+        : lowPriceDisplay < 0.00001
+        ? lowPriceDisplay.toExponential(2)
+        : lowPriceDisplay < 2
+        ? lowPriceDisplay.toPrecision(3)
+        : lowPriceDisplay >= 100000
+        ? formatAmountOld(lowPriceDisplay, 1)
+        : lowPriceDisplay.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          });
 
-    // const pinnedMaxPriceDisplay = isDenomInBase
-    //     ? 1 / toDisplayPrice(pinnedMinPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false)
-    //     : toDisplayPrice(pinnedMaxPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false);
-
-    // const pinnedMinPriceDisplayTruncated =
-    //     pinnedMinPriceDisplay < 2
-    //         ? pinnedMinPriceDisplay > 0.1
-    //             ? truncateDecimals(pinnedMinPriceDisplay, 4).toString()
-    //             : truncateDecimals(pinnedMinPriceDisplay, 6).toString()
-    //         : truncateDecimals(pinnedMinPriceDisplay, 2).toString();
-
-    // // console.log({ pinnedMinPriceDisplay });
-
-    // const pinnedMaxPriceDisplayTruncated =
-    //     pinnedMaxPriceDisplay < 2
-    //         ? pinnedMinPriceDisplay > 0.1
-    //             ? truncateDecimals(pinnedMaxPriceDisplay, 4).toString()
-    //             : truncateDecimals(pinnedMaxPriceDisplay, 6).toString()
-    //         : truncateDecimals(pinnedMaxPriceDisplay, 2).toString();
+    const highPriceDisplayTruncatedWithCommas: string = !highPriceDisplay
+        ? ''
+        : highPriceDisplay < 0.00001
+        ? highPriceDisplay.toExponential(2)
+        : highPriceDisplay < 2
+        ? highPriceDisplay.toPrecision(3)
+        : highPriceDisplay >= 100000
+        ? formatAmountOld(highPriceDisplay, 1)
+        : highPriceDisplay.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          });
 
     return {
         pinnedMinPriceDisplay: lowPriceDisplay.toString(),
         pinnedMaxPriceDisplay: highPriceDisplay.toString(),
         pinnedMinPriceDisplayTruncated: lowPriceDisplayTruncated,
         pinnedMaxPriceDisplayTruncated: highPriceDisplayTruncated,
+        pinnedMinPriceDisplayTruncatedWithCommas:
+            lowPriceDisplayTruncatedWithCommas,
+        pinnedMaxPriceDisplayTruncatedWithCommas:
+            highPriceDisplayTruncatedWithCommas,
         pinnedLowTick: pinnedLowTick,
         pinnedHighTick: pinnedHighTick,
         pinnedMinPriceNonDisplay: pinnedMinPriceNonDisplay,
         pinnedMaxPriceNonDisplay: pinnedMaxPriceNonDisplay,
     };
+}
+
+export function getPinnedTickFromDisplayPrice(
+    isDenomInBase: boolean,
+    baseTokenDecimals: number,
+    quoteTokenDecimals: number,
+    isMinPrice: boolean,
+    priceDisplayString: string,
+    gridSize: number,
+): number {
+    const priceDisplayNum = parseFloat(priceDisplayString);
+    let priceNonDisplayNum, pinnedTick;
+    if (isDenomInBase) {
+        priceNonDisplayNum = fromDisplayPrice(
+            1 / priceDisplayNum,
+            baseTokenDecimals,
+            quoteTokenDecimals,
+        );
+        const tickExact = Math.log(priceNonDisplayNum) / Math.log(1.0001);
+        if (isMinPrice) {
+            pinnedTick = roundDownTick(tickExact, gridSize);
+        } else {
+            pinnedTick = roundUpTick(tickExact, gridSize);
+        }
+    } else {
+        priceNonDisplayNum = fromDisplayPrice(
+            priceDisplayNum,
+            baseTokenDecimals,
+            quoteTokenDecimals,
+        );
+        const tickExact = Math.log(priceNonDisplayNum) / Math.log(1.0001);
+        if (isMinPrice) {
+            pinnedTick = roundDownTick(tickExact, gridSize);
+        } else {
+            pinnedTick = roundUpTick(tickExact, gridSize);
+        }
+    }
+    return pinnedTick;
 }
 
 export function getPinnedPriceValuesFromDisplayPrices(
@@ -128,12 +183,28 @@ export function getPinnedPriceValuesFromDisplayPrices(
     const maxPriceDisplayNum = parseFloat(maxPriceDisplayString);
 
     const minPriceNonDisplayNum = isDenomInBase
-        ? fromDisplayPrice(1 / maxPriceDisplayNum, baseTokenDecimals, quoteTokenDecimals)
-        : fromDisplayPrice(minPriceDisplayNum, baseTokenDecimals, quoteTokenDecimals);
+        ? fromDisplayPrice(
+              1 / maxPriceDisplayNum,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+          )
+        : fromDisplayPrice(
+              minPriceDisplayNum,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+          );
 
     const maxPriceNonDisplayNum = isDenomInBase
-        ? fromDisplayPrice(1 / minPriceDisplayNum, baseTokenDecimals, quoteTokenDecimals)
-        : fromDisplayPrice(maxPriceDisplayNum, baseTokenDecimals, quoteTokenDecimals);
+        ? fromDisplayPrice(
+              1 / minPriceDisplayNum,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+          )
+        : fromDisplayPrice(
+              maxPriceDisplayNum,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+          );
 
     const lowTickExact = Math.log(minPriceNonDisplayNum) / Math.log(1.0001);
     const highTickExact = Math.log(maxPriceNonDisplayNum) / Math.log(1.0001);
@@ -146,12 +217,34 @@ export function getPinnedPriceValuesFromDisplayPrices(
     const pinnedMaxPriceNonDisplay = tickToPrice(pinnedHighTick);
 
     const pinnedMinPriceDisplay = isDenomInBase
-        ? 1 / toDisplayPrice(pinnedMaxPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false)
-        : toDisplayPrice(pinnedMinPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false);
+        ? 1 /
+          toDisplayPrice(
+              pinnedMaxPriceNonDisplay,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+              false,
+          )
+        : toDisplayPrice(
+              pinnedMinPriceNonDisplay,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+              false,
+          );
 
     const pinnedMaxPriceDisplay = isDenomInBase
-        ? 1 / toDisplayPrice(pinnedMinPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false)
-        : toDisplayPrice(pinnedMaxPriceNonDisplay, baseTokenDecimals, quoteTokenDecimals, false);
+        ? 1 /
+          toDisplayPrice(
+              pinnedMinPriceNonDisplay,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+              false,
+          )
+        : toDisplayPrice(
+              pinnedMaxPriceNonDisplay,
+              baseTokenDecimals,
+              quoteTokenDecimals,
+              false,
+          );
 
     const pinnedMinPriceDisplayTruncated =
         pinnedMinPriceDisplay < 2

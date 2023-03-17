@@ -6,26 +6,31 @@ import TransactionSettings from '../../../Global/TransactionSettings/Transaction
 
 // START: Import Local Files
 import styles from './LimitHeader.module.css';
-import { SlippagePairIF } from '../../../../utils/interfaces/exports';
 import settingsIcon from '../../../../assets/images/icons/settings.svg';
 import Modal from '../../../../components/Global/Modal/Modal';
 import { useModal } from '../../../../components/Global/Modal/useModal';
 import { useAppDispatch, useAppSelector } from '../../../../utils/hooks/reduxToolkit';
 import { toggleDidUserFlipDenom } from '../../../../utils/state/tradeDataSlice';
+import IconWithTooltip from '../../../Global/IconWithTooltip/IconWithTooltip';
+import { AiOutlineShareAlt } from 'react-icons/ai';
+import ShareModal from '../../../Global/ShareModal/ShareModal';
+import { SlippageMethodsIF } from '../../../../App/hooks/useSlippage';
 
 // interface for component props
-interface LimitHeaderPropsIF {
+interface propsIF {
     chainId: string;
-    // tokenPair: TokenPairIF;
-    mintSlippage: SlippagePairIF;
+    mintSlippage: SlippageMethodsIF;
     isPairStable: boolean;
-    // isDenomBase: boolean;
-    // isTokenABase: boolean;
+    bypassConfirm: boolean;
+    toggleBypassConfirm: (item: string, pref: boolean) => void;
+    openGlobalModal: (content: React.ReactNode, title?: string) => void;
+    shareOptionsDisplay: JSX.Element;
 }
 
 // central react functional component
-export default function LimitHeader(props: LimitHeaderPropsIF) {
-    const { mintSlippage, isPairStable } = props;
+export default function LimitHeader(props: propsIF) {
+    const { mintSlippage, isPairStable, openGlobalModal, bypassConfirm, toggleBypassConfirm } =
+        props;
 
     const [isModalOpen, openModal, closeModal] = useModal();
 
@@ -34,29 +39,44 @@ export default function LimitHeader(props: LimitHeaderPropsIF) {
     const isDenomBase = tradeData.isDenomBase;
     const baseTokenSymbol = tradeData.baseToken.symbol;
     const quoteTokenSymbol = tradeData.quoteToken.symbol;
-    // const reverseDisplay = (isTokenABase && isDenomBase) || (!isTokenABase && !isDenomBase);
 
     const settingsModalOrNull = isModalOpen ? (
         <Modal noHeader title='modal' onClose={closeModal}>
             <TransactionSettings
                 module='Limit Order'
+                toggleFor='limit'
                 slippage={mintSlippage}
                 isPairStable={isPairStable}
                 onClose={closeModal}
+                bypassConfirm={bypassConfirm}
+                toggleBypassConfirm={toggleBypassConfirm}
             />
         </Modal>
     ) : null;
 
     return (
         <ContentHeader>
-            <span />
+            <div
+                className={styles.share_button}
+                onClick={() => openGlobalModal(<ShareModal />, 'Share')}
+                id='limit_share_button'
+            >
+                <AiOutlineShareAlt />
+            </div>
             <div className={styles.token_info} onClick={() => dispatch(toggleDidUserFlipDenom())}>
                 {isDenomBase ? baseTokenSymbol : quoteTokenSymbol} /{' '}
                 {isDenomBase ? quoteTokenSymbol : baseTokenSymbol}
             </div>
-            <div onClick={openModal}>
-                <img src={settingsIcon} alt='settings' />
-            </div>
+            <IconWithTooltip title='Settings' placement='left'>
+                <div
+                    onClick={openModal}
+                    style={{ cursor: 'pointer' }}
+                    className={styles.settings_icon}
+                    id='limit_settings_button'
+                >
+                    <img src={settingsIcon} alt='settings' />
+                </div>
+            </IconWithTooltip>
             {settingsModalOrNull}
         </ContentHeader>
     );

@@ -7,37 +7,47 @@ import { RiArrowDownSLine } from 'react-icons/ri';
 import styles from './LimitExtraInfo.module.css';
 import { TokenPairIF } from '../../../../utils/interfaces/exports';
 import TooltipComponent from '../../../Global/TooltipComponent/TooltipComponent';
-import truncateDecimals from '../../../../utils/data/truncateDecimals';
-import { useAppSelector } from '../../../../utils/hooks/reduxToolkit';
+// import truncateDecimals from '../../../../utils/data/truncateDecimals';
+import { useAppDispatch, useAppSelector } from '../../../../utils/hooks/reduxToolkit';
+// import DenominationSwitch from '../../../Swap/DenominationSwitch/DenominationSwitch';
+import { toggleDidUserFlipDenom } from '../../../../utils/state/tradeDataSlice';
 // import makePriceDisplay from './makePriceDisplay';
 
 // interface for component props
-interface LimitExtraInfoPropsIF {
+interface propsIF {
     tokenPair: TokenPairIF;
     poolPriceDisplay: number;
     slippageTolerance: number;
     liquidityProviderFee: number;
-    quoteTokenIsBuy?: boolean;
-    gasPriceinGwei: number | undefined;
+    // quoteTokenIsBuy?: boolean;
+    orderGasPriceInDollars: string | undefined;
     didUserFlipDenom: boolean;
     isTokenABase: boolean;
     isDenomBase: boolean;
     limitRate: string;
+    startDisplayPrice: number;
+    middleDisplayPrice: number;
+    endDisplayPrice: number;
+    isQtyEntered: boolean;
 }
 
 // central react functional component
-export default function LimitExtraInfo(props: LimitExtraInfoPropsIF) {
+export default function LimitExtraInfo(props: propsIF) {
     const {
         // tokenPair,
-        gasPriceinGwei,
+        orderGasPriceInDollars,
         // quoteTokenIsBuy,
         poolPriceDisplay,
-        slippageTolerance,
+        // slippageTolerance,
         liquidityProviderFee,
         // didUserFlipDenom,
-        isTokenABase,
+        // isTokenABase,
         // isDenomBase,
         // limitRate,
+        startDisplayPrice,
+        middleDisplayPrice,
+        endDisplayPrice,
+        isQtyEntered,
     } = props;
     const [showExtraDetails, setShowExtraDetails] = useState<boolean>(false);
 
@@ -49,21 +59,21 @@ export default function LimitExtraInfo(props: LimitExtraInfoPropsIF) {
     const baseTokenSymbol = tradeData.baseToken.symbol;
     const quoteTokenSymbol = tradeData.quoteToken.symbol;
 
-    let reverseSlippage: boolean;
+    // let reverseSlippage: boolean;
 
-    if (isDenomBase) {
-        if (isTokenABase) {
-            reverseSlippage = false;
-        } else {
-            reverseSlippage = true;
-        }
-    } else {
-        if (isTokenABase) {
-            reverseSlippage = true;
-        } else {
-            reverseSlippage = false;
-        }
-    }
+    // if (isDenomBase) {
+    //     if (isTokenABase) {
+    //         reverseSlippage = false;
+    //     } else {
+    //         reverseSlippage = true;
+    //     }
+    // } else {
+    //     if (isTokenABase) {
+    //         reverseSlippage = true;
+    //     } else {
+    //         reverseSlippage = false;
+    //     }
+    // }
 
     const displayPriceWithDenom = isDenomBase ? 1 / poolPriceDisplay : poolPriceDisplay;
 
@@ -80,43 +90,41 @@ export default function LimitExtraInfo(props: LimitExtraInfoPropsIF) {
                   maximumFractionDigits: 2,
               });
 
-    // const limitRateString = truncateDecimals(parseFloat(limitRate), 2);
+    const startPriceString = !startDisplayPrice
+        ? '…'
+        : startDisplayPrice < 2
+        ? startDisplayPrice.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 6,
+          })
+        : startDisplayPrice.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          });
 
-    // const displayPriceString = isDenomBase
-    //     ? truncateDecimals(1 / poolPriceDisplay, 2)
-    //     : truncateDecimals(poolPriceDisplay, 2);
+    const middlePriceString = !middleDisplayPrice
+        ? '…'
+        : middleDisplayPrice < 2
+        ? middleDisplayPrice.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 6,
+          })
+        : middleDisplayPrice.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          });
 
-    const priceLimitAfterSlippageAndFee = reverseSlippage
-        ? displayPriceWithDenom * (1 + slippageTolerance / 100) * (1 + liquidityProviderFee / 100)
-        : displayPriceWithDenom * (1 - slippageTolerance / 100) * (1 - liquidityProviderFee / 100);
-
-    const displayLimitPriceString =
-        displayPriceWithDenom === Infinity || displayPriceWithDenom === 0
-            ? '…'
-            : priceLimitAfterSlippageAndFee < 2
-            ? priceLimitAfterSlippageAndFee.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 6,
-              })
-            : priceLimitAfterSlippageAndFee.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-              });
-    // const priceLimitAfterSlippageAndFee = reverseSlippage
-    //     ? truncateDecimals(
-    //           parseFloat(limitRateString) *
-    //               (1 + slippageTolerance / 100) *
-    //               (1 + liquidityProviderFee / 100),
-    //           4,
-    //       )
-    //     : truncateDecimals(
-    //           parseFloat(limitRateString) *
-    //               (1 - slippageTolerance / 100) *
-    //               (1 - liquidityProviderFee / 100),
-    //           4,
-    //       );
-
-    const truncatedGasInGwei = gasPriceinGwei ? truncateDecimals(gasPriceinGwei, 2) : undefined;
+    const endPriceString = !endDisplayPrice
+        ? '…'
+        : endDisplayPrice < 2
+        ? endDisplayPrice.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 6,
+          })
+        : endDisplayPrice.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+          });
 
     const extraInfoData = [
         {
@@ -134,22 +142,48 @@ export default function LimitExtraInfo(props: LimitExtraInfoPropsIF) {
         //         : `${limitRateNum} ${tokenPair.dataTokenB.symbol} per ${tokenPair.dataTokenA.symbol}`,
         // },
         {
-            title: 'Limit Price',
-            tooltipTitle: 'Price Limit After Maximum Slippage',
+            title: 'Fill Start',
+            tooltipTitle: 'Fill Start Explanation',
             data: isDenomBase
-                ? `${displayLimitPriceString} ${quoteTokenSymbol} per ${baseTokenSymbol}`
-                : `${displayLimitPriceString} ${baseTokenSymbol} per ${quoteTokenSymbol}`,
+                ? `${startPriceString} ${quoteTokenSymbol} per ${baseTokenSymbol}`
+                : `${startPriceString} ${baseTokenSymbol} per ${quoteTokenSymbol}`,
         },
         {
-            title: 'Slippage Tolerance',
-            tooltipTitle: 'slippage tolerance explanation',
-            data: `${slippageTolerance}%`,
+            title: 'Fill Middle',
+            tooltipTitle: 'Fill Middle Explanation',
+            data: isDenomBase
+                ? `${middlePriceString} ${quoteTokenSymbol} per ${baseTokenSymbol}`
+                : `${middlePriceString} ${baseTokenSymbol} per ${quoteTokenSymbol}`,
         },
         {
-            title: 'Liquidity Provider Fee',
-            tooltipTitle: 'liquidity provider fee explanation',
+            title: 'Fill End',
+            tooltipTitle: 'Fill End Explanation',
+            data: isDenomBase
+                ? `${endPriceString} ${quoteTokenSymbol} per ${baseTokenSymbol}`
+                : `${endPriceString} ${baseTokenSymbol} per ${quoteTokenSymbol}`,
+        },
+        {
+            title: 'Minimum Rebate Rate',
+            tooltipTitle:
+                'The minimum provider fee for market orders in this pool. Provider fees are effectively rebated for limit orders.',
+            data: '0.05%',
+        },
+        {
+            title: 'Current Rebate Rate',
+            tooltipTitle:
+                'The current provider fee for market orders. Provider fees are effectively rebated for limit orders.',
             data: `${liquidityProviderFee}%`,
         },
+        // {
+        //     title: 'Slippage Tolerance',
+        //     tooltipTitle: 'slippage tolerance explanation',
+        //     data: `${slippageTolerance}%`,
+        // },
+        // {
+        //     title: 'Liquidity Provider Fee',
+        //     tooltipTitle: 'liquidity provider fee explanation',
+        //     data: `${liquidityProviderFee}%`,
+        // },
     ];
 
     const limitExtraInfoDetails = (
@@ -176,23 +210,44 @@ export default function LimitExtraInfo(props: LimitExtraInfoPropsIF) {
     //     didUserFlipDenom,
     // );
 
+    const dropDownOrNull = isQtyEntered ? (
+        <div style={{ cursor: 'pointer' }}>
+            <RiArrowDownSLine size={20} />
+        </div>
+    ) : null;
+
+    const dispatch = useAppDispatch();
+
+    const extraInfoSectionOrNull = (
+        <div
+            className={styles.extra_info_content}
+            onClick={
+                isQtyEntered
+                    ? () => setShowExtraDetails(!showExtraDetails)
+                    : () => setShowExtraDetails(false)
+            }
+        >
+            <div className={styles.gas_pump}>
+                <FaGasPump size={15} /> {orderGasPriceInDollars ? orderGasPriceInDollars : '…'}
+            </div>
+            <div
+                className={styles.token_amount}
+                onClick={(e) => {
+                    dispatch(toggleDidUserFlipDenom());
+                    e.stopPropagation();
+                }}
+            >
+                {isDenomBase
+                    ? `1 ${baseTokenSymbol} ≈ ${displayPriceString} ${quoteTokenSymbol}`
+                    : `1 ${quoteTokenSymbol} ≈ ${displayPriceString} ${baseTokenSymbol}`}
+            </div>
+            {/* <DenominationSwitch /> */}
+            {dropDownOrNull}
+        </div>
+    );
     return (
         <>
-            <div
-                className={styles.extra_info_content}
-                onClick={() => setShowExtraDetails(!showExtraDetails)}
-            >
-                <div className={styles.gas_pump}>
-                    <FaGasPump size={15} />{' '}
-                    {truncatedGasInGwei ? `${truncatedGasInGwei} gwei` : '…'}
-                </div>
-                <div className={styles.token_amount}>
-                    {isDenomBase
-                        ? `1 ${baseTokenSymbol} ≈ ${displayPriceString} ${quoteTokenSymbol}`
-                        : `1 ${quoteTokenSymbol} ≈ ${displayPriceString} ${baseTokenSymbol}`}
-                    <RiArrowDownSLine size={27} />{' '}
-                </div>
-            </div>
+            {extraInfoSectionOrNull}
             {extraDetailsOrNull}
         </>
     );

@@ -4,6 +4,7 @@
     align-items: center;
     gap: 8px;
     min-height: 20px;
+    transition: var(--animation-speed) ease-in-out;
 }
 
 .options_toggles {
@@ -33,4 +34,77 @@
 
 .icon {
     cursor: pointer;
+
+    display: flex;
+    align-items: flex-start;
+}
+
+.disable_right {
+    filter: blur(7px);
+    pointer-events: none;
+    display: none;
+    transition: var(--animation-speed) ease-in-out;
+}
+
+.leader {
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-logo);
+    transition: all var(--animation-speed) ease-in-out;
+}
+
+.leader h3 {
+    /* background: var(--title-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; */
+
+    font-size: 14px;
+    line-height: 12px;
+
+    color: #cdc1ff;
+}
+
+.option_button {
+    background: var(--dark3);
+    width: 40px;
+    border: none;
+    outline: none;
+    display: flex;
+    /* justify-content: center; */
+    align-items: center;
+    /* border: 1px solid #242f3f; */
+    box-shadow: 2px 1000px 1px var(--dark3) inset;
+    transition: box-shadow var(--animation-speed) ease-in-out;
+
+    height: 23px;
+    padding: 5px 8px;
+    text-decoration: none;
+    border-radius: 6.25rem;
+    cursor: pointer;
+    font-size: 10px;
+    /* line-height: var(--body-lh); */
+    color: var(--text-grey-light);
+}
+
+.graph_indicaor {
+    color: #fff;
+
+    height: 1px;
+    width: 1px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+
+    background-color: #fff;
+  box-shadow:
+    0 0 1px 0.5px #fff,
+    0 0 1.5px 1px #3ca6e4,
+    0 0 2px 1.5px #3ca6e4;
+
+    margin: 2px 2px 0 3px;
+    
 }

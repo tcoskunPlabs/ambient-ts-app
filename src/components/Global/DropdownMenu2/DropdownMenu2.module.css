@@ -2,19 +2,25 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    color: white;
+    color: var(--text-grey-white);
     width: 100%;
     padding: 5px 12px;
     border-right: 4px solid transparent;
     transition: 0.2s cubic-bezier(0.6, -0.28, 0.735, 0.045);
     justify-content: space-between;
     position: relative;
+    z-index: 999;
+
+    /* background: var(--dark3);
+    border-radius: 4px; */
+
 }
 
 .menu_item {
     display: flex;
-    gap: 10px;
+    gap: 4px;
     cursor: pointer;
+    z-index: 999;
 }
 
 .menu_container {
@@ -23,13 +29,14 @@
     flex-direction: column;
 
     position: absolute;
+    z-index: 999;
     /* top: 30px; */
 }
 
 .link_text {
     white-space: nowrap;
     font-size: 15px;
-    color: white;
+    color: var(--text-grey-white);
 }
 
 .icon {

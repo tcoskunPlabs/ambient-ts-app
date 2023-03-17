@@ -1,54 +1,39 @@
 import styles from './FavoritePoolsCard.module.css';
 import { PoolIF } from '../../../../utils/interfaces/exports';
-import { getPoolStatsFresh } from '../../../../App/functions/getPoolStats';
-import { useEffect, useState } from 'react';
-import { formatAmount } from '../../../../utils/numbers';
-import { useAppDispatch } from '../../../../utils/hooks/reduxToolkit';
-import { setTokenA, setTokenB } from '../../../../utils/state/tradeDataSlice';
+import { PoolStatsFn } from '../../../../App/functions/getPoolStats';
+import { Link } from 'react-router-dom';
+import { useAppSelector } from '../../../../utils/hooks/reduxToolkit';
+import { usePoolStats } from './hooks/usePoolStats';
 
-interface FavoritePoolsCardIF {
+interface propsIF {
     pool: PoolIF;
+    chainId: string;
     lastBlockNumber: number;
+    cachedPoolStatsFetch: PoolStatsFn;
 }
 
-export default function FavoritePoolsCard(props: FavoritePoolsCardIF) {
-    const { pool, lastBlockNumber } = props;
+export default function FavoritePoolsCard(props: propsIF) {
+    const { pool, chainId, cachedPoolStatsFetch, lastBlockNumber } = props;
 
-    const dispatch = useAppDispatch();
+    // hook to get human-readable values for pool volume and TVL
+    const [volume, tvl] = usePoolStats(pool, lastBlockNumber, cachedPoolStatsFetch);
 
-    const [poolVolume, setPoolVolume] = useState<string | undefined>();
-    const [poolTvl, setPoolTvl] = useState<string | undefined>();
+    const { tokenB } = useAppSelector((state) => state.tradeData);
 
-    useEffect(() => {
-        (async () => {
-            const poolStatsFresh = await getPoolStatsFresh(
-                pool.chainId,
-                pool.base.address,
-                pool.quote.address,
-                pool.poolId,
-            );
-            const volume = poolStatsFresh?.volume;
-            const volumeString = volume ? '$' + formatAmount(volume) : undefined;
-            setPoolVolume(volumeString);
-            const tvl = poolStatsFresh?.tvl;
-            const tvlString = tvl ? '$' + formatAmount(tvl) : undefined;
-            setPoolTvl(tvlString);
-        })();
-    }, [JSON.stringify(pool), lastBlockNumber]);
+    const [addrTokenA, addrTokenB] =
+    tokenB.address.toLowerCase() === pool.base.address.toLowerCase()
+        ? [pool.quote.address, pool.base.address]
+        : [pool.base.address, pool.quote.address];
+
+    const linkPath = '/trade/market/chain=' + chainId + '&tokenA=' + addrTokenA + '&tokenB=' + addrTokenB
 
     return (
-        <div
-            className={styles.container}
-            onClick={() => {
-                dispatch(setTokenA(props.pool.base));
-                dispatch(setTokenB(props.pool.quote));
-            }}
-        >
+        <Link className={styles.container} to={linkPath}>
             <div>
                 {pool.base.symbol} / {pool.quote.symbol}
             </div>
-            <div>{poolVolume ?? '…'}</div>
-            <div>{poolTvl ?? '…'}</div>
-        </div>
+            <div>{volume}</div>
+            <div>{tvl}</div>
+        </Link>
     );
 }

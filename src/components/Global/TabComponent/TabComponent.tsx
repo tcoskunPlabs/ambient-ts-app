@@ -19,24 +19,54 @@ type tabData = {
     label: string;
     content: ReactNode;
     icon?: string;
+    showRightSideOption?: boolean;
 };
 
 interface TabPropsIF {
     data: tabData[];
+    setSelectedInsideTab?: Dispatch<SetStateAction<number>>;
     rightTabOptions?: ReactNode;
     selectedOutsideTab: number;
     setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
     outsideControl: boolean;
     setOutsideControl: Dispatch<SetStateAction<boolean>>;
+    showPositionsOnlyToggle?: boolean;
+    setShowPositionsOnlyToggle?: Dispatch<SetStateAction<boolean>>;
+
     // this props is for components that do not need outside control such as exchange balance
 }
 
 export default function TabComponent(props: TabPropsIF) {
-    const { data, selectedOutsideTab, rightTabOptions, outsideControl, setOutsideControl } = props;
+    const {
+        data,
+        setSelectedInsideTab,
+        selectedOutsideTab,
+        rightTabOptions,
+        outsideControl,
+        setOutsideControl,
+        // showPositionsOnlyToggle,
+        setShowPositionsOnlyToggle,
+    } = props;
 
     const [selectedTab, setSelectedTab] = useState(data[0]);
 
     function handleSelectedTab(item: tabData) {
+        // console.log({ item });
+        if (setSelectedInsideTab) {
+            switch (item.label) {
+                case 'Transactions':
+                    setSelectedInsideTab(0);
+                    break;
+                case 'Limit Orders':
+                    setSelectedInsideTab(1);
+                    break;
+                case 'Ranges':
+                    setSelectedInsideTab(2);
+                    break;
+                default:
+                    break;
+            }
+        }
         setOutsideControl(false);
         setSelectedTab(item);
     }
@@ -44,6 +74,12 @@ export default function TabComponent(props: TabPropsIF) {
     useEffect(() => {
         const currentTabData = data.find((item) => item.label === selectedTab.label);
         if (currentTabData) setSelectedTab(currentTabData);
+
+        if (!currentTabData?.showRightSideOption && setShowPositionsOnlyToggle) {
+            setShowPositionsOnlyToggle(false);
+        } else if (currentTabData?.showRightSideOption && setShowPositionsOnlyToggle) {
+            setShowPositionsOnlyToggle(true);
+        }
     }, [data, outsideControl]);
 
     function handleOutside2() {
@@ -140,7 +176,7 @@ export default function TabComponent(props: TabPropsIF) {
                     {rightTabOptions ? tabsWithRightOption : fullTabs}
                 </AnimateSharedLayout>
             </nav>
-            <main className={styles.main_tab_content}>
+            <section className={styles.main_tab_content}>
                 <AnimateSharedLayout>
                     <motion.div
                         key={selectedTab ? selectedTab.label : 'empty'}
@@ -152,7 +188,7 @@ export default function TabComponent(props: TabPropsIF) {
                         {selectedTab ? selectedTab.content : null}
                     </motion.div>
                 </AnimateSharedLayout>
-            </main>
+            </section>
         </div>
     );
 }

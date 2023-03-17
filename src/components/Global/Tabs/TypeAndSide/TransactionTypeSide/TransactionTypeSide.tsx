@@ -1,15 +1,30 @@
 import styles from './TransactionTypeSide.module.css';
 
 interface TransactionTypeSideProps {
-    type: 'remove' | 'buy' | 'add' | 'sell';
+    type: 'remove' | 'buy' | 'add' | 'sell' | 'claim';
     side: 'rangeRemove' | 'rangeAdd' | 'limit' | 'market';
+    baseTokenCharacter?: string;
+    quoteTokenCharacter?: string;
+    isDenomBase?: boolean;
 }
 export default function TransactionTypeSide(props: TransactionTypeSideProps) {
-    const { type, side } = props;
+    const { type, side, isDenomBase, baseTokenCharacter, quoteTokenCharacter } = props;
+
     const removeType = <p className={styles.remove_style}>Remove</p>;
-    const buyType = <p className={styles.buy_style}>Buy</p>;
+    const claimType = <p className={styles.claim_style}>Claimed</p>;
+
+    const buyType = (
+        <p className={styles.buy_style}>
+            Buy {isDenomBase ? baseTokenCharacter : quoteTokenCharacter}
+        </p>
+    );
     const addType = <p className={styles.add_style}>Add</p>;
-    const sellType = <p className={styles.sell_style}>Sell</p>;
+
+    const sellType = (
+        <p className={styles.sell_style}>
+            Sell {isDenomBase ? baseTokenCharacter : quoteTokenCharacter}
+        </p>
+    );
 
     const rangeRemove = <p className={styles.range_style}>Range</p>;
     const rangeAdd = <p className={styles.range_style2}>Range</p>;
@@ -18,6 +33,7 @@ export default function TransactionTypeSide(props: TransactionTypeSideProps) {
 
     const typeData = {
         remove: removeType,
+        claim: claimType,
         buy: buyType,
         add: addType,
         sell: sellType,

@@ -1,13 +1,15 @@
 import styles from './HarvestPositionInfo.module.css';
 import Row from '../../Global/Row/Row';
 import DividerDark from '../../Global/DividerDark/DividerDark';
-// import { formatAmount } from '../../../utils/numbers';
+// import { formatAmountOld } from '../../../utils/numbers';
 
 interface IHarvestPositionInfoProps {
     baseTokenSymbol: string;
     quoteTokenSymbol: string;
     baseTokenLogoURI: string;
     quoteTokenLogoURI: string;
+    baseRemovalNum: number;
+    quoteRemovalNum: number;
     posLiqBaseDecimalCorrected: number | undefined;
     posLiqQuoteDecimalCorrected: number | undefined;
     feeLiqBaseDecimalCorrected: number | undefined;
@@ -25,7 +27,9 @@ export default function HarvestPositionInfo(props: IHarvestPositionInfoProps) {
         // posLiqQuoteDecimalCorrected,
         feeLiqBaseDecimalCorrected,
         feeLiqQuoteDecimalCorrected,
-        removalPercentage,
+        // removalPercentage,
+        baseRemovalNum,
+        quoteRemovalNum,
     } = props;
 
     // Temp Values
@@ -33,7 +37,7 @@ export default function HarvestPositionInfo(props: IHarvestPositionInfoProps) {
     // const quoteTokenSymbol = 'USDC';
 
     // const baseTokenLogoURI =
-    //     'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ethereum-icon-purple.svg/480px-Ethereum-icon-purple.svg.png';
+    //     'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ethereum-icon-purple.svg/580px-Ethereum-icon-purple.svg.png';
 
     // const quoteTokenLogoURI = 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png';
 
@@ -90,10 +94,6 @@ export default function HarvestPositionInfo(props: IHarvestPositionInfoProps) {
                   maximumFractionDigits: 2,
               })
         : undefined;
-
-    const baseRemovalNum = ((feeLiqBaseDecimalCorrected || 0) * removalPercentage) / 100;
-
-    const quoteRemovalNum = ((feeLiqQuoteDecimalCorrected || 0) * removalPercentage) / 100;
 
     const baseRemovalString = baseRemovalNum
         ? baseRemovalNum < 2

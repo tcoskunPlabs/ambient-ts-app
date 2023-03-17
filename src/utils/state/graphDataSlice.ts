@@ -1,68 +1,44 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { PositionIF } from '../interfaces/PositionIF';
+import { LimitOrderIF, PositionIF, TransactionIF } from '../interfaces/exports';
+
 export interface graphData {
+    lastBlock: number;
     positionsByUser: PositionsByUser;
     positionsByPool: PositionsByPool;
-    swapsByUser: SwapsByUser;
-    swapsByPool: SwapsByPool;
+    leaderboardByPool: PositionsByPool;
+    changesByUser: ChangesByUser;
+    changesByPool: ChangesByPool;
     candlesForAllPools: CandlesForAllPools;
-    liquidityForAllPools: LiquidityForAllPools;
+    liquidityData: LiquidityData;
     poolVolumeSeries: PoolVolumeSeries;
     poolTvlSeries: PoolTvlSeries;
     limitOrdersByUser: LimitOrdersByUser;
+    limitOrdersByPool: LimitOrdersByPool;
+    dataLoadingStatus: DataLoadingStatus;
+}
+
+export interface DataLoadingStatus {
+    isConnectedUserTxDataLoading: boolean;
+    isConnectedUserOrderDataLoading: boolean;
+    isConnectedUserRangeDataLoading: boolean;
+    isLookupUserTxDataLoading: boolean;
+    isLookupUserOrderDataLoading: boolean;
+    isLookupUserRangeDataLoading: boolean;
+    isPoolTxDataLoading: boolean;
+    isPoolOrderDataLoading: boolean;
+    isPoolRangeDataLoading: boolean;
+    isCandleDataLoading: boolean;
 }
 
 export interface LimitOrdersByUser {
     dataReceived: boolean;
-    limitOrders: Array<ILimitOrderState>;
+    limitOrders: LimitOrderIF[];
+}
+export interface LimitOrdersByPool {
+    dataReceived: boolean;
+    limitOrders: LimitOrderIF[];
 }
 
-export interface ILimitOrderState {
-    id: string;
-    positionId: string;
-    network: string;
-    block: number;
-    time: number;
-    user: string;
-    base: string;
-    quote: string;
-    poolIdx: number;
-    poolHash: string;
-    bidTick: number;
-    askTick: number;
-    isBid: boolean;
-    price: number;
-    deflator: number;
-    concGrowth: number;
-    positionLiq: number;
-    positionLiqBase: number;
-    positionLiqBaseDecimalCorrected: number;
-    positionLiqQuoteDecimalCorrected: number;
-    positionLiqQuote: number;
-    updateType: string;
-    latestUpdateBlock: number;
-    latestUpdateTime: number;
-    latestCrossBlock: number;
-    latestCrossTime: number;
-    latestCrossTransaction: string;
-    knockoutChanges: number;
-    baseSymbol: string;
-    baseDecimals: number;
-    quoteSymbol: string;
-    quoteDecimals: number;
-    limitPrice: number;
-    invLimitPrice: number;
-    limitPriceDecimalCorrected: number;
-    invLimitPriceDecimalCorrected: number;
-    ensResolution: string;
-    ensResolutionAge: number;
-    basePrice: number;
-    quotePrice: number;
-    positionLiqBaseUSD: number;
-    positionLiqQuoteUSD: number;
-    positionLiqTotalUSD: number;
-    chainId: string;
-}
 export interface PoolVolumeSeries {
     dataReceived: boolean;
     pools: Array<VolumeSeriesByPool>;
@@ -129,14 +105,20 @@ export interface VolumeByTimeData {
     method: string;
 }
 
-export interface LiquidityForAllPools {
-    pools: Array<LiquidityByPool>;
+// export interface LiquidityForAllPools {
+//     pools: Array<LiquidityByPool>;
+// }
+
+export interface LiquidityData {
+    time: number;
+    currentTick: number;
+    ranges: Array<Range>;
 }
 
-export interface LiquidityByPool {
-    pool: { baseAddress: string; quoteAddress: string; poolIdx: number; chainId: string };
-    liquidityData: Array<Range>;
-}
+// export interface LiquidityByPool {
+//     pool: { baseAddress: string; quoteAddress: string; poolIdx: number; chainId: string };
+//     liquidityData: liquidityData;
+// }
 
 export interface Range {
     lowerBound: number | string;
@@ -158,6 +140,8 @@ export interface Range {
     cumBidLiq: string;
     cumAmbientBidLiq: string;
     cumConcBidLiq: string;
+    deltaAverageUSD: number;
+    cumAverageUSD: number;
 }
 
 export interface CandlesForAllPools {
@@ -175,7 +159,19 @@ export interface CandlesByPoolAndDuration {
     candles: Array<CandleData>;
 }
 
+export interface TvlData {
+    interpBadness: number;
+    interpDistHigher: number;
+    interpDistLower: number;
+    method: string;
+    time: number;
+    tvl: number;
+}
+
 export interface CandleData {
+    tvlData: TvlData;
+    volumeUSD: number;
+    averageLiquidityFee: number;
     time: number;
     poolHash: string;
     firstBlock: number;
@@ -231,130 +227,119 @@ export interface pool {
     quote: string;
 }
 
-export interface ISwap {
-    base: string;
-    baseDecimals: number;
-    baseFlow: string;
-    baseSymbol: string;
-    block: number;
-    chainId: string;
-    network: string;
-    dex: string;
-    id: string;
-    inBaseQty: boolean;
-    isBuy: boolean;
-    minOut: string;
-    poolHash: string;
-    poolIdx: number;
-    qty: string;
-    quote: string;
-    quoteDecimals: number;
-    quoteFlow: string;
-    quoteSymbol: string;
-    source: string;
-    time: number;
-    tx: string;
-    user: string;
-    userEnsName: string;
-    limitPrice: number;
-    price: number;
-    invPrice: number;
-    priceDecimalCorrected: number;
-    invPriceDecimalCorrected: number;
-    valueUSD: number;
-    ensResolution: string;
+export interface ChangesByUser {
+    dataReceived: boolean;
+    changes: Array<TransactionIF>;
 }
 
-export interface SwapsByUser {
+export interface ChangesByPool {
     dataReceived: boolean;
-    swaps: Array<ISwap>;
-}
-
-export interface SwapsByPool {
-    dataReceived: boolean;
-    swaps: Array<ISwap>;
+    changes: Array<TransactionIF>;
 }
 
 const initialState: graphData = {
+    lastBlock: 0,
     positionsByUser: { dataReceived: false, positions: [] },
     positionsByPool: { dataReceived: false, positions: [] },
-    swapsByUser: { dataReceived: false, swaps: [] },
+    leaderboardByPool: { dataReceived: false, positions: [] },
+    changesByUser: { dataReceived: false, changes: [] },
+    changesByPool: { dataReceived: false, changes: [] },
     limitOrdersByUser: { dataReceived: false, limitOrders: [] },
-    swapsByPool: { dataReceived: false, swaps: [] },
+    limitOrdersByPool: { dataReceived: false, limitOrders: [] },
     candlesForAllPools: { pools: [] },
-    liquidityForAllPools: { pools: [] },
+    liquidityData: { time: 0, currentTick: 0, ranges: [] },
     poolVolumeSeries: { dataReceived: false, pools: [] },
     poolTvlSeries: { dataReceived: false, pools: [] },
+    dataLoadingStatus: {
+        isConnectedUserTxDataLoading: true,
+        isConnectedUserOrderDataLoading: true,
+        isConnectedUserRangeDataLoading: true,
+        isLookupUserTxDataLoading: true,
+        isLookupUserOrderDataLoading: true,
+        isLookupUserRangeDataLoading: true,
+        isPoolTxDataLoading: true,
+        isPoolOrderDataLoading: true,
+        isPoolRangeDataLoading: true,
+        isCandleDataLoading: true,
+    },
 };
 
 export const graphDataSlice = createSlice({
     name: 'graphData',
     initialState,
     reducers: {
+        setLastBlock: (state, action: PayloadAction<number>) => {
+            state.lastBlock = action.payload;
+        },
         setPositionsByUser: (state, action: PayloadAction<PositionsByUser>) => {
             state.positionsByUser = action.payload;
         },
         addPositionsByUser: (state, action: PayloadAction<Array<PositionIF>>) => {
-            if (action.payload[0].positionType === 'knockout') {
-                const slotToFind = action.payload[0].merkleStorageSlot?.toLowerCase();
-                const indexOfSlot = state.positionsByUser.positions
-                    .map((position) =>
-                        position.positionType === 'knockout'
-                            ? position.merkleStorageSlot?.toLowerCase()
-                            : false,
-                    )
-                    .findIndex((slot) => slot === slotToFind);
-                if (indexOfSlot === -1) {
-                    state.positionsByUser.positions = action.payload.concat(
+            for (let index = 0; index < action.payload.length; index++) {
+                const updatedPosition = action.payload[index];
+                const positionIdToFind = updatedPosition.positionId.toLowerCase();
+                const indexOfPositionInState = state.positionsByUser.positions.findIndex(
+                    (position) => position.positionId.toLowerCase() === positionIdToFind,
+                );
+                if (indexOfPositionInState === -1) {
+                    state.positionsByUser.positions = [action.payload[index]].concat(
                         state.positionsByUser.positions,
                     );
                 } else {
-                    state.positionsByUser.positions[indexOfSlot] = action.payload[0];
-                }
-            } else {
-                const slotToFind = action.payload[0].positionStorageSlot?.toLowerCase();
-                const indexOfSlot = state.positionsByUser.positions
-                    .map((position) => position.positionStorageSlot?.toLowerCase())
-                    .findIndex((slot) => slot === slotToFind);
-                if (indexOfSlot === -1) {
-                    state.positionsByUser.positions = action.payload.concat(
-                        state.positionsByUser.positions,
-                    );
-                } else {
-                    state.positionsByUser.positions[indexOfSlot] = action.payload[0];
+                    const existingPosition =
+                        state.positionsByUser.positions[indexOfPositionInState];
+                    const updatedPosition = action.payload[index];
+
+                    if (!updatedPosition.latestUpdateTime) {
+                        updatedPosition.latestUpdateTime = existingPosition.latestUpdateTime;
+                    }
+
+                    state.positionsByUser.positions[indexOfPositionInState] = updatedPosition;
                 }
             }
         },
         setPositionsByPool: (state, action: PayloadAction<PositionsByPool>) => {
             state.positionsByPool = action.payload;
         },
+        setLeaderboardByPool: (state, action: PayloadAction<PositionsByPool>) => {
+            state.leaderboardByPool = action.payload;
+        },
         setLimitOrdersByUser: (state, action: PayloadAction<LimitOrdersByUser>) => {
             state.limitOrdersByUser = action.payload;
         },
+        setLimitOrdersByPool: (state, action: PayloadAction<LimitOrdersByPool>) => {
+            state.limitOrdersByPool = action.payload;
+        },
         addPositionsByPool: (state, action: PayloadAction<Array<PositionIF>>) => {
-            if (action.payload[0].positionType === 'knockout') {
-                const slotToFind = action.payload[0].merkleStorageSlot?.toLowerCase();
-                const indexOfSlot = state.positionsByPool.positions
-                    .map((position) => position.merkleStorageSlot?.toLowerCase())
-                    .findIndex((slot) => slot === slotToFind);
-                if (indexOfSlot === -1) {
-                    state.positionsByPool.positions = action.payload.concat(
+            for (let index = 0; index < action.payload.length; index++) {
+                const updatedPosition = action.payload[index];
+                const positionIdToFind = updatedPosition.positionId.toLowerCase();
+                const indexOfPositionInState = state.positionsByPool.positions.findIndex(
+                    (position) => position.positionId.toLowerCase() === positionIdToFind,
+                );
+                if (indexOfPositionInState === -1) {
+                    state.positionsByPool.positions = [action.payload[index]].concat(
                         state.positionsByPool.positions,
                     );
                 } else {
-                    state.positionsByPool.positions[indexOfSlot] = action.payload[0];
+                    state.positionsByPool.positions[indexOfPositionInState] = action.payload[index];
                 }
-            } else {
-                const slotToFind = action.payload[0].positionStorageSlot?.toLowerCase();
-                const indexOfSlot = state.positionsByPool.positions
-                    .map((position) => position.positionStorageSlot?.toLowerCase())
-                    .findIndex((slot) => slot === slotToFind);
-                if (indexOfSlot === -1) {
-                    state.positionsByPool.positions = action.payload.concat(
-                        state.positionsByPool.positions,
+            }
+        },
+        updateLeaderboard: (state, action: PayloadAction<Array<PositionIF>>) => {
+            for (let index = 0; index < action.payload.length; index++) {
+                const updatedPosition = action.payload[index];
+                const positionIdToFind = updatedPosition.positionId.toLowerCase();
+                const indexOfPositionInState = state.leaderboardByPool.positions.findIndex(
+                    (position) => position.positionId.toLowerCase() === positionIdToFind,
+                );
+                if (indexOfPositionInState === -1) {
+                    state.leaderboardByPool.positions = [action.payload[index]].concat(
+                        state.leaderboardByPool.positions,
                     );
                 } else {
-                    state.positionsByPool.positions[indexOfSlot] = action.payload[0];
+                    state.leaderboardByPool.positions[indexOfPositionInState] =
+                        action.payload[index];
                 }
             }
         },
@@ -364,55 +349,90 @@ export const graphDataSlice = createSlice({
         setPoolTvlSeries: (state, action: PayloadAction<PoolTvlSeries>) => {
             state.poolTvlSeries = action.payload;
         },
-        setSwapsByUser: (state, action: PayloadAction<SwapsByUser>) => {
-            state.swapsByUser = action.payload;
+        setChangesByUser: (state, action: PayloadAction<ChangesByUser>) => {
+            state.changesByUser = action.payload;
         },
-        addSwapsByUser: (state, action: PayloadAction<Array<ISwap>>) => {
-            const swapTxToFind = action.payload[0].tx.toLowerCase();
-            const indexOfTx = state.swapsByUser.swaps
-                .map((item) => item.tx.toLowerCase())
-                .findIndex((tx) => tx === swapTxToFind);
-            if (indexOfTx === -1) {
-                state.swapsByUser.swaps = action.payload.concat(state.swapsByUser.swaps);
-            } else {
-                state.swapsByUser.swaps[indexOfTx] = action.payload[0];
+        addChangesByUser: (state, action: PayloadAction<Array<TransactionIF>>) => {
+            // const payload = action.payload;
+            // console.log({ payload });
+            const newChangesArray: Array<TransactionIF> = [];
+
+            for (let index = 0; index < action.payload.length; index++) {
+                const updatedTx = action.payload[index];
+                const txToFind = updatedTx.tx.toLowerCase();
+                const indexOfTxInState = state.changesByUser.changes.findIndex(
+                    (tx) => tx.tx.toLowerCase() === txToFind,
+                );
+                if (indexOfTxInState === -1) {
+                    newChangesArray.push(action.payload[index]);
+                    // state.changesByUser.changes = [action.payload[index]].concat(
+                    //     state.changesByUser.changes,
+                    // );
+                } else {
+                    state.changesByUser.changes[indexOfTxInState] = action.payload[index];
+                }
+            }
+            if (newChangesArray.length)
+                state.changesByUser.changes = newChangesArray.concat(state.changesByUser.changes);
+        },
+        addLimitOrderChangesByUser: (state, action: PayloadAction<LimitOrderIF[]>) => {
+            for (let index = 0; index < action.payload.length; index++) {
+                const updatedTx = action.payload[index];
+                console.log({ updatedTx });
+                const idToFind = updatedTx.limitOrderIdentifier.toLowerCase();
+                const indexOfOrderInState = state.limitOrdersByUser.limitOrders.findIndex(
+                    (order) => order.limitOrderIdentifier.toLowerCase() === idToFind,
+                );
+                if (indexOfOrderInState === -1) {
+                    state.limitOrdersByUser.limitOrders = [action.payload[index]].concat(
+                        state.limitOrdersByUser.limitOrders,
+                    );
+                } else {
+                    state.limitOrdersByUser.limitOrders[indexOfOrderInState] =
+                        action.payload[index];
+                }
             }
         },
-        setSwapsByPool: (state, action: PayloadAction<SwapsByPool>) => {
-            state.swapsByPool = action.payload;
-        },
-        addSwapsByPool: (state, action: PayloadAction<Array<ISwap>>) => {
-            const swapTxToFind = action.payload[0].tx.toLowerCase();
-            const indexOfTx = state.swapsByPool.swaps
-                .map((item) => item.tx.toLowerCase())
-                .findIndex((tx) => tx === swapTxToFind);
-            if (indexOfTx === -1) {
-                state.swapsByPool.swaps = action.payload.concat(state.swapsByPool.swaps);
-            } else {
-                state.swapsByPool.swaps[indexOfTx] = action.payload[0];
+        addLimitOrderChangesByPool: (state, action: PayloadAction<LimitOrderIF[]>) => {
+            for (let index = 0; index < action.payload.length; index++) {
+                const updatedTx = action.payload[index];
+                const idToFind = updatedTx.limitOrderIdentifier?.toLowerCase();
+                const indexOfOrderInState = state.limitOrdersByPool.limitOrders.findIndex(
+                    (order) => order.limitOrderIdentifier?.toLowerCase() === idToFind,
+                );
+                if (indexOfOrderInState === -1) {
+                    state.limitOrdersByPool.limitOrders = [action.payload[index]].concat(
+                        state.limitOrdersByPool.limitOrders,
+                    );
+                } else {
+                    state.limitOrdersByPool.limitOrders[indexOfOrderInState] =
+                        action.payload[index];
+                }
             }
         },
-        setLiquidity: (state, action: PayloadAction<LiquidityByPool>) => {
-            const poolToFind = JSON.stringify(action.payload.pool);
-            const indexOfPool = state.liquidityForAllPools.pools
-                .map((item) => JSON.stringify(item.pool))
-                .findIndex((pool) => pool === poolToFind);
-
-            // if candles for pool not yet saved in RTK, add to RTK
-            if (indexOfPool === -1) {
-                // console.log('pool not found in RTK for new candle data');
-
-                state.liquidityForAllPools.pools = state.liquidityForAllPools.pools.concat({
-                    pool: action.payload.pool,
-                    liquidityData: action.payload.liquidityData,
-                });
-                // else, check if duration exists
-            } else {
-                // console.log('pool found in RTK for new liquidity data');
-
-                state.liquidityForAllPools.pools[indexOfPool].liquidityData =
-                    action.payload.liquidityData;
+        setChangesByPool: (state, action: PayloadAction<ChangesByPool>) => {
+            state.changesByPool = action.payload;
+        },
+        addChangesByPool: (state, action: PayloadAction<Array<TransactionIF>>) => {
+            for (let index = 0; index < action.payload.length; index++) {
+                const updatedTx = action.payload[index];
+                const txToFind = updatedTx.tx.toLowerCase();
+                const indexOfTxInState = state.changesByPool.changes.findIndex(
+                    (tx) => tx.tx.toLowerCase() === txToFind,
+                );
+                if (indexOfTxInState === -1) {
+                    state.changesByPool.changes = [action.payload[index]].concat(
+                        state.changesByPool.changes,
+                    );
+                } else {
+                    state.changesByPool.changes[indexOfTxInState] = action.payload[index];
+                }
             }
+        },
+        setLiquidity: (state, action: PayloadAction<LiquidityData>) => {
+            // console.log('pool found in RTK for new liquidity data');
+
+            state.liquidityData = action.payload;
         },
         setCandles: (state, action: PayloadAction<CandlesByPoolAndDuration>) => {
             const poolToFind = JSON.stringify(action.payload.pool);
@@ -539,18 +559,84 @@ export const graphDataSlice = createSlice({
                 }
             }
         },
-        resetGraphData: (state) => {
+        setDataLoadingStatus: (
+            state,
+            action: PayloadAction<{ datasetName: string; loadingStatus: boolean }>,
+        ) => {
+            switch (action.payload.datasetName) {
+                case 'connectedUserTxData':
+                    state.dataLoadingStatus.isConnectedUserTxDataLoading =
+                        action.payload.loadingStatus;
+                    break;
+                case 'connectedUserOrderData':
+                    state.dataLoadingStatus.isConnectedUserOrderDataLoading =
+                        action.payload.loadingStatus;
+                    break;
+                case 'connectedUserRangeData':
+                    state.dataLoadingStatus.isConnectedUserRangeDataLoading =
+                        action.payload.loadingStatus;
+                    break;
+                case 'lookupUserTxData':
+                    state.dataLoadingStatus.isLookupUserTxDataLoading =
+                        action.payload.loadingStatus;
+                    break;
+                case 'lookupUserOrderData':
+                    state.dataLoadingStatus.isLookupUserOrderDataLoading =
+                        action.payload.loadingStatus;
+                    break;
+                case 'lookupUserRangeData':
+                    state.dataLoadingStatus.isLookupUserRangeDataLoading =
+                        action.payload.loadingStatus;
+                    break;
+                case 'poolTxData':
+                    state.dataLoadingStatus.isPoolTxDataLoading = action.payload.loadingStatus;
+                    break;
+                case 'poolOrderData':
+                    state.dataLoadingStatus.isPoolOrderDataLoading = action.payload.loadingStatus;
+                    break;
+                case 'poolRangeData':
+                    state.dataLoadingStatus.isPoolRangeDataLoading = action.payload.loadingStatus;
+                    break;
+                case 'candleData':
+                    state.dataLoadingStatus.isCandleDataLoading = action.payload.loadingStatus;
+                    break;
+                default:
+                    break;
+            }
+        },
+        resetConnectedUserDataLoadingStatus: (state) => {
+            state.dataLoadingStatus.isConnectedUserTxDataLoading = true;
+            state.dataLoadingStatus.isConnectedUserOrderDataLoading = true;
+            state.dataLoadingStatus.isConnectedUserRangeDataLoading = true;
+            // state.dataLoadingStatus.isLookupUserTxDataLoading = true;
+            // state.dataLoadingStatus.isLookupUserOrderDataLoading = true;
+            // state.dataLoadingStatus.isLookupUserRangeDataLoading = true;
+            // state.dataLoadingStatus.isPoolTxDataLoading = true;
+            // state.dataLoadingStatus.isPoolOrderDataLoading = true;
+            // state.dataLoadingStatus.isPoolRangeDataLoading = true;
+            // state.dataLoadingStatus.isCandleDataLoading = true;
+        },
+        resetLookupUserDataLoadingStatus: (state) => {
+            state.dataLoadingStatus.isLookupUserTxDataLoading = true;
+            state.dataLoadingStatus.isLookupUserOrderDataLoading = true;
+            state.dataLoadingStatus.isLookupUserRangeDataLoading = true;
+        },
+        resetUserGraphData: (state) => {
             state.positionsByUser = initialState.positionsByUser;
-            state.swapsByUser = initialState.swapsByUser;
+            state.changesByUser = initialState.changesByUser;
+            state.limitOrdersByUser = initialState.limitOrdersByUser;
         },
     },
 });
 
 // action creators are generated for each case reducer function
 export const {
+    setLastBlock,
     setPositionsByUser,
     addPositionsByUser,
     setPositionsByPool,
+    setLeaderboardByPool,
+    updateLeaderboard,
     addPositionsByPool,
     setPoolVolumeSeries,
     setPoolTvlSeries,
@@ -558,11 +644,17 @@ export const {
     setCandles,
     addCandles,
     setLimitOrdersByUser,
-    setSwapsByUser,
-    addSwapsByUser,
-    addSwapsByPool,
-    setSwapsByPool,
-    resetGraphData,
+    setLimitOrdersByPool,
+    setChangesByUser,
+    addChangesByUser,
+    addLimitOrderChangesByUser,
+    addLimitOrderChangesByPool,
+    addChangesByPool,
+    setChangesByPool,
+    setDataLoadingStatus,
+    resetUserGraphData,
+    resetConnectedUserDataLoadingStatus,
+    resetLookupUserDataLoadingStatus,
 } = graphDataSlice.actions;
 
 export default graphDataSlice.reducer;

@@ -1,33 +1,74 @@
-import { useEffect, useState } from 'react';
-import { BsSlashSquare, BsEmojiSmileFill } from 'react-icons/bs';
+import { useAccount } from 'wagmi';
+import useSocket from '../../Service/useSocket';
+import { BsEmojiSmileFill } from 'react-icons/bs';
 import { Message } from '../../Model/MessageModel';
-import Picker from 'emoji-picker-react';
-import {
-    // host,
-    sendMessageRoute,
-    socket,
-} from '../../Service/chatApi';
-import styles from './MessageInput.module.css';
-import axios from 'axios';
 
+// import { Message } from '../../Model/MessageModel';
+import Picker from 'emoji-picker-react';
+import styles from './MessageInput.module.css';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import PositionBox from '../PositionBox/PositionBox';
+import { PoolIF, TokenIF } from '../../../../utils/interfaces/exports';
+
+import { useAppSelector } from '../../../../utils/hooks/reduxToolkit';
+import { RiCloseFill, RiInformationLine } from 'react-icons/ri';
 interface MessageInputProps {
-    message: Message;
+    message?: Message;
     room: string;
+    currentUser: string;
+    ensName: string;
+}
+interface currentPoolInfo {
+    tokenA: TokenIF;
+    tokenB: TokenIF;
+    baseToken: TokenIF;
+    quoteToken: TokenIF;
+    didUserFlipDenom: boolean;
+    isDenomBase: boolean;
+    advancedMode: boolean;
+    isTokenAPrimary: boolean;
+    primaryQuantity: string;
+    isTokenAPrimaryRange: boolean;
+    primaryQuantityRange: string;
+    limitPrice: string;
+    advancedLowTick: number;
+    advancedHighTick: number;
+    slippageTolerance: number;
+    activeChartPeriod: number;
+    pinnedMaxPriceDisplayTruncated: number;
+    pinnedMinPriceDisplayTruncated: number;
 }
 
-export default function MessageInput(props: MessageInputProps) {
-    const _socket = socket;
+export interface ChatProps {
+    chatStatus: boolean;
+    onClose: () => void;
+    favePools: PoolIF[];
+    currentPool: currentPoolInfo;
+    isFullScreen?: boolean;
+    setChatStatus: Dispatch<SetStateAction<boolean>>;
+}
 
-    useEffect(() => {
-        _socket.connect();
-        // _socket.on('msg-recieve', (data) => {
-        // //   setMessageReceived(data.message)
-        // })
-        // _socket.disconnect();
-    }, [_socket]);
-
+export default function MessageInput(
+    props: MessageInputProps,
+    prop: ChatProps,
+) {
     const [message, setMessage] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isInfoPressed, setIsInfoPressed] = useState(false);
+    const { address, isConnected } = useAccount();
+    const [isPosition, setIsPosition] = useState(false);
+    // const { roomId } = props.match.params;
+
+    const { sendMsg } = useSocket(props.room.toUpperCase());
+
+    const userData = useAppSelector((state) => state.userData);
+    const isUserLoggedIn = userData.isLoggedIn;
+
+    const roomId =
+        props.room === 'Current Pool'
+            ? prop.currentPool.baseToken.symbol.toUpperCase() +
+              prop.currentPool.quoteToken.symbol.toUpperCase()
+            : props.room.toUpperCase();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleEmojiClick = (event: any, emoji: any) => {
@@ -37,50 +78,204 @@ export default function MessageInput(props: MessageInputProps) {
     };
 
     const handleEmojiPickerHideShow = () => {
-        setShowEmojiPicker(!showEmojiPicker);
+        if (!isUserLoggedIn) {
+            setShowEmojiPicker(false);
+        } else {
+            setShowEmojiPicker(!showEmojiPicker);
+        }
+    };
+
+    const dontShowEmojiPanel = () => {
+        setShowEmojiPicker(false);
+    };
+
+    function messageInputText() {
+        if (isConnected && address) {
+            return 'Type to chat. Enter to submit.';
+        } else {
+            return 'Please log in to chat.';
+        }
+    }
+
+    useEffect(() => {
+        messageInputText();
+    }, [isConnected, address]);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+    const handleSendMessageButton = () => {
+        handleSendMsg(message, roomId);
+        setMessage('');
+        dontShowEmojiPanel();
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const _handleKeyDown = (e: any) => {
         if (e.key === 'Enter') {
-            handleSendMsg(e.target.value);
+            handleSendMsg(e.target.value, roomId);
             setMessage('');
+            dontShowEmojiPanel();
         }
     };
 
-    const handleSendMsg = async (msg: string) => {
-        _socket.emit('send-msg', msg);
+    // eslint-disable-next-line
+    function openEmojiPanel(e: any) {
+        if (e.keyCode === 88 && e.altKey) {
+            setShowEmojiPicker(true);
+        }
+    }
 
-        await axios.post(sendMessageRoute, {
-            from: '62f24f3ff40188d467c532e8',
-            to: '62fa389c897f9778e2eb863f',
-            message: msg,
-            roomInfo: props.room,
-        });
+    // eslint-disable-next-line
+    function closeEmojiPanel(e: any) {
+        if (e.keyCode === 81 && e.altKey) {
+            setShowEmojiPicker(false);
+        }
+    }
+
+    // eslint-disable-next-line
+    function openInfo(e: any) {
+        if (e.keyCode === 77 && e.ctrlKey) {
+            setShowEmojiPicker(true);
+            setIsInfoPressed(true);
+        }
+    }
+
+    useEffect(() => {
+        document.body.addEventListener('keydown', openEmojiPanel);
+        document.body.addEventListener('keydown', closeEmojiPanel);
+        document.body.addEventListener('keydown', openInfo);
+
+        return function cleanUp() {
+            document.body.removeEventListener('keydown', openEmojiPanel);
+        };
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleSendMsg = async (msg: string, roomId: any) => {
+        if (msg === '' || !address) {
+            // do nothing
+        } else {
+            sendMsg(props.currentUser, message, roomId, props.ensName, address);
+        }
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const onChangeMessage = (e: any) => {
+    const onChangeMessage = async (e: any) => {
         setMessage(e.target.value);
     };
 
     return (
-        <div className={styles.input_box}>
-            <div className={styles.input}>
+        <div
+            className={
+                !isConnected ? styles.input_box_not_allowed : styles.input_box
+            }
+        >
+            <PositionBox
+                message={message}
+                isInput={true}
+                isPosition={isPosition}
+                setIsPosition={setIsPosition}
+            />
+
+            <div
+                className={
+                    !isConnected ? styles.input_not_allowed : styles.input
+                }
+            >
                 <input
                     type='text'
                     id='box'
-                    placeholder='Please log in to chat.'
-                    className={styles.input_text}
+                    placeholder={messageInputText()}
+                    disabled={!isConnected}
+                    className={
+                        !isConnected
+                            ? styles.input_text_not_allowed
+                            : styles.input_text
+                    }
                     onKeyDown={_handleKeyDown}
                     value={message}
                     onChange={onChangeMessage}
+                    autoComplete={'off'}
                 />
-                <BsSlashSquare />
-                <BsEmojiSmileFill onClick={handleEmojiPickerHideShow} />
+
+                <BsEmojiSmileFill
+                    className={styles.svgButton}
+                    style={{ pointerEvents: !isUserLoggedIn ? 'none' : 'auto' }}
+                    onClick={handleEmojiPickerHideShow}
+                />
+                <div
+                    className={styles.send_message_button}
+                    onClick={() => handleSendMessageButton()}
+                >
+                    <svg
+                        width='16'
+                        height='16'
+                        viewBox='0 0 16 16'
+                        fill='none'
+                        xmlns='http://www.w3.org/2000/svg'
+                    >
+                        <path
+                            d='M14.6663 1.3335L7.33301 8.66683M14.6663 1.3335L9.99967 14.6668L7.33301 8.66683M14.6663 1.3335L1.33301 6.00016L7.33301 8.66683'
+                            stroke='#EBEBFF'
+                            strokeOpacity='0.25'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            className={styles.svgButton}
+                            id='send message button'
+                        />
+                        <title>Send Message</title>
+                    </svg>
+                </div>
             </div>
-            <div className={styles.emojiPicker}>
-                {showEmojiPicker && <Picker onEmojiClick={handleEmojiClick} />}
-            </div>
+            {showEmojiPicker && (
+                <div className={styles.emojiPicker}>
+                    <span className={styles.emoji_close_button}>
+                        <RiCloseFill
+                            size={20}
+                            title='Close Emoji Picker'
+                            onClick={() => setShowEmojiPicker(false)}
+                            id='close emoji panel button'
+                        />
+                    </span>
+                    <span
+                        className={styles.emoji_close_button}
+                        onClick={() => setIsInfoPressed(!isInfoPressed)}
+                    >
+                        <RiInformationLine title='Info' id='info' />
+                    </span>
+                    {isInfoPressed ? (
+                        <ul>
+                            <h5>Keyboard Shortcuts</h5>
+                            <hr></hr>
+                            <li>Ctrl + Alt + C - opens/closes chat</li>
+                            <li>Esc- closes chat</li>
+                            <li>
+                                Alt + X - opens emoji panel when chat is open
+                            </li>
+                            <li>Alt+ Q - close emoji panel</li>
+                            <li>Ctrl + M - opens info</li>
+                            <li>Enter - sends message directly</li>
+                        </ul>
+                    ) : (
+                        <Picker
+                            pickerStyle={{
+                                width: '100%',
+                                height: '89%',
+                                // filter: 'invert(100%)',
+                                // height: '100%',
+                                // backgroundColor: '#2e4960',
+                                // indicatorColor: '#b04c2d',
+                                // fontColor: 'lightgrey',
+                                // searchBackgroundColor: '#263d51',
+                                // tabsFontColor: '#8cdce4',
+                                // searchFontColor: 'lightgrey',
+                                // skinTonePickerBackgroundColor: '#284155',
+                            }}
+                            onEmojiClick={handleEmojiClick}
+                            disableSkinTonePicker={true}
+                        />
+                    )}
+                </div>
+            )}
         </div>
     );
 }

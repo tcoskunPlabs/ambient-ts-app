@@ -1,5 +1,6 @@
 import { isAddress } from '../../utils';
-import { TokenIF } from '../../utils/interfaces/TokenIF';
+import getUnicodeCharacter from '../../utils/functions/getUnicodeCharacter';
+import { TokenIF } from '../../utils/interfaces/exports';
 import PoolDisplay from '../Global/Analytics/PoolDisplay';
 import TokenDisplay from '../Global/Analytics/TokenDisplay';
 import RangeStatus from '../Global/RangeStatus/RangeStatus';
@@ -31,6 +32,9 @@ export default function TopRange() {
         logoURI: '',
     };
 
+    const baseTokenCharacter = baseToken.symbol ? getUnicodeCharacter(baseToken.symbol) : '';
+    const quoteTokenCharacter = quoteToken.symbol ? getUnicodeCharacter(quoteToken.symbol) : '';
+
     return (
         <div className={styles.main_container}>
             <div className={styles.tokens_container}>
@@ -43,14 +47,14 @@ export default function TopRange() {
                 <RangeMinMax min={100} max={1000} />
 
                 <TokenQty
-                    baseTokenSymbol={baseToken.symbol}
-                    quoteTokenSymbol={quoteToken.symbol}
+                    baseTokenCharacter={baseTokenCharacter}
+                    quoteTokenCharacter={quoteTokenCharacter}
                     baseQty={undefined}
                     quoteQty={undefined}
                 />
                 <Apy amount={10} />
 
-                <RangeStatus isInRange={true} isAmbient={true} />
+                <RangeStatus isInRange={true} isEmpty={false} isAmbient={true} />
             </div>
 
             <div className={styles.menu_container}>

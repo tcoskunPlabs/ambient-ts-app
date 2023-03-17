@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { PoolData } from '../../state/pools/models';
 import { feeTierPercent, isAddress } from '../../utils';
 import { useAppDispatch } from '../../utils/hooks/reduxToolkit';
-import { TokenIF } from '../../utils/interfaces/TokenIF';
+import { PoolIF, TokenIF } from '../../utils/interfaces/exports';
 import { formatDollarAmount } from '../../utils/numbers';
 import { setTokenA, setTokenB } from '../../utils/state/tradeDataSlice';
 import PoolDisplay from '../Global/Analytics/PoolDisplay';
@@ -10,24 +9,20 @@ import TokenDisplay from '../Global/Analytics/TokenDisplay';
 import Apy from '../Global/Tabs/Apy/Apy';
 import styles from './PoolRow.module.css';
 import { motion } from 'framer-motion';
-import { PoolIF } from '../../utils/interfaces/PoolIF';
 import { MouseEvent } from 'react';
+import { favePoolsMethodsIF } from '../../App/hooks/useFavePools';
 
-interface PoolProps {
-    pool: PoolData;
+interface propsIF {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pool: any;
     poolType: string;
-    favePools: PoolIF[];
-    addPoolToFaves: (tokenA: TokenIF, tokenB: TokenIF, chainId: string, poolId: number) => void;
-    removePoolFromFaves: (
-        tokenA: TokenIF,
-        tokenB: TokenIF,
-        chainId: string,
-        poolId: number,
-    ) => void;
+    favePools: favePoolsMethodsIF;
 }
 
-export default function PoolRow(props: PoolProps) {
-    const poolData = props.pool;
+export default function PoolRow(props: propsIF) {
+    const {pool, favePools} = props;
+
+    const poolData = pool;
 
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
@@ -55,7 +50,7 @@ export default function PoolRow(props: PoolProps) {
         navigate('/trade/market');
     }
 
-    const isButtonFavorited = props.favePools.some(
+    const isButtonFavorited = favePools.pools.some(
         (pool: PoolIF) =>
             pool.base.address === poolData.token0.address &&
             pool.quote.address === poolData.token1.address,
@@ -66,26 +61,24 @@ export default function PoolRow(props: PoolProps) {
 
     const handleFavButton = (event: MouseEvent<HTMLDivElement>) => {
         isButtonFavorited
-            ? props.removePoolFromFaves(
-                  { address: poolData.token0.address } as TokenIF,
-                  { address: poolData.token1.address } as TokenIF,
-                  '',
-                  36000,
-              )
-            : props.addPoolToFaves(
-                  { address: poolData.token0.address } as TokenIF,
-                  { address: poolData.token1.address } as TokenIF,
-                  '',
-                  36000,
-              );
+            ? favePools.remove(
+                { address: poolData.token0.address } as TokenIF,
+                { address: poolData.token1.address } as TokenIF,
+                '',
+                36000,
+            )
+            : favePools.add(
+                { address: poolData.token0.address } as TokenIF,
+                { address: poolData.token1.address } as TokenIF,
+                '',
+                36000,
+            );
         event.stopPropagation();
     };
-    // function handleFavButton(event: MouseEvent<HTMLDivElement>) {
-    //     event.stopPropagation();
-    // }
 
     const favButton = (
         <motion.div
+            className={styles.fab_button}
             whileTap={{ scale: 3 }}
             transition={{ duration: 0.5 }}
             onClick={handleFavButton}

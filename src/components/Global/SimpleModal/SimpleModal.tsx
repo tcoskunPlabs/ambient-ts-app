@@ -35,16 +35,17 @@ export default function SimpleModal(props: SimpleModalPropsIF) {
     }, []);
 
     return (
-        <div className={styles.outside_modal} onClick={onClose}>
+        <div className={styles.outside_modal} onMouseDown={onClose}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4 }}
                 className={`
-                    ${styles.modal_body}
-                    ${noBackground ? styles.no_background_modal : null}
+                ${styles.modal_body}
+                ${noBackground ? styles.no_background_modal : null}
                 `}
-                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                style={{ justifyContent: 'flex-start' }}
             >
                 <section className={styles.modal_content}>
                     {title && <SimpleModalHeader title={title} onClose={onClose} />}

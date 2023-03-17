@@ -1,44 +1,98 @@
+import { Dispatch, SetStateAction } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../SidebarSearchResults.module.css';
+import { PositionIF } from '../../../../../utils/interfaces/exports';
+import { getRangeDisplay, getValueUSD } from './functions/exports';
 
-import ResultSkeleton from '../ResultSkeleton/ResultSkeleton';
-
-interface PositionsSearchResultPropsIF {
-    loading: boolean;
-    searchInput: React.ReactNode;
+interface propsIF {
+    chainId: string;
+    searchedPositions: PositionIF[];
+    isDenomBase: boolean;
+    setOutsideControl: Dispatch<SetStateAction<boolean>>;
+    setSelectedOutsideTab: Dispatch<SetStateAction<number>>;
+    setCurrentPositionActive: Dispatch<SetStateAction<string>>;
+    setIsShowAllEnabled: Dispatch<SetStateAction<boolean>>;
 }
-export default function PositionsSearchResults(props: PositionsSearchResultPropsIF) {
-    function PositionSearchResult() {
-        return (
-            <div className={styles.card_container}>
-                <div>Pool</div>
-                <div>Price</div>
-                <div>Qty</div>
-            </div>
+interface PositionLiPropsIF {
+    position: PositionIF;
+    isDenomBase: boolean;
+    handleClick: (position: PositionIF) => void;
+}
+
+function PositionLI(props: PositionLiPropsIF) {
+    const { position, isDenomBase, handleClick } = props;
+
+    // fn to generate human-readable range output (from X to Y)
+    const rangeDisplay = getRangeDisplay(position, isDenomBase);
+
+    // fn to generate human-readable version of total position value
+    const positionValue = getValueUSD(position.totalValueUSD);
+
+    return (
+        <li className={styles.card_container} onClick={() => handleClick(position)}>
+            <p>
+                {isDenomBase
+                    ? `${position?.baseSymbol} / ${position?.quoteSymbol}`
+                    : `${position?.quoteSymbol} / ${position?.baseSymbol}`}
+            </p>
+            <p style={{ textAlign: 'center' }}>{rangeDisplay}</p>
+            <p style={{ textAlign: 'center' }}>{'$' + positionValue}</p>
+        </li>
+    );
+}
+
+export default function PositionsSearchResults(props: propsIF) {
+    const {
+        chainId,
+        searchedPositions,
+        isDenomBase,
+        setOutsideControl,
+        setSelectedOutsideTab,
+        setCurrentPositionActive,
+        setIsShowAllEnabled,
+    } = props;
+
+    const navigate = useNavigate();
+
+    const handleClick = (position: PositionIF): void => {
+        setOutsideControl(true);
+        setSelectedOutsideTab(2);
+        setCurrentPositionActive(position.positionStorageSlot);
+        setIsShowAllEnabled(false);
+        navigate(
+            '/trade/range/chain=' +
+                chainId +
+                '&tokenA=' +
+                position.base +
+                '&tokenB=' +
+                position.quote,
         );
-    }
-
-    const header = (
-        <div className={styles.header}>
-            <div>Pool</div>
-            <div>Price</div>
-            <div>Change</div>
-        </div>
-    );
-
-    const exampleContent = (
-        <div className={styles.main_result_container}>
-            {new Array(5).fill(null).map((item, idx) => (
-                <PositionSearchResult key={idx} />
-            ))}
-        </div>
-    );
+    };
 
     return (
         <div>
-            <div className={styles.card_title}>Range Positions</div>
-            {header}
-
-            {props.loading ? <ResultSkeleton /> : exampleContent}
+            <div className={styles.card_title}>My Range Positions</div>
+            {searchedPositions.length ? (
+                <>
+                    <header className={styles.header}>
+                        <div>Pool</div>
+                        <div>Range</div>
+                        <div>Value</div>
+                    </header>
+                    <ol className={styles.main_result_container}>
+                        {searchedPositions.slice(0, 4).map((position: PositionIF) => (
+                            <PositionLI
+                                key={`PositionSearchResult_${JSON.stringify(position)}`}
+                                position={position}
+                                isDenomBase={isDenomBase}
+                                handleClick={handleClick}
+                            />
+                        ))}
+                    </ol>
+                </>
+            ) : (
+                <h5 className={styles.not_found_text}>No Ranges Found</h5>
+            )}
         </div>
     );
 }
