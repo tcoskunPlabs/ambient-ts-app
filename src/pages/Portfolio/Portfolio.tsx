@@ -94,6 +94,9 @@ interface propsIF {
     mainnetProvider: Provider | undefined;
     setSimpleRangeWidth: Dispatch<SetStateAction<number>>;
     dexBalancePrefs: allDexBalanceMethodsIF;
+
+    isExchangeBalanceOpen: boolean;
+    setIsExchangeBalanceOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function Portfolio(props: propsIF) {
@@ -142,6 +145,9 @@ export default function Portfolio(props: propsIF) {
         mainnetProvider,
         setSimpleRangeWidth,
         dexBalancePrefs,
+
+        isExchangeBalanceOpen,
+        setIsExchangeBalanceOpen,
     } = props;
 
     const { isConnected, address } = useAccount();
@@ -355,6 +361,8 @@ export default function Portfolio(props: propsIF) {
                 setFullLayoutActive={setFullLayoutActive}
                 selectedTokenDecimals={selectedTokenDecimals}
                 gasPriceInGwei={gasPriceInGwei}
+                isExchangeBalanceOpen={isExchangeBalanceOpen}
+                setIsExchangeBalanceOpen={setIsExchangeBalanceOpen}
             />
         </div>
     );

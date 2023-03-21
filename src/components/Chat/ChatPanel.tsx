@@ -48,10 +48,18 @@ interface propsIF {
     userImageData: string[];
     appPage?: boolean;
     username?: string | undefined | null;
+
+    isExchangeBalanceOpen: boolean;
 }
 
 export default function ChatPanel(props: propsIF) {
-    const { isFullScreen, favePools, currentPool, setIsChatOpen } = props;
+    const {
+        isFullScreen,
+        favePools,
+        currentPool,
+        setIsChatOpen,
+        isExchangeBalanceOpen,
+    } = props;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
     // const navigate = useNavigate();
@@ -310,6 +318,48 @@ export default function ChatPanel(props: propsIF) {
     //     props.setIsChatOpen(true);
     // };
 
+    const contentHeight = props.isChatOpen ? '479px' : '30px';
+    const contentWidth = props.isChatOpen ? '100%' : '40%';
+
+    const nonExpandedChatHeader = isExchangeBalanceOpen ? null : (
+        <div
+            className={styles.chat_header_non_expanded}
+            onClick={() => setIsChatOpen(!props.isChatOpen)}
+        >
+            <h2>Chat</h2>
+
+            <IoIosArrowUp size={18} className={styles.close_button} />
+        </div>
+    );
+
+    const expandedChatHeader = (
+        <div
+            className={styles.chat_header}
+            onClick={() => setIsChatOpen(!props.isChatOpen)}
+        >
+            <h2 className={styles.chat_title}>Chat</h2>
+            <section style={{ paddingRight: '10px' }}>
+                <TbTableExport
+                    size={18}
+                    className={styles.open_full_button}
+                    onClick={() =>
+                        window.open(
+                            '/chat/' + room.replace('/', '&').toLowerCase(),
+                        )
+                    }
+                />
+
+                <IoIosArrowDown
+                    size={22}
+                    className={styles.close_button}
+                    onClick={() => handleCloseChatPanel()}
+                />
+
+                {!props.isChatOpen && <IoIosArrowDown size={22} />}
+            </section>
+        </div>
+    );
+
     const header = (
         <div
             className={styles.chat_header}
@@ -469,7 +519,6 @@ export default function ChatPanel(props: propsIF) {
         />
     );
 
-    const contentHeight = props.isChatOpen ? '479px' : '30px';
     if (props.appPage)
         return (
             <FullChat
@@ -492,45 +541,57 @@ export default function ChatPanel(props: propsIF) {
         );
 
     return (
-        <div
-            className={styles.main_container}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onClick={(e: any) => e.stopPropagation()}
-        >
-            <div
-                className={styles.modal_body}
-                style={{ height: contentHeight, width: '100%' }}
-            >
-                <div className={styles.chat_body}>
-                    {header}
+        <>
+            {!props.isChatOpen && nonExpandedChatHeader}
+            {props.isChatOpen && (
+                <div
+                    className={styles.main_container}
+                    style={{ width: props.isChatOpen ? '380px' : '100px' }}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={(e: any) => e.stopPropagation()}
+                >
+                    <div
+                        className={styles.modal_body}
+                        style={{ height: contentHeight, width: contentWidth }}
+                    >
+                        <div className={styles.chat_body}>
+                            {expandedChatHeader}
 
-                    <Room
-                        favePools={favePools}
-                        selectedRoom={room}
-                        setRoom={setRoom}
-                        currentPool={currentPool}
-                        isFullScreen={isFullScreen}
-                        room={room}
-                        setIsCurrentPool={setIsCurrentPool}
-                        isCurrentPool={isCurrentPool}
-                        showCurrentPoolButton={showCurrentPoolButton}
-                        setShowCurrentPoolButton={setShowCurrentPoolButton}
-                        userCurrentPool={userCurrentPool}
-                        setUserCurrentPool={setUserCurrentPool}
-                        currentUser={currentUser}
-                        ensName={ensName}
-                    />
+                            <Room
+                                favePools={favePools}
+                                selectedRoom={room}
+                                setRoom={setRoom}
+                                currentPool={currentPool}
+                                isFullScreen={isFullScreen}
+                                room={room}
+                                setIsCurrentPool={setIsCurrentPool}
+                                isCurrentPool={isCurrentPool}
+                                showCurrentPoolButton={showCurrentPoolButton}
+                                setShowCurrentPoolButton={
+                                    setShowCurrentPoolButton
+                                }
+                                userCurrentPool={userCurrentPool}
+                                setUserCurrentPool={setUserCurrentPool}
+                                currentUser={currentUser}
+                                ensName={ensName}
+                            />
 
-                    <DividerDark changeColor addMarginTop addMarginBottom />
+                            <DividerDark
+                                changeColor
+                                addMarginTop
+                                addMarginBottom
+                            />
 
-                    {messageList}
+                            {messageList}
 
-                    {chatNotification}
+                            {chatNotification}
 
-                    {messageInput}
-                    <div id='thelastmessage' />
+                            {messageInput}
+                            <div id='thelastmessage' />
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            )}
+        </>
     );
 }

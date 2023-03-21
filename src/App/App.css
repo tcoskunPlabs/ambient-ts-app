@@ -114,12 +114,15 @@ footer {
 }
 
 .footer_container {
-    color: white;
+    /* background: yellow; */
+    /* color: white; */
+    width: 380px;
 
     position: fixed;
     display: flex;
     flex-direction: row;
     -webkit-box-align: center;
+    justify-content: space-between;
     align-items: center;
     right: 0;
     bottom: 0px;

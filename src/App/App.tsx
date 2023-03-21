@@ -178,6 +178,7 @@ import {
     useExchangePrefs,
     dexBalanceMethodsIF,
 } from './hooks/useExchangePrefs';
+import ExchangeBalance from '../components/Portfolio/EchangeBalance/ExchangeBalance';
 
 const cachedFetchAddress = memoizeFetchAddress();
 const cachedFetchNativeTokenBalance = memoizeFetchNativeTokenBalance();
@@ -3082,7 +3083,12 @@ export default function App() {
         limit: `/trade/limit/chain=0x5&tokenA=${tradeData.tokenA.address}&tokenB=${tradeData.tokenB.address}&lowTick=0&highTick=0`,
         range: `/trade/range/chain=0x5&tokenA=${tradeData.tokenA.address}&tokenB=${tradeData.tokenB.address}&lowTick=0&highTick=0`,
     };
+    const [recheckTokenAllowance, setRecheckTokenAllowance] =
+        useState<boolean>(false);
+    const [recheckTokenBalances, setRecheckTokenBalances] =
+        useState<boolean>(false);
 
+    const [isExchangeBalanceOpen, setIsExchangeBalanceOpen] = useState(false);
     return (
         <>
             <div className={containerStyle} data-theme={theme}>
@@ -3433,6 +3439,9 @@ export default function App() {
                                     userImageData={imageData}
                                     username={ensName}
                                     appPage={true}
+                                    isExchangeBalanceOpen={
+                                        isExchangeBalanceOpen
+                                    }
                                 />
                             }
                         />
@@ -3454,6 +3463,9 @@ export default function App() {
                                     userImageData={imageData}
                                     appPage={true}
                                     username={ensName}
+                                    isExchangeBalanceOpen={
+                                        isExchangeBalanceOpen
+                                    }
                                 />
                             }
                         />
@@ -3560,6 +3572,12 @@ export default function App() {
                                         limit: dexBalPrefLimit,
                                         range: dexBalPrefRange,
                                     }}
+                                    isExchangeBalanceOpen={
+                                        isExchangeBalanceOpen
+                                    }
+                                    setIsExchangeBalanceOpen={
+                                        setIsExchangeBalanceOpen
+                                    }
                                 />
                             }
                         />
@@ -3639,6 +3657,12 @@ export default function App() {
                                         limit: dexBalPrefLimit,
                                         range: dexBalPrefRange,
                                     }}
+                                    isExchangeBalanceOpen={
+                                        isExchangeBalanceOpen
+                                    }
+                                    setIsExchangeBalanceOpen={
+                                        setIsExchangeBalanceOpen
+                                    }
                                 />
                             }
                         />
@@ -3743,6 +3767,12 @@ export default function App() {
                                         limit: dexBalPrefLimit,
                                         range: dexBalPrefRange,
                                     }}
+                                    isExchangeBalanceOpen={
+                                        isExchangeBalanceOpen
+                                    }
+                                    setIsExchangeBalanceOpen={
+                                        setIsExchangeBalanceOpen
+                                    }
                                 />
                             }
                         />
@@ -3765,8 +3795,34 @@ export default function App() {
                             setIsChatOpen={setIsChatOpen}
                             isFullScreen={false}
                             userImageData={imageData}
+                            isExchangeBalanceOpen={isExchangeBalanceOpen}
                         />
                     )}
+
+                <ExchangeBalance
+                    crocEnv={crocEnv}
+                    mainnetProvider={mainnetProvider}
+                    connectedAccount={account ?? ''}
+                    setSelectedOutsideTab={setSelectedOutsideTab}
+                    setOutsideControl={setOutsideControl}
+                    openGlobalModal={openGlobalModal}
+                    closeGlobalModal={closeGlobalModal}
+                    selectedToken={useAppSelector((state) => state.temp.token)}
+                    tokenAllowance={'123'}
+                    tokenWalletBalance={'123'}
+                    tokenDexBalance={'123'}
+                    setRecheckTokenAllowance={setRecheckTokenAllowance}
+                    setRecheckTokenBalances={setRecheckTokenBalances}
+                    lastBlockNumber={lastBlockNumber}
+                    openTokenModal={() => console.log('opened')}
+                    fullLayoutActive={false}
+                    portfolioPage={false}
+                    isExchangeBalanceOpen={isExchangeBalanceOpen}
+                    setIsExchangeBalanceOpen={setIsExchangeBalanceOpen}
+                    setFullLayoutActive={setRecheckTokenAllowance}
+                    selectedTokenDecimals={123}
+                    gasPriceInGwei={gasPriceInGwei}
+                />
             </div>
             <SidebarFooter />
             <GlobalModal

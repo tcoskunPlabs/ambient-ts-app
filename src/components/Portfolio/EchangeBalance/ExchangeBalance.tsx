@@ -18,6 +18,9 @@ import { ethers } from 'ethers';
 import { fetchAddress } from '../../../App/functions/fetchAddress';
 import IconWithTooltip from '../../Global/IconWithTooltip/IconWithTooltip';
 import useMediaQuery from '../../../utils/hooks/useMediaQuery';
+import { useLocation } from 'react-router-dom';
+
+import { IoIosArrowUp, IoIosArrowDown } from 'react-icons/io';
 
 interface propsIF {
     crocEnv: CrocEnv | undefined;
@@ -39,6 +42,11 @@ interface propsIF {
     openTokenModal: () => void;
     selectedTokenDecimals: number;
     gasPriceInGwei: number | undefined;
+
+    portfolioPage?: boolean;
+
+    isExchangeBalanceOpen: boolean;
+    setIsExchangeBalanceOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function ExchangeBalance(props: propsIF) {
@@ -62,8 +70,12 @@ export default function ExchangeBalance(props: propsIF) {
         setFullLayoutActive,
         selectedTokenDecimals,
         gasPriceInGwei,
+
+        isExchangeBalanceOpen,
+        setIsExchangeBalanceOpen,
     } = props;
 
+    const location = useLocation();
     const [sendToAddress, setSendToAddress] = useState<string | undefined>();
     const [resolvedAddress, setResolvedAddress] = useState<
         string | undefined
@@ -203,7 +215,7 @@ export default function ExchangeBalance(props: propsIF) {
         },
     ];
 
-    const exchangeControl = (
+    const exchangeControl = props.portfolioPage ? (
         <section
             className={styles.control_container}
             onClick={() => setFullLayoutActive(!fullLayoutActive)}
@@ -217,36 +229,54 @@ export default function ExchangeBalance(props: propsIF) {
             </IconWithTooltip>
             {/* { fullLayoutActive && <p>Exchange Balance</p>} */}
         </section>
-    );
+    ) : null;
 
     // const titleOpacity = fullLayoutActive ? '0' : '1';
 
+    const isTradePath = location.pathname.includes('/trade');
+
     const columnView = useMediaQuery('(max-width: 1200px)');
+
+    const contentWidth = isExchangeBalanceOpen ? '100%' : 'auto';
     return (
         <motion.main
             animate={columnView ? 'open' : fullLayoutActive ? 'closed' : 'open'}
-            style={{ width: '100%' }}
-            className={styles.container}
+            style={{ width: contentWidth, alignItems: 'flex-end' }}
+            className={`${styles.container} ${
+                isTradePath && styles.colored_border
+            } `}
         >
             <motion.div className={styles.main_container}>
-                {/* <div style={{ opacity: titleOpacity }} className={styles.title}>
-                    Exchange Balance
-                </div> */}
-                <div className={styles.tabs_container}>
-                    {(!fullLayoutActive || columnView) && (
-                        <TabComponent
-                            data={accountData}
-                            rightTabOptions={false}
-                            setSelectedOutsideTab={setSelectedOutsideTab}
-                            setOutsideControl={setOutsideControl}
-                            outsideControl={false}
-                            selectedOutsideTab={0}
-                        />
+                <div
+                    className={styles.title_container}
+                    onClick={() =>
+                        setIsExchangeBalanceOpen(!isExchangeBalanceOpen)
+                    }
+                >
+                    <h3 className={styles.title}>Exchange Balance</h3>
+                    {isExchangeBalanceOpen ? (
+                        <IoIosArrowDown size={18} />
+                    ) : (
+                        <IoIosArrowUp size={18} />
                     )}
-                    {exchangeControl}
                 </div>
+                {isExchangeBalanceOpen && (
+                    <div className={styles.tabs_container}>
+                        {(!fullLayoutActive || columnView) && (
+                            <TabComponent
+                                data={accountData}
+                                rightTabOptions={false}
+                                setSelectedOutsideTab={setSelectedOutsideTab}
+                                setOutsideControl={setOutsideControl}
+                                outsideControl={false}
+                                selectedOutsideTab={0}
+                            />
+                        )}
+                        {exchangeControl}
+                    </div>
+                )}
             </motion.div>
-            {(!fullLayoutActive || columnView) && (
+            {(!fullLayoutActive || columnView) && isExchangeBalanceOpen && (
                 <section style={{ background: 'var(--dark1)' }}>
                     <div className={styles.info_text}>
                         Collateral deposited into the Ambient Finance exchange
