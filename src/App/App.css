@@ -8,8 +8,8 @@
     scroll-behavior: smooth;
     font-family: var(--font-family);
     font-weight: 200;
-
-    /* outline: 1px solid red; */
+    -webkit-user-select: none; /* Safari */
+    user-select: none;
 }
 
 /* ===== Scrollbar CSS ===== */
