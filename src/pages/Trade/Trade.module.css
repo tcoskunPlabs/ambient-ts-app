@@ -1,6 +1,13 @@
 .main_layout {
     transition: all var(--animation-speed) ease-in-out;
     border-top: 1px solid var(--dark2);
+    -webkit-user-select: text; /* Safari */
+    user-select: text;
+}
+
+.main_layout * {
+    -webkit-user-select: inherit; /* Safari */
+    user-select: inherit;
 }
 
 .middle_col,
