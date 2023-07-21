@@ -132,12 +132,10 @@ const TableRow = styled.tr`
     height: 40px;
     cursor: pointer;
     margin-bottom: 2px;
-  
     &:hover {
         background-color: var(--dark2);
     }
     position: relative;
- ]
 `;
 
 const TableCell = styled.td<TableCellProps>`
