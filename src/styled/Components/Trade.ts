@@ -1,5 +1,6 @@
 import { Resizable } from 're-resizable';
 import styled from 'styled-components/macro';
+import { StyledResizableProps } from '../../pages/Trade/Trade';
 
 export const MainSection = styled.section`
     display: grid;
@@ -54,9 +55,7 @@ export const TradeDropdownButton = styled.button`
     text-transform: capitalize;
 `;
 
-export const ResizableContainer = styled(Resizable)<{
-    showResizeable: boolean;
-}>`
+export const ResizableContainer = styled(Resizable)<StyledResizableProps>`
     display: flex;
     justify-content: center;
     align-items: center;

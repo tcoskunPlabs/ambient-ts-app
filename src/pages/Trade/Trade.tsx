@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // START: Import React and Dongles
 import { useParams, Outlet, NavLink } from 'react-router-dom';
-import { NumberSize } from 're-resizable';
+import { NumberSize, ResizableProps } from 're-resizable';
 import {
     useEffect,
     useState,
@@ -43,7 +43,9 @@ import {
 } from '../../styled/Components/TradeModules';
 
 const TRADE_CHART_MIN_HEIGHT = 175;
-
+export interface StyledResizableProps extends ResizableProps {
+    showResizeable: boolean;
+}
 // React functional component
 function Trade() {
     const {
@@ -252,7 +254,44 @@ function Trade() {
     if (showActiveMobileComponent) return mobileTrade;
 
     const showNoChartData = !isPoolInitialized || isCandleDataNull;
-
+    const resizableProps: StyledResizableProps = {
+        showResizeable: !isCandleDataNull && !isChartFullScreen,
+        enable: {
+            bottom: !isChartFullScreen,
+            top: false,
+            left: false,
+            topLeft: false,
+            bottomLeft: false,
+            right: false,
+            topRight: false,
+            bottomRight: false,
+        },
+        size: {
+            width: '100%',
+            height: chartHeights.current,
+        },
+        minHeight: 4,
+        onResizeStart: () => {
+            // may be useful later
+        },
+        onResizeStop: (
+            evt: MouseEvent | TouchEvent,
+            dir: Direction,
+            ref: HTMLElement,
+            d: NumberSize,
+        ) => {
+            if (chartHeights.current + d.height < TRADE_CHART_MIN_HEIGHT) {
+                if (tradeTableState === 'Expanded') {
+                    setChartHeight(chartHeights.default);
+                } else {
+                    setChartHeight(chartHeights.min);
+                }
+            } else {
+                setChartHeight(chartHeights.current + d.height);
+            }
+        },
+        bounds: 'parent',
+    };
     return (
         <MainSection>
             <FlexContainer
@@ -270,47 +309,7 @@ function Trade() {
                     fullHeight
                     overflow='hidden'
                 >
-                    <ResizableContainer
-                        showResizeable={!isCandleDataNull && !isChartFullScreen}
-                        enable={{
-                            bottom: !isChartFullScreen,
-                            top: false,
-                            left: false,
-                            topLeft: false,
-                            bottomLeft: false,
-                            right: false,
-                            topRight: false,
-                            bottomRight: false,
-                        }}
-                        size={{
-                            width: '100%',
-                            height: chartHeights.current,
-                        }}
-                        minHeight={4}
-                        onResizeStart={() => {
-                            // may be useful later
-                        }}
-                        onResizeStop={(
-                            evt: MouseEvent | TouchEvent,
-                            dir: Direction,
-                            ref: HTMLElement,
-                            d: NumberSize,
-                        ) => {
-                            if (
-                                chartHeights.current + d.height <
-                                TRADE_CHART_MIN_HEIGHT
-                            ) {
-                                if (tradeTableState == 'Expanded') {
-                                    setChartHeight(chartHeights.default);
-                                } else {
-                                    setChartHeight(chartHeights.min);
-                                }
-                            } else {
-                                setChartHeight(chartHeights.current + d.height);
-                            }
-                        }}
-                        bounds={'parent'}
-                    >
+                    <ResizableContainer {...resizableProps}>
                         {showNoChartData && (
                             <NoChartData
                                 chainId={chainId}
