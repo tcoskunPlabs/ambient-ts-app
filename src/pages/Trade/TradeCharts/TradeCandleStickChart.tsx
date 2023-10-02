@@ -200,10 +200,6 @@ function TradeCandleStickChart(props: propsIF) {
 
     const clearLiquidityData = () => {
         if (liquidityData) {
-            liquidityData.liqAskData = [];
-            liquidityData.liqBidData = [];
-            liquidityData.depthLiqBidData = [];
-            liquidityData.depthLiqAskData = [];
             liquidityData.topBoundary = 0;
             liquidityData.lowBoundary = 0;
             liquidityData.liqTransitionPointforCurve = 0;
@@ -333,202 +329,19 @@ function TradeCandleStickChart(props: propsIF) {
                     ? data.lowerBoundInvPriceDecimalCorrected
                     : data.upperBoundPriceDecimalCorrected;
 
-                if (
-                    liqUpperPrices >= liqBoundary &&
-                    liqUpperPrices < liqBoundary * 10
-                ) {
-                    liqBidData.push({
-                        activeLiq: liquidityScale(data.activeLiq),
-                        liqPrices: liqUpperPrices,
-                        deltaAverageUSD: data.deltaAverageUSD
-                            ? data.deltaAverageUSD
-                            : 0,
-                        cumAverageUSD: data.cumAverageUSD
-                            ? data.cumAverageUSD
-                            : 0,
-                        upperBound:
-                            data.upperBound === '+inf'
-                                ? data.lowerBound
-                                : data.upperBound,
-                        lowerBound: data.lowerBound,
-                    });
-                } else {
-                    if (
-                        liqLowerPrices <= limitBoundary &&
-                        liqLowerPrices > liqBoundary / 10
-                    ) {
-                        liqAskData.push({
-                            activeLiq: liquidityScale(data.activeLiq),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD
-                                ? data.deltaAverageUSD
-                                : 0,
-                            cumAverageUSD: data.cumAverageUSD
-                                ? data.cumAverageUSD
-                                : 0,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-                }
+                liqBoundaryDepth = liqLowerPrices;
 
-                if (!denominationsInBase.isDenomBase) {
-                    if (
-                        data.cumAskLiq !== undefined &&
-                        data.cumAskLiq !== '0' &&
-                        liqUpperPrices !== '+inf' &&
-                        !Number.isNaN(depthLiquidityScale(data.cumAskLiq)) &&
-                        liqUpperPrices < liqBoundary * 10
-                    ) {
-                        depthLiqBidData.push({
-                            activeLiq: depthLiquidityScale(data.cumAskLiq),
-                            liqPrices: liqUpperPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                        liqBoundaryDepth = depthLiqBidData[0].liqPrices;
-                    }
-
-                    if (
-                        data.cumBidLiq !== undefined &&
-                        !Number.isNaN(depthLiquidityScale(data.cumBidLiq)) &&
-                        liqLowerPrices > liqBoundary / 10
-                    ) {
-                        depthLiqAskData.push({
-                            activeLiq: depthLiquidityScale(data.cumBidLiq),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-
-                        liqBoundaryDepth = liqLowerPrices;
-                    }
-                } else {
-                    if (
-                        data.cumBidLiq !== undefined &&
-                        data.cumBidLiq !== '0' &&
-                        liqUpperPrices !== '+inf' &&
-                        liqUpperPrices < liqBoundary * 10 &&
-                        !Number.isNaN(depthLiquidityScale(data.cumBidLiq))
-                    ) {
-                        depthLiqBidData.push({
-                            activeLiq: depthLiquidityScale(data.cumBidLiq),
-                            liqPrices: liqUpperPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                        liqBoundaryDepth = liqUpperPrices;
-                    }
-
-                    if (
-                        data.cumAskLiq !== undefined &&
-                        data.cumAskLiq !== '0' &&
-                        !Number.isNaN(depthLiquidityScale(data.cumAskLiq)) &&
-                        liqUpperPrices <= limitBoundary &&
-                        liqUpperPrices > liqBoundary / 10
-                    ) {
-                        depthLiqAskData.push({
-                            activeLiq: depthLiquidityScale(data.cumAskLiq),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                        liqBoundaryDepth = depthLiqAskData[0].liqPrices;
-                    }
-                }
+                liqBoundaryDepth = liqUpperPrices;
             });
-            if (liqBidData.length > 1 && liqAskData.length > 1) {
-                liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
 
-                liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-                depthLiqBidData.sort(
-                    (a: any, b: any) => b.liqPrices - a.liqPrices,
-                );
-
-                liqBidData.push({
-                    activeLiq: liqBidData.find(
-                        (liqData) => liqData.liqPrices < limitBoundary,
-                    )?.activeLiq,
-                    liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                depthLiqBidData.push({
-                    activeLiq: depthLiqBidData.find(
-                        (liqData) => liqData.liqPrices < limitBoundary,
-                    )?.activeLiq,
-                    liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                liqAskData.push({
-                    activeLiq: liqAskData[liqAskData.length - 1].activeLiq,
-                    liqPrices: 0,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                depthLiqAskData.push({
-                    activeLiq:
-                        depthLiqAskData[
-                            !denominationsInBase.isDenomBase
-                                ? 0
-                                : depthLiqAskData.length - 1
-                        ]?.activeLiq,
-                    liqPrices: 0,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-            }
             topBoundary = limitBoundary;
             lowBoundary = parseFloat(rangeBoundary.pinnedMinPriceDisplay);
-
-            liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-            liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-            depthLiqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-            depthLiqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
 
             return {
                 liquidityScale: liquidityScale,
                 depthLiquidityScale: depthLiquidityScale,
                 allData: unparsedLiquidityData.ranges,
-                liqAskData: [],
-                liqBidData: [],
-                depthLiqBidData: [],
-                depthLiqAskData: [],
+
                 topBoundary: topBoundary,
                 lowBoundary: lowBoundary,
                 liqTransitionPointforCurve: liqBoundary
@@ -551,48 +364,6 @@ function TradeCandleStickChart(props: propsIF) {
             setScaleForChart(unparsedCandleData);
         }
     }, [unparsedCandleData === undefined, mobileView]);
-
-    // Liq Scale
-    useEffect(() => {
-        if (liquidityData !== undefined) {
-            if (liquidityScale === undefined) {
-                setScaleForChartLiquidity(liquidityData);
-            }
-        } else {
-            setLiquidityScale(() => {
-                return undefined;
-            });
-        }
-    }, [liquidityData, liquidityScale]);
-
-    const setScaleForChartLiquidity = (liquidityData: any) => {
-        IS_LOCAL_ENV && console.debug('parse Liq Scale');
-        if (liquidityData !== undefined) {
-            const liquidityScale = d3.scaleLinear();
-            const liquidityDepthScale = d3.scaleLinear();
-
-            const liquidityExtent = d3fc
-                .extentLinear()
-                .include([0])
-                .accessors([(d: any) => parseFloat(d.activeLiq)]);
-
-            liquidityScale.domain(
-                liquidityExtent(
-                    liquidityData.liqBidData.concat(liquidityData.liqAskData),
-                ),
-            );
-            liquidityDepthScale.domain(
-                liquidityExtent(
-                    liquidityData.depthLiqBidData.concat(
-                        liquidityData.depthLiqAskData,
-                    ),
-                ),
-            );
-
-            setLiquidityScale(() => liquidityScale);
-            setLiquidityDepthScale(() => liquidityDepthScale);
-        }
-    };
 
     // Scale
     const setScaleForChart = (unparsedCandleData: any) => {
@@ -780,8 +551,6 @@ function TradeCandleStickChart(props: propsIF) {
         const timer = setTimeout(() => {
             const shouldReload =
                 scaleData === undefined ||
-                liquidityScale === undefined ||
-                liquidityDepthScale === undefined ||
                 unparsedCandleData?.length === 0 ||
                 poolPriceDisplay === 0 ||
                 poolPriceNonDisplay === 0 ||

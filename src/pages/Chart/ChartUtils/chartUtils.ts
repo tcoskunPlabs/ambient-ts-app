@@ -32,11 +32,6 @@ export interface CandleDataChart extends CandleData {
 export type liquidityChartData = {
     liquidityScale: any;
     depthLiquidityScale: any;
-    allData: any;
-    liqAskData: LiquidityDataLocal[] | [];
-    liqBidData: LiquidityDataLocal[];
-    depthLiqBidData: LiquidityDataLocal[];
-    depthLiqAskData: LiquidityDataLocal[];
     topBoundary: number;
     lowBoundary: number;
     liqTransitionPointforCurve: number;

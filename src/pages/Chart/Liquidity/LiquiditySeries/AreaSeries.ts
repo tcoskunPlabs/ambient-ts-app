@@ -22,27 +22,6 @@ export function getActiveLiqDepth(
     }
 }
 
-export function createAreaSeries(
-    xScale: d3.ScaleLinear<number, number>,
-    yScale: d3.ScaleLinear<number, number>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    curve: any,
-) {
-    return d3fc
-        .seriesCanvasArea()
-        .orient('horizontal')
-        .curve(curve)
-        .decorate((context: CanvasRenderingContext2D) => {
-            // context.fillStyle = 'transparent';
-        })
-        .mainValue((d: LiquidityDataLocal) => d.activeLiq)
-        .crossValue((d: LiquidityDataLocal) => {
-            return d.liqPrices;
-        })
-        .xScale(xScale)
-        .yScale(yScale);
-}
-
 export function createAreaSeriesLiquidity(
     liqScale: d3.ScaleLinear<number, number>,
     xScale: d3.ScaleLinear<number, number>,
@@ -83,75 +62,3 @@ export function createAreaSeriesLiquidity(
         .xScale(xScale)
         .yScale(yScale);
 }
-
-export function createAreaSeriesLiquidityBid(
-    liqScale: d3.ScaleLinear<number, number>,
-    xScale: d3.ScaleLinear<number, number>,
-    yScale: d3.ScaleLinear<number, number>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    curve: any,
-    isDenomBase: boolean,
-) {
-    return d3fc
-        .seriesCanvasArea()
-        .orient('horizontal')
-        .curve(curve)
-        .decorate((context: CanvasRenderingContext2D) => {
-            context.fillStyle = liqBidColor;
-        })
-        .mainValue((d: LiquidityRangeIF) => {
-            return liqScale(d.activeLiq);
-        })
-        .crossValue((d: LiquidityRangeIF) => {
-            return isDenomBase
-                ? d.upperBoundInvPriceDecimalCorrected
-                : d.lowerBoundPriceDecimalCorrected;
-        })
-        .xScale(xScale)
-        .yScale(yScale);
-}
-
-export function createAreaSeriesLiquidityAsk(
-    liqScale: d3.ScaleLinear<number, number>,
-    xScale: d3.ScaleLinear<number, number>,
-    yScale: d3.ScaleLinear<number, number>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    curve: any,
-    isDenomBase: boolean,
-) {
-    return d3fc
-        .seriesCanvasArea()
-        .orient('horizontal')
-        .curve(curve)
-        .decorate((context: CanvasRenderingContext2D) => {
-            context.fillStyle = liqAskColor;
-        })
-        .mainValue((d: LiquidityRangeIF) => liqScale(d.activeLiq))
-        .crossValue((d: LiquidityRangeIF) =>
-            isDenomBase
-                ? d.lowerBoundInvPriceDecimalCorrected
-                : d.upperBoundPriceDecimalCorrected,
-        )
-        .xScale(xScale)
-        .yScale(yScale);
-}
-
-// export function decorateForLiquidityArea(
-//     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//     series: any,
-//     threshold: number,
-//     isDenomBase: boolean,
-// ) {
-//     series.decorate(
-//         (context: CanvasRenderingContext2D, d: LiquidityRangeIF[]) => {
-//             const liqPrice = isDenomBase
-//                 ? d[0].lowerBoundInvPriceDecimalCorrected
-//                 : d[0].upperBoundPriceDecimalCorrected;
-//             if (liqPrice > threshold) {
-//                 context.fillStyle = liqBidColor;
-//             } else {
-//                 context.fillStyle = liqAskColor;
-//             }
-//         },
-//     );
-// }

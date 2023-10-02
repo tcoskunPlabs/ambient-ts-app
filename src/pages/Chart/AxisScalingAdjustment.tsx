@@ -418,8 +418,6 @@ export default function AxisScalingAdjustment(props: propsIF) {
                                 buffer / 2,
                         ];
 
-                        console.log(minYBoundary, maxYBoundary, marketPrice);
-
                         setYaxisDomain(domain[0], domain[1]);
                     }
                 }
