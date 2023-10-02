@@ -30,7 +30,10 @@ export interface CandleDataChart extends CandleData {
     isFakeData: boolean;
 }
 export type liquidityChartData = {
-    liqAskData: LiquidityDataLocal[];
+    liquidityScale: any;
+    depthLiquidityScale: any;
+    allData: any;
+    liqAskData: LiquidityDataLocal[] | [];
     liqBidData: LiquidityDataLocal[];
     depthLiqBidData: LiquidityDataLocal[];
     depthLiqAskData: LiquidityDataLocal[];
@@ -38,6 +41,7 @@ export type liquidityChartData = {
     lowBoundary: number;
     liqTransitionPointforCurve: number;
     liqTransitionPointforDepth: number;
+    limitBoundary: number;
 };
 
 export type scaleData = {

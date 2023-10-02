@@ -53,6 +53,11 @@ export interface LiquidityDataLocal {
     lowerBound: any;
 }
 
+export interface LiquidityHoverData {
+    activeLiq: number;
+    liqPrices: number;
+}
+
 export interface LiqSnap {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     activeLiq: any;

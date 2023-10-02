@@ -8,13 +8,13 @@ import { scaleData, setCanvasResolution } from '../ChartUtils/chartUtils';
 interface propsIF {
     scaleData: scaleData | undefined;
     selectedDate: number | undefined;
-    denomInBase: boolean;
+    isDenomBase: boolean;
     volumeData: Array<CandleData>;
     showVolume: boolean;
 }
 
 export default function VolumeBarCanvas(props: propsIF) {
-    const { scaleData, selectedDate, denomInBase, volumeData, showVolume } =
+    const { scaleData, selectedDate, isDenomBase, volumeData, showVolume } =
         props;
 
     const d3CanvasBar = useRef<HTMLCanvasElement | null>(null);
@@ -39,11 +39,11 @@ export default function VolumeBarCanvas(props: propsIF) {
         if (barSeries) {
             barSeries.decorate(
                 (context: CanvasRenderingContext2D, d: CandleData) => {
-                    const close = denomInBase
+                    const close = isDenomBase
                         ? d.invPriceCloseExclMEVDecimalCorrected
                         : d.priceCloseExclMEVDecimalCorrected;
 
-                    const open = denomInBase
+                    const open = isDenomBase
                         ? d.invPriceOpenExclMEVDecimalCorrected
                         : d.priceOpenExclMEVDecimalCorrected;
 

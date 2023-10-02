@@ -22,7 +22,7 @@ interface candlePropsIF {
     scaleData: scaleData | undefined;
     selectedDate: number | undefined;
     showLatest: boolean | undefined;
-    denomInBase: boolean;
+    isDenomBase: boolean;
     data: CandleData[];
     period: number;
     lastCandleData: CandleData;
@@ -35,7 +35,7 @@ export default function CandleChart(props: candlePropsIF) {
         scaleData,
         selectedDate,
         showLatest,
-        denomInBase,
+        isDenomBase,
         data,
         period,
         lastCandleData,
@@ -93,29 +93,29 @@ export default function CandleChart(props: candlePropsIF) {
                 .yScale(scaleData?.yScale)
                 .crossValue((d: CandleData) => d.time * 1000)
                 .highValue((d: CandleData) =>
-                    denomInBase
+                    isDenomBase
                         ? d.invMinPriceExclMEVDecimalCorrected
                         : d.maxPriceExclMEVDecimalCorrected,
                 )
                 .lowValue((d: CandleData) =>
-                    denomInBase
+                    isDenomBase
                         ? d.invMaxPriceExclMEVDecimalCorrected
                         : d.minPriceExclMEVDecimalCorrected,
                 )
                 .openValue((d: CandleData) =>
-                    denomInBase
+                    isDenomBase
                         ? d.invPriceOpenExclMEVDecimalCorrected
                         : d.priceOpenExclMEVDecimalCorrected,
                 )
                 .closeValue((d: CandleData) =>
-                    denomInBase
+                    isDenomBase
                         ? d.invPriceCloseExclMEVDecimalCorrected
                         : d.priceCloseExclMEVDecimalCorrected,
                 );
 
             setCandlestick(() => canvasCandlestick);
         }
-    }, [scaleData]);
+    }, [scaleData, isDenomBase]);
 
     useEffect(() => {
         if (candlestick) {
@@ -123,11 +123,11 @@ export default function CandleChart(props: candlePropsIF) {
                 (context: CanvasRenderingContext2D, d: CandleData) => {
                     const nowDate = new Date();
 
-                    const close = denomInBase
+                    const close = isDenomBase
                         ? d.invPriceCloseExclMEVDecimalCorrected
                         : d.priceCloseExclMEVDecimalCorrected;
 
-                    const open = denomInBase
+                    const open = isDenomBase
                         ? d.invPriceOpenExclMEVDecimalCorrected
                         : d.priceOpenExclMEVDecimalCorrected;
 

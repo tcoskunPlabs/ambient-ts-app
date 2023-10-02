@@ -54,7 +54,7 @@ interface yAxisIF {
     dragRange: any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dragLimit: any;
-    denomInBase: boolean;
+    isDenomBase: boolean;
     setYaxisWidth: React.Dispatch<React.SetStateAction<string>>;
     yAxisWidth: string;
     simpleRangeWidth: number;
@@ -94,7 +94,7 @@ function YAxisCanvas(props: yAxisIF) {
         dragRange,
         dragLimit,
         setCrosshairActive,
-        denomInBase,
+        isDenomBase,
         setYaxisWidth,
         yAxisWidth,
         simpleRangeWidth,
@@ -864,6 +864,7 @@ function YAxisCanvas(props: yAxisIF) {
         checkLimitOrder,
         location,
         crosshairActive,
+        yAxis === undefined,
     ]);
 
     function addYaxisLabel(y: number) {
@@ -886,7 +887,7 @@ function YAxisCanvas(props: yAxisIF) {
         d3.select(d3Yaxis.current).on('mouseover', () => {
             setCrosshairActive('none');
         });
-    }, [denomInBase, liqMode, location.pathname, tradeData.advancedMode]);
+    }, [isDenomBase, liqMode, location.pathname, tradeData.advancedMode]);
 
     return (
         <d3fc-canvas

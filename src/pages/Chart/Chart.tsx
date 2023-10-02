@@ -82,7 +82,6 @@ interface propsIF {
         isOpen: boolean | undefined,
         candleData: CandleData | undefined,
     ) => void;
-    denomInBase: boolean;
     chartItemStates: chartItemStates;
     setCurrentData: React.Dispatch<
         React.SetStateAction<CandleData | undefined>
@@ -90,8 +89,6 @@ interface propsIF {
     setCurrentVolumeData: React.Dispatch<
         React.SetStateAction<number | undefined>
     >;
-    isCandleAdded: boolean | undefined;
-    setIsCandleAdded: React.Dispatch<boolean>;
     scaleData: scaleData | undefined;
     poolPriceNonDisplay: number | undefined;
     selectedDate: number | undefined;
@@ -108,15 +105,30 @@ interface propsIF {
     liquidityScale: d3.ScaleLinear<number, number> | undefined;
     liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
     candleTime: candleTimeIF;
-    unparsedData: CandlesByPoolAndDuration;
     prevPeriod: number;
     candleTimeInSeconds: number;
+    changeScale: any;
+    setYaxisDomain: any;
+    limit: number;
+    setLimit: React.Dispatch<React.SetStateAction<number>>;
+    market: number;
+    setMarket: React.Dispatch<React.SetStateAction<number>>;
+    ranges: lineValue[];
+    setRanges: React.Dispatch<React.SetStateAction<lineValue[]>>;
+    unparsedCandleData: CandleDataChart[];
+    minTickForLimit: number;
+    maxTickForLimit: number;
+    getNoZoneData: any;
+    noGoZoneBoudnaries: any;
+    isLineDrag: boolean;
+    setIsLineDrag: React.Dispatch<React.SetStateAction<boolean>>;
+    render: any;
+    isLoadingChart: boolean;
 }
 
 export default function Chart(props: propsIF) {
     const {
         isTokenABase,
-        denomInBase,
         scaleData,
         poolPriceNonDisplay,
         selectedDate,
@@ -132,9 +144,25 @@ export default function Chart(props: propsIF) {
         liquidityData,
         liquidityScale,
         liquidityDepthScale,
-        unparsedData,
         prevPeriod,
         candleTimeInSeconds,
+        changeScale,
+        setYaxisDomain,
+        limit,
+        setLimit,
+        market,
+        setMarket,
+        ranges,
+        setRanges,
+        unparsedCandleData,
+        minTickForLimit,
+        maxTickForLimit,
+        getNoZoneData,
+        noGoZoneBoudnaries,
+        isLineDrag,
+        setIsLineDrag,
+        render,
+        isLoadingChart,
     } = props;
 
     const {
@@ -173,10 +201,7 @@ export default function Chart(props: propsIF) {
 
     const tradeData = useAppSelector((state) => state.tradeData);
 
-    const [minTickForLimit, setMinTickForLimit] = useState<number>(0);
-    const [maxTickForLimit, setMaxTickForLimit] = useState<number>(0);
-
-    const period = unparsedData.duration;
+    const period = candleTimeInSeconds;
 
     const isDenomBase = tradeData.isDenomBase;
     const isBid = tradeData.isTokenABase;
@@ -224,24 +249,8 @@ export default function Chart(props: propsIF) {
 
     const [isShowLastCandleTooltip, setIsShowLastCandleTooltip] =
         useState(false);
-    const [ranges, setRanges] = useState<lineValue[]>([
-        {
-            name: 'Min',
-            value: 0,
-        },
-        {
-            name: 'Max',
-            value: 0,
-        },
-    ]);
-
-    const [limit, setLimit] = useState<number>(0);
-
-    const [market, setMarket] = useState<number>(0);
 
     const [boundaries, setBoundaries] = useState<boolean>();
-
-    const [isLineDrag, setIsLineDrag] = useState(false);
 
     // Data
     const [crosshairData, setCrosshairData] = useState<crosshair[]>([
@@ -249,64 +258,6 @@ export default function Chart(props: propsIF) {
     ]);
 
     const mobileView = useMediaQuery('(max-width: 600px)');
-
-    const unparsedCandleData = useMemo(() => {
-        const data = unparsedData.candles
-            .sort((a, b) => b.time - a.time)
-            .map((item) => ({
-                ...item,
-                isFakeData: false,
-            }));
-        if (poolPriceWithoutDenom && data && data.length > 0) {
-            const fakeData = {
-                time: data[0].time + period,
-                invMinPriceExclMEVDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                maxPriceExclMEVDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                invMaxPriceExclMEVDecimalCorrected: 1 / poolPriceWithoutDenom,
-                minPriceExclMEVDecimalCorrected: poolPriceWithoutDenom,
-                invPriceOpenExclMEVDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                priceOpenExclMEVDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                invPriceCloseExclMEVDecimalCorrected: 1 / poolPriceWithoutDenom,
-                priceCloseExclMEVDecimalCorrected: poolPriceWithoutDenom,
-                period: period,
-                tvlData: {
-                    time: data[0].time,
-                    tvl: data[0].tvlData.tvl,
-                },
-                volumeUSD: 0,
-                averageLiquidityFee: data[0].averageLiquidityFee,
-                minPriceDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                maxPriceDecimalCorrected: 0,
-                priceOpenDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                priceCloseDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                invMinPriceDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                invMaxPriceDecimalCorrected: 0,
-                invPriceOpenDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                invPriceCloseDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                isCrocData: false,
-                isFakeData: true,
-            };
-
-            // added candle for pool price market price match
-            if (!data[0].isFakeData) {
-                data.unshift(fakeData);
-            } else {
-                data[0] = fakeData;
-            }
-        }
-
-        return data;
-    }, [diffHashSigChart(unparsedData.candles), poolPriceWithoutDenom]);
 
     const calculateVisibleCandles = (
         scaleData: scaleData | undefined,
@@ -391,9 +342,6 @@ export default function Chart(props: propsIF) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [marketLine, setMarketLine] = useState<any>();
 
-    // NoGoZone
-    const [noGoZoneBoudnaries, setNoGoZoneBoudnaries] = useState([[0, 0]]);
-
     const [mainZoom, setMainZoom] =
         useState<d3.ZoomBehavior<Element, unknown>>();
 
@@ -471,12 +419,6 @@ export default function Chart(props: propsIF) {
             return lastCrocDate * 1000;
         }
     }, [diffHashSigChart(unparsedCandleData)]);
-
-    const render = useCallback(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const nd = d3.select('#d3fc_group').node() as any;
-        if (nd) nd.requestRedraw();
-    }, []);
 
     // controls the distance of the mouse to the range lines, if close, activates the dragRange event
     const canUserDragRange = useMemo<boolean>(() => {
@@ -585,7 +527,7 @@ export default function Chart(props: propsIF) {
     useEffect(() => {
         // auto zoom active
         setRescale(true);
-    }, [location.pathname, period, denomInBase]);
+    }, [location.pathname, period, isDenomBase]);
 
     // finds candle closest to the mouse
     const snapForCandle = (point: number, filtered: Array<CandleData>) => {
@@ -1033,11 +975,11 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         setMarketLineValue();
-    }, [poolPriceWithoutDenom, denomInBase]);
+    }, [poolPriceWithoutDenom, isDenomBase]);
 
     const setMarketLineValue = useCallback(() => {
         if (poolPriceWithoutDenom !== undefined) {
-            const lastCandlePrice = denomInBase
+            const lastCandlePrice = isDenomBase
                 ? 1 / poolPriceWithoutDenom
                 : poolPriceWithoutDenom;
 
@@ -1045,7 +987,7 @@ export default function Chart(props: propsIF) {
                 return lastCandlePrice !== undefined ? lastCandlePrice : 0;
             });
         }
-    }, [poolPriceWithoutDenom, denomInBase]);
+    }, [poolPriceWithoutDenom, isDenomBase]);
     // set default limit tick
     useEffect(() => {
         if (tradeData.limitTick && Math.abs(tradeData.limitTick) === Infinity)
@@ -1086,7 +1028,7 @@ export default function Chart(props: propsIF) {
                 return newTargets;
             });
         }
-    }, [denomInBase]);
+    }, [isDenomBase]);
 
     const setAdvancedLines = () => {
         if (minPrice !== undefined && maxPrice !== undefined) {
@@ -1121,7 +1063,7 @@ export default function Chart(props: propsIF) {
         }
     }, [
         location.pathname,
-        denomInBase,
+        isDenomBase,
         minPrice,
         maxPrice,
         rescaleRangeBoundariesWithSlider,
@@ -1134,7 +1076,7 @@ export default function Chart(props: propsIF) {
             tradeData.advancedMode &&
             scaleData &&
             liquidityData &&
-            denomInBase === boundaries
+            isDenomBase === boundaries
         ) {
             const liqAllBidPrices = liquidityData?.liqBidData.map(
                 (liqData: LiquidityDataLocal) => liqData.liqPrices,
@@ -1143,7 +1085,7 @@ export default function Chart(props: propsIF) {
 
             fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
         } else {
-            setBoundaries(denomInBase);
+            setBoundaries(isDenomBase);
         }
     }, [
         tradeData.advancedMode,
@@ -1178,60 +1120,6 @@ export default function Chart(props: propsIF) {
         }
     }
 
-    const getNoZoneData = () => {
-        const noGoZoneMin = noGoZoneBoudnaries[0][0];
-        const noGoZoneMax = noGoZoneBoudnaries[0][1];
-        return { noGoZoneMin: noGoZoneMin, noGoZoneMax: noGoZoneMax };
-    };
-
-    // finds border ticks of nogozone
-    const setLimitTickNearNoGoZone = (low: number, high: number) => {
-        const limitNonDisplay = denomInBase
-            ? pool?.fromDisplayPrice(parseFloat(low.toString()))
-            : pool?.fromDisplayPrice(1 / parseFloat(low.toString()));
-
-        limitNonDisplay?.then((limit) => {
-            limit = limit !== 0 ? limit : 1;
-            const pinnedTick: number = pinTickLower(limit, chainData.gridSize);
-
-            const tickPrice = tickToPrice(
-                pinnedTick + (denomInBase ? 1 : -1) * chainData.gridSize * 2,
-            );
-
-            const tickDispPrice = pool?.toDisplayPrice(tickPrice);
-
-            if (tickDispPrice) {
-                tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
-
-                    setMinTickForLimit(displayPriceWithDenom);
-                });
-            }
-        });
-
-        const limitNonDisplayMax = denomInBase
-            ? pool?.fromDisplayPrice(parseFloat(high.toString()))
-            : pool?.fromDisplayPrice(1 / parseFloat(high.toString()));
-
-        limitNonDisplayMax?.then((limit) => {
-            limit = limit !== 0 ? limit : 1;
-            const pinnedTick: number = pinTickUpper(limit, chainData.gridSize);
-
-            const tickPrice = tickToPrice(
-                pinnedTick + (denomInBase ? -1 : 1) * chainData.gridSize * 2,
-            );
-
-            const tickDispPrice = pool?.toDisplayPrice(tickPrice);
-
-            if (tickDispPrice) {
-                tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
-                    setMaxTickForLimit(displayPriceWithDenom);
-                });
-            }
-        });
-    };
-
     // If the limit is set to no gozone, it will jump to the nearest tick
     function setLimitForNoGoZone(newLimitValue: number) {
         const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
@@ -1254,7 +1142,7 @@ export default function Chart(props: propsIF) {
         newLimitValue = setLimitForNoGoZone(newLimitValue);
         const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
 
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(newLimitValue)
             : pool?.fromDisplayPrice(1 / newLimitValue);
         const isNoGoneZoneMax = newLimitValue === noGoZoneMax;
@@ -1283,7 +1171,7 @@ export default function Chart(props: propsIF) {
 
             if (tickDispPrice) {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
 
                     newLimitValue = displayPriceWithDenom;
                     if (
@@ -1366,7 +1254,7 @@ export default function Chart(props: propsIF) {
                         const highTick = currentPoolPriceTick + offset;
 
                         pinnedDisplayPrices = getPinnedPriceValuesFromTicks(
-                            denomInBase,
+                            isDenomBase,
                             baseTokenDecimals,
                             quoteTokenDecimals,
                             lowTick,
@@ -1395,7 +1283,7 @@ export default function Chart(props: propsIF) {
                         const highTick = currentPoolPriceTick + offset;
 
                         pinnedDisplayPrices = getPinnedPriceValuesFromTicks(
-                            denomInBase,
+                            isDenomBase,
                             baseTokenDecimals,
                             quoteTokenDecimals,
                             lowTick,
@@ -1426,7 +1314,7 @@ export default function Chart(props: propsIF) {
                         if (advancedValue < low) {
                             pinnedDisplayPrices =
                                 getPinnedPriceValuesFromDisplayPrices(
-                                    denomInBase,
+                                    isDenomBase,
                                     baseTokenDecimals,
                                     quoteTokenDecimals,
                                     high.toString(),
@@ -1436,7 +1324,7 @@ export default function Chart(props: propsIF) {
                         } else {
                             pinnedDisplayPrices =
                                 getPinnedPriceValuesFromDisplayPrices(
-                                    denomInBase,
+                                    isDenomBase,
                                     baseTokenDecimals,
                                     quoteTokenDecimals,
                                     low.toString(),
@@ -1447,7 +1335,7 @@ export default function Chart(props: propsIF) {
                     } else {
                         pinnedDisplayPrices =
                             getPinnedPriceValuesFromDisplayPrices(
-                                denomInBase,
+                                isDenomBase,
                                 baseTokenDecimals,
                                 quoteTokenDecimals,
                                 advancedValue.toString(),
@@ -1672,7 +1560,7 @@ export default function Chart(props: propsIF) {
 
                                         pinnedDisplayPrices =
                                             getPinnedPriceValuesFromTicks(
-                                                denomInBase,
+                                                isDenomBase,
                                                 baseTokenDecimals,
                                                 quoteTokenDecimals,
                                                 lowTick,
@@ -1711,7 +1599,7 @@ export default function Chart(props: propsIF) {
 
                                         pinnedDisplayPrices =
                                             getPinnedPriceValuesFromTicks(
-                                                denomInBase,
+                                                isDenomBase,
                                                 baseTokenDecimals,
                                                 quoteTokenDecimals,
                                                 lowTick,
@@ -1757,7 +1645,7 @@ export default function Chart(props: propsIF) {
                                         if (advancedValue < low) {
                                             pinnedDisplayPrices =
                                                 getPinnedPriceValuesFromDisplayPrices(
-                                                    denomInBase,
+                                                    isDenomBase,
                                                     baseTokenDecimals,
                                                     quoteTokenDecimals,
                                                     high.toString(),
@@ -1768,7 +1656,7 @@ export default function Chart(props: propsIF) {
                                         } else {
                                             pinnedDisplayPrices =
                                                 getPinnedPriceValuesFromDisplayPrices(
-                                                    denomInBase,
+                                                    isDenomBase,
                                                     baseTokenDecimals,
                                                     quoteTokenDecimals,
                                                     low.toString(),
@@ -1780,7 +1668,7 @@ export default function Chart(props: propsIF) {
                                     } else {
                                         pinnedDisplayPrices =
                                             getPinnedPriceValuesFromDisplayPrices(
-                                                denomInBase,
+                                                isDenomBase,
                                                 baseTokenDecimals,
                                                 quoteTokenDecimals,
                                                 advancedValue.toString(),
@@ -2013,7 +1901,7 @@ export default function Chart(props: propsIF) {
         baseTokenDecimals,
         quoteTokenDecimals,
         currentPoolPriceTick,
-        denomInBase,
+        isDenomBase,
         isTokenABase,
         chainData.gridSize,
         rescale,
@@ -2162,12 +2050,12 @@ export default function Chart(props: propsIF) {
                     scaleData?.yScale.domain()[1] -
                     scaleData?.yScale.domain()[0];
 
-                const high = denomInBase
+                const high = isDenomBase
                     ? unparsedCandleData[latestCandleIndex]
                           .invMinPriceExclMEVDecimalCorrected
                     : unparsedCandleData[latestCandleIndex]
                           .maxPriceExclMEVDecimalCorrected;
-                const low = denomInBase
+                const low = isDenomBase
                     ? unparsedCandleData[latestCandleIndex]
                           .invMaxPriceExclMEVDecimalCorrected
                     : unparsedCandleData[latestCandleIndex]
@@ -2192,7 +2080,7 @@ export default function Chart(props: propsIF) {
         // diffHashSigScaleData(scaleData),
         latest,
         unparsedCandleData,
-        denomInBase,
+        isDenomBase,
         rescale,
         location.pathname,
     ]);
@@ -2321,7 +2209,7 @@ export default function Chart(props: propsIF) {
 
                 if (lineToBeSet === 'Max') {
                     pinnedDisplayPrices = getPinnedPriceValuesFromDisplayPrices(
-                        denomInBase,
+                        isDenomBase,
                         baseTokenDecimals,
                         quoteTokenDecimals,
                         low.toString(),
@@ -2330,7 +2218,7 @@ export default function Chart(props: propsIF) {
                     );
                 } else {
                     pinnedDisplayPrices = getPinnedPriceValuesFromDisplayPrices(
-                        denomInBase,
+                        isDenomBase,
                         baseTokenDecimals,
                         quoteTokenDecimals,
                         value.toString(),
@@ -2462,6 +2350,7 @@ export default function Chart(props: propsIF) {
                 const canvas = canvasDiv
                     .select('canvas')
                     .node() as HTMLCanvasElement;
+
                 setMainCanvasBoundingClientRect(canvas.getBoundingClientRect());
 
                 const height = result[0].contentRect.height;
@@ -2474,7 +2363,7 @@ export default function Chart(props: propsIF) {
 
             return () => resizeObserver.unobserve(canvasDiv.node());
         }
-    }, []);
+    }, [isLoadingChart]);
 
     useEffect(() => {
         const canvas = d3
@@ -2559,205 +2448,155 @@ export default function Chart(props: propsIF) {
         renderCanvasArray([d3CanvasMarketLine]);
     }, [market, marketLine]);
 
-    function noGoZone(poolPrice: number) {
-        setLimitTickNearNoGoZone(poolPrice * 0.99, poolPrice * 1.01);
-        return [[poolPrice * 0.99, poolPrice * 1.01]];
-    }
+    // function changeScale(isChangeDenom = false) {
+    //     if (poolPriceDisplay && scaleData && rescale) {
+    //         const xmin = scaleData?.xScale.domain()[0];
+    //         const xmax = scaleData?.xScale.domain()[1];
 
-    useEffect(() => {
-        const noGoZoneBoudnaries = noGoZone(poolPriceDisplay);
-        setNoGoZoneBoudnaries(() => {
-            return noGoZoneBoudnaries;
-        });
-    }, [poolPriceDisplay]);
+    //         const filtered = unparsedCandleData.filter(
+    //             (data: CandleData) =>
+    //                 data.time * 1000 >= xmin && data.time * 1000 <= xmax,
+    //         );
 
-    function changeScale(isChangeDenom = false) {
-        if (poolPriceDisplay && scaleData && rescale) {
-            const xmin = scaleData?.xScale.domain()[0];
-            const xmax = scaleData?.xScale.domain()[1];
+    //         if (
+    //             filtered !== undefined &&
+    //             (isChangeDenom || filtered.length > 10)
+    //         ) {
+    //             const minYBoundary = d3.min(filtered, (d) =>
+    //                 isDenomBase
+    //                     ? d.invMaxPriceExclMEVDecimalCorrected
+    //                     : d.minPriceExclMEVDecimalCorrected,
+    //             );
+    //             const maxYBoundary = d3.max(filtered, (d) =>
+    //                 isDenomBase
+    //                     ? d.invMinPriceExclMEVDecimalCorrected
+    //                     : d.maxPriceExclMEVDecimalCorrected,
+    //             );
 
-            const filtered = unparsedCandleData.filter(
-                (data: CandleData) =>
-                    data.time * 1000 >= xmin && data.time * 1000 <= xmax,
-            );
+    //             const marketPrice = market;
 
-            if (
-                filtered !== undefined &&
-                (isChangeDenom || filtered.length > 10)
-            ) {
-                const minYBoundary = d3.min(filtered, (d) =>
-                    denomInBase
-                        ? d.invMaxPriceExclMEVDecimalCorrected
-                        : d.minPriceExclMEVDecimalCorrected,
-                );
-                const maxYBoundary = d3.max(filtered, (d) =>
-                    denomInBase
-                        ? d.invMinPriceExclMEVDecimalCorrected
-                        : d.maxPriceExclMEVDecimalCorrected,
-                );
+    //             if (minYBoundary && maxYBoundary) {
+    //                 const diffBoundray = Math.abs(maxYBoundary - minYBoundary);
+    //                 const buffer = diffBoundray
+    //                     ? diffBoundray / 6
+    //                     : minYBoundary / 2;
+    //                 if (
+    //                     location.pathname.includes('pool') ||
+    //                     location.pathname.includes('reposition')
+    //                 ) {
+    //                     if (
+    //                         simpleRangeWidth !== 100 ||
+    //                         tradeData.advancedMode
+    //                     ) {
+    //                         const min = ranges.filter(
+    //                             (target: lineValue) => target.name === 'Min',
+    //                         )[0].value;
+    //                         const max = ranges.filter(
+    //                             (target: lineValue) => target.name === 'Max',
+    //                         )[0].value;
 
-                const marketPrice = market;
+    //                         const low = Math.min(
+    //                             min,
+    //                             max,
+    //                             minYBoundary,
+    //                             marketPrice,
+    //                         );
 
-                if (minYBoundary && maxYBoundary) {
-                    const diffBoundray = Math.abs(maxYBoundary - minYBoundary);
-                    const buffer = diffBoundray
-                        ? diffBoundray / 6
-                        : minYBoundary / 2;
-                    if (
-                        location.pathname.includes('pool') ||
-                        location.pathname.includes('reposition')
-                    ) {
-                        if (
-                            simpleRangeWidth !== 100 ||
-                            tradeData.advancedMode
-                        ) {
-                            const min = ranges.filter(
-                                (target: lineValue) => target.name === 'Min',
-                            )[0].value;
-                            const max = ranges.filter(
-                                (target: lineValue) => target.name === 'Max',
-                            )[0].value;
+    //                         const high = Math.max(
+    //                             min,
+    //                             max,
+    //                             maxYBoundary,
+    //                             marketPrice,
+    //                         );
 
-                            const low = Math.min(
-                                min,
-                                max,
-                                minYBoundary,
-                                marketPrice,
-                            );
+    //                         const bufferForRange = Math.abs(
+    //                             (low - high) /
+    //                                 (simpleRangeWidth !== 100 ? 6 : 90),
+    //                         );
 
-                            const high = Math.max(
-                                min,
-                                max,
-                                maxYBoundary,
-                                marketPrice,
-                            );
+    //                         const domain = [
+    //                             Math.min(low, high) - bufferForRange,
+    //                             Math.max(low, high) + bufferForRange / 2,
+    //                         ];
 
-                            const bufferForRange = Math.abs(
-                                (low - high) /
-                                    (simpleRangeWidth !== 100 ? 6 : 90),
-                            );
+    //                         setYaxisDomain(domain[0], domain[1]);
+    //                     } else {
+    //                         const lowTick =
+    //                             currentPoolPriceTick - simpleRangeWidth * 100;
+    //                         const highTick =
+    //                             currentPoolPriceTick + simpleRangeWidth * 100;
 
-                            const domain = [
-                                Math.min(low, high) - bufferForRange,
-                                Math.max(low, high) + bufferForRange / 2,
-                            ];
+    //                         const pinnedDisplayPrices =
+    //                             getPinnedPriceValuesFromTicks(
+    //                                 isDenomBase,
+    //                                 baseTokenDecimals,
+    //                                 quoteTokenDecimals,
+    //                                 lowTick,
+    //                                 highTick,
+    //                                 lookupChain(chainId).gridSize,
+    //                             );
 
-                            setYaxisDomain(domain[0], domain[1]);
-                        } else {
-                            const lowTick =
-                                currentPoolPriceTick - simpleRangeWidth * 100;
-                            const highTick =
-                                currentPoolPriceTick + simpleRangeWidth * 100;
+    //                         const low = 0;
+    //                         const high = parseFloat(
+    //                             pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
+    //                         );
 
-                            const pinnedDisplayPrices =
-                                getPinnedPriceValuesFromTicks(
-                                    isDenomBase,
-                                    baseTokenDecimals,
-                                    quoteTokenDecimals,
-                                    lowTick,
-                                    highTick,
-                                    lookupChain(chainId).gridSize,
-                                );
+    //                         const bufferForRange = Math.abs(
+    //                             (low - high) /
+    //                                 (simpleRangeWidth !== 100 ? 6 : 90),
+    //                         );
 
-                            const low = 0;
-                            const high = parseFloat(
-                                pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-                            );
+    //                         const domain = [
+    //                             Math.min(low, high) - bufferForRange,
+    //                             Math.max(low, high) + bufferForRange / 2,
+    //                         ];
 
-                            const bufferForRange = Math.abs(
-                                (low - high) /
-                                    (simpleRangeWidth !== 100 ? 6 : 90),
-                            );
+    //                         scaleData?.yScale.domain(domain);
+    //                     }
+    //                 } else if (location.pathname.includes('/limit')) {
+    //                     const value = limit;
+    //                     const low = Math.min(
+    //                         minYBoundary,
+    //                         value,
+    //                         minTickForLimit,
+    //                         marketPrice,
+    //                     );
 
-                            const domain = [
-                                Math.min(low, high) - bufferForRange,
-                                Math.max(low, high) + bufferForRange / 2,
-                            ];
+    //                     const high = Math.max(
+    //                         maxYBoundary,
+    //                         value,
+    //                         maxTickForLimit,
+    //                         marketPrice,
+    //                     );
 
-                            scaleData?.yScale.domain(domain);
-                        }
-                    } else if (location.pathname.includes('/limit')) {
-                        const value = limit;
-                        const low = Math.min(
-                            minYBoundary,
-                            value,
-                            minTickForLimit,
-                            marketPrice,
-                        );
+    //                     const bufferForLimit = Math.abs((low - high) / 6);
+    //                     if (value > 0 && Math.abs(value) !== Infinity) {
+    //                         const domain = [
+    //                             Math.min(low, high) - bufferForLimit,
+    //                             Math.max(low, high) + bufferForLimit / 2,
+    //                         ];
 
-                        const high = Math.max(
-                            maxYBoundary,
-                            value,
-                            maxTickForLimit,
-                            marketPrice,
-                        );
+    //                         setYaxisDomain(domain[0], domain[1]);
+    //                     }
+    //                 } else {
+    //                     const domain = [
+    //                         Math.min(minYBoundary, maxYBoundary, marketPrice) -
+    //                             buffer,
+    //                         Math.max(minYBoundary, maxYBoundary, marketPrice) +
+    //                             buffer / 2,
+    //                     ];
 
-                        const bufferForLimit = Math.abs((low - high) / 6);
-                        if (value > 0 && Math.abs(value) !== Infinity) {
-                            const domain = [
-                                Math.min(low, high) - bufferForLimit,
-                                Math.max(low, high) + bufferForLimit / 2,
-                            ];
+    //                     setYaxisDomain(domain[0], domain[1]);
+    //                 }
+    //             }
+    //         }
+    //         render();
+    //     }
+    // }
 
-                            setYaxisDomain(domain[0], domain[1]);
-                        }
-                    } else {
-                        const domain = [
-                            Math.min(minYBoundary, maxYBoundary, marketPrice) -
-                                buffer,
-                            Math.max(minYBoundary, maxYBoundary, marketPrice) +
-                                buffer / 2,
-                        ];
-
-                        setYaxisDomain(domain[0], domain[1]);
-                    }
-                }
-            }
-            render();
-        }
-    }
-
-    // autoScaleF
-    useEffect(() => {
-        if (
-            rescale &&
-            !isLineDrag &&
-            prevPeriod === period &&
-            candleTimeInSeconds === period
-        ) {
-            changeScale();
-        }
-    }, [
-        ranges,
-        limit,
-        location.pathname,
-        period,
-        diffHashSigChart(unparsedCandleData),
-        noGoZoneBoudnaries,
-        maxTickForLimit,
-        minTickForLimit,
-        prevPeriod === period,
-        candleTimeInSeconds === period,
-        isLineDrag,
-    ]);
-
-    useEffect(() => {
-        changeScale(true);
-    }, [isDenomBase]);
-
-    function setYaxisDomain(minDomain: number, maxDomain: number) {
-        if (scaleData) {
-            if (minDomain === maxDomain) {
-                const delta = minDomain / 8;
-                const tempMinDomain = minDomain - delta;
-                const tempMaxDomain = minDomain + delta;
-
-                scaleData.yScale.domain([tempMinDomain, tempMaxDomain]);
-            } else {
-                scaleData.yScale.domain([minDomain, maxDomain]);
-            }
-        }
-    }
+    // useEffect(() => {
+    //     changeScale(true);
+    // }, [isDenomBase]);
 
     const mouseLeaveCanvas = () => {
         if (crosshairActive !== 'none') {
@@ -3037,7 +2876,7 @@ export default function Chart(props: propsIF) {
             );
         }
     }, [
-        denomInBase,
+        isDenomBase,
         selectedDate,
         isSidebarOpen,
         liqMode,
@@ -3081,10 +2920,10 @@ export default function Chart(props: propsIF) {
             avaregeHeight =
                 avaregeHeight +
                 Math.abs(
-                    (denomInBase
+                    (isDenomBase
                         ? d.invPriceCloseExclMEVDecimalCorrected
                         : d.priceCloseExclMEVDecimalCorrected) -
-                        (denomInBase
+                        (isDenomBase
                             ? d.invPriceOpenExclMEVDecimalCorrected
                             : d.priceOpenExclMEVDecimalCorrected),
                 );
@@ -3127,23 +2966,23 @@ export default function Chart(props: propsIF) {
                     : false
                 : false;
 
-        let close = denomInBase
+        let close = isDenomBase
             ? nearest?.invMinPriceExclMEVDecimalCorrected
             : nearest?.minPriceExclMEVDecimalCorrected;
 
-        let open = denomInBase
+        let open = isDenomBase
             ? nearest?.invMaxPriceExclMEVDecimalCorrected
             : nearest?.maxPriceExclMEVDecimalCorrected;
 
         if (tempFilterData.length > 1) {
             close = d3.max(tempFilterData, (d: CandleData) =>
-                denomInBase
+                isDenomBase
                     ? d?.invMinPriceExclMEVDecimalCorrected
                     : d?.minPriceExclMEVDecimalCorrected,
             );
 
             open = d3.min(tempFilterData, (d: CandleData) =>
-                denomInBase
+                isDenomBase
                     ? d?.invMaxPriceExclMEVDecimalCorrected
                     : d?.maxPriceExclMEVDecimalCorrected,
             );
@@ -3420,7 +3259,7 @@ export default function Chart(props: propsIF) {
         diffHashSigChart(unparsedCandleData),
     ]);
 
-    // Candle transactions
+    // Candle transactions table
     useEffect(() => {
         if (selectedDate !== undefined) {
             const candle = unparsedCandleData.find(
@@ -3468,7 +3307,7 @@ export default function Chart(props: propsIF) {
         if (newLimitValue === undefined) {
             return;
         }
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(newLimitValue)
             : pool?.fromDisplayPrice(1 / newLimitValue);
 
@@ -3491,7 +3330,7 @@ export default function Chart(props: propsIF) {
                 });
             } else {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
 
                     newLimitValue = displayPriceWithDenom;
                     reverseTokenForChart(limitPreviousData, newLimitValue);
@@ -3573,7 +3412,7 @@ export default function Chart(props: propsIF) {
         dragRange,
         dragLimit,
         setCrosshairActive,
-        denomInBase,
+        isDenomBase,
         setYaxisWidth,
         yAxisWidth,
         simpleRangeWidth,
@@ -3581,12 +3420,17 @@ export default function Chart(props: propsIF) {
         isChartZoom,
     };
 
+    useEffect(() => {
+        render();
+    }, [isLoadingChart]);
+
     return (
         <div
             ref={d3Container}
             className='main_layout_chart'
             data-testid={'chart'}
             id={'chartContainer'}
+            style={{ visibility: isLoadingChart ? 'visible' : 'hidden' }}
         >
             <d3fc-group id='d3fc_group' auto-resize>
                 <div
@@ -3600,7 +3444,7 @@ export default function Chart(props: propsIF) {
                         <CandleChart
                             chartItemStates={props.chartItemStates}
                             data={visibleCandleData}
-                            denomInBase={denomInBase}
+                            isDenomBase={isDenomBase}
                             lastCandleData={lastCandleData}
                             period={period}
                             scaleData={scaleData}
@@ -3612,7 +3456,7 @@ export default function Chart(props: propsIF) {
                         <VolumeBarCanvas
                             scaleData={scaleData}
                             volumeData={unparsedCandleData}
-                            denomInBase={denomInBase}
+                            isDenomBase={isDenomBase}
                             selectedDate={selectedDate}
                             showVolume={showVolume}
                         />
