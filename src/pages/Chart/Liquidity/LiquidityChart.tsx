@@ -274,8 +274,8 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
     const liqDepthDataBid = useMemo<LiquidityRangeIF[]>(() => {
         if (liqBoundary && unparsedLiquidityData) {
-            const data = unparsedLiquidityData?.ranges
-                .filter((i: LiquidityRangeIF) => {
+            const data = unparsedLiquidityData?.ranges.filter(
+                (i: LiquidityRangeIF) => {
                     const liqUpperPrices = isDenomBase
                         ? i.upperBoundInvPriceDecimalCorrected
                         : i.lowerBoundPriceDecimalCorrected;
@@ -299,57 +299,36 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                             liqUpperPrices < liqBoundary * 10
                         );
                     }
-                })
-                .sort(
-                    (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
-                        b.upperBoundInvPriceDecimalCorrected -
-                        a.upperBoundInvPriceDecimalCorrected,
-                );
-            if (isDenomBase) {
-                const minLowerBoundInvPriceDecimalCorrected = d3.min(
-                    data,
-                    (d: LiquidityRangeIF) =>
-                        d.upperBoundInvPriceDecimalCorrected,
-                );
+                },
+            );
 
-                const cumBidLiq = data.find(
-                    (liqData: LiquidityRangeIF) =>
-                        minLowerBoundInvPriceDecimalCorrected ===
-                        liqData.upperBoundInvPriceDecimalCorrected,
-                )?.cumBidLiq;
+            const result = data.find(
+                (liqData) =>
+                    getBidPriceValue(liqData, isDenomBase) <
+                    liquidityData.limitBoundary,
+            );
 
-                if (cumBidLiq) {
+            if (result) {
+                if (isDenomBase) {
                     data.push({
-                        ...data[0],
-                        cumBidLiq: cumBidLiq,
+                        ...result,
                         upperBoundInvPriceDecimalCorrected:
-                            liquidityData.liqTransitionPointforCurve,
+                            liquidityData?.limitBoundary,
+                    });
+                } else {
+                    data.push({
+                        ...result,
+                        lowerBoundPriceDecimalCorrected:
+                            liquidityData?.limitBoundary,
                     });
                 }
-
-                return data.sort(
-                    (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
-                        b.upperBoundInvPriceDecimalCorrected -
-                        a.upperBoundInvPriceDecimalCorrected,
-                );
-            } else {
-                // const minUpperBoundInvPriceDecimalCorrected = d3.min(
-                //     data,
-                //     (d: LiquidityRangeIF) => d.upperBoundPriceDecimalCorrected,
-                // );
-
-                // const activeLiq = data.find(
-                //     (liqData: LiquidityRangeIF) =>
-                //         minUpperBoundInvPriceDecimalCorrected ===
-                //         liqData.upperBoundPriceDecimalCorrected,
-                // )?.activeLiq;
-
-                return data.sort(
-                    (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
-                        b.upperBoundPriceDecimalCorrected -
-                        a.upperBoundPriceDecimalCorrected,
-                );
             }
+
+            return data.sort(
+                (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
+                    getBidPriceValue(b, isDenomBase) -
+                    getBidPriceValue(a, isDenomBase),
+            );
         }
 
         return [];
