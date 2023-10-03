@@ -217,14 +217,28 @@ export default function AxisScalingAdjustment(props: propsIF) {
         return [[poolPrice * 0.99, poolPrice * 1.01]];
     }
 
+    // *** LIMIT ***
+    /**
+     * This function retrieves the 'noGoZoneMin' and 'noGoZoneMax' values from the 'noGoZoneBoundaries' array.
+     * These values represent the minimum and maximum boundaries of a no-go zone.
+     *
+     * @returns {Object} An object containing 'noGoZoneMin' and 'noGoZoneMax'.
+     */
     const getNoZoneData = () => {
         const noGoZoneMin = noGoZoneBoudnaries[0][0];
         const noGoZoneMax = noGoZoneBoudnaries[0][1];
         return { noGoZoneMin: noGoZoneMin, noGoZoneMax: noGoZoneMax };
     };
 
-    // finds border ticks of nogozone
-    const setLimitTickNearNoGoZone = (low: number, high: number) => {
+    // *** LIMIT ***
+    /**
+     * finds border ticks of nogozone
+     * This function sets the 'minTickForLimit' and 'maxTickForLimit' values
+     * tick values are calculated based on the 'low' and 'high' values provided near the no go zone.
+     *
+     * @param low   The low value for the calculation
+     * @param high  The high value for the calculation
+     */ const setLimitTickNearNoGoZone = (low: number, high: number) => {
         const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(parseFloat(low.toString()))
             : pool?.fromDisplayPrice(1 / parseFloat(low.toString()));
@@ -334,10 +348,7 @@ export default function AxisScalingAdjustment(props: propsIF) {
                                 marketPrice,
                             );
 
-                            const bufferForRange = Math.abs(
-                                (low - high) /
-                                    (rangeSimpleRangeWidth !== 100 ? 6 : 90),
-                            );
+                            const bufferForRange = Math.abs((low - high) / 6);
 
                             const domain = [
                                 Math.min(low, high) - bufferForRange,
@@ -368,10 +379,7 @@ export default function AxisScalingAdjustment(props: propsIF) {
                                 pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
                             );
 
-                            const bufferForRange = Math.abs(
-                                (low - high) /
-                                    (rangeSimpleRangeWidth !== 100 ? 6 : 90),
-                            );
+                            const bufferForRange = Math.abs((low - high) / 90);
 
                             const domain = [
                                 Math.min(low, high) - bufferForRange,

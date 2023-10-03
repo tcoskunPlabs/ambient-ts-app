@@ -588,13 +588,13 @@ export default function Chart(props: propsIF) {
             const lastCandleDate = lastCandleData?.time * 1000;
             const firstCandleDate = firstCandleData?.time * 1000;
 
-            let scrollTimeout: NodeJS.Timeout | null = null; // Declare scrollTimeout
+            let wheelTimeout: NodeJS.Timeout | null = null; // Declare wheelTimeout
 
             if (lastCandleDate && firstCandleDate) {
                 d3.select(d3CanvasMain.current).on(
                     'wheel',
                     function (event) {
-                        if (scrollTimeout === null) {
+                        if (wheelTimeout === null) {
                             setIsChartZoom(true);
                         }
 
@@ -610,11 +610,11 @@ export default function Chart(props: propsIF) {
                             changeScale();
                         }
 
-                        if (scrollTimeout) {
-                            clearTimeout(scrollTimeout);
+                        if (wheelTimeout) {
+                            clearTimeout(wheelTimeout);
                         }
                         // check wheel end
-                        scrollTimeout = setTimeout(() => {
+                        wheelTimeout = setTimeout(() => {
                             setIsChartZoom(false);
                             showLatestActive();
                         }, 200);
@@ -1041,13 +1041,20 @@ export default function Chart(props: propsIF) {
         }
     }, [tradeData.advancedMode, ranges, diffHashSigScaleData(scaleData, 'y')]);
 
-    // performs reverse token function when limit line position (sell /buy) changes
+    // *** LIMIT ***
+    /**
+     * This function checks if the limit values trigger a position changes buy /sell .
+     * If the conditions are met, it initiates a pulse animation and updates the limit direction accordingly.
+     * @param limitPreviousData  limit value before the operation started
+     * @param newLimitValue  limit value the operation finished
+     */
     function reverseTokenForChart(
         limitPreviousData: number,
         newLimitValue: number,
     ) {
         if (poolPriceDisplay) {
             if (sellOrderStyle === 'order_sell') {
+                // Check if the previous limit was above poolPriceDisplay and the new limit is below it
                 if (
                     limitPreviousData > poolPriceDisplay &&
                     newLimitValue < poolPriceDisplay
@@ -1056,6 +1063,7 @@ export default function Chart(props: propsIF) {
                     dispatch(setShouldLimitDirectionReverse(true));
                 }
             } else {
+                // Check if the previous limit was below poolPriceDisplay and the new limit is above it.
                 if (
                     limitPreviousData < poolPriceDisplay &&
                     newLimitValue > poolPriceDisplay
@@ -1083,15 +1091,22 @@ export default function Chart(props: propsIF) {
         return newLimitValue;
     }
 
+    // *** LİMİT ***
+    // This function calculates a new limit value, and adjusts it as a corrected limit if it falls within the No-Go Zone boundaries.
     function calculateLimit(newLimitValue: number) {
         if (newLimitValue < 0) newLimitValue = 0;
 
+        // If the calculated limit value is within "No Go Zone", it returns the limit value outside the region
         newLimitValue = setLimitForNoGoZone(newLimitValue);
+
+        // Get data for the No-Go Zone (minimum and maximum values)
         const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
 
         const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(newLimitValue)
             : pool?.fromDisplayPrice(1 / newLimitValue);
+
+        // Check if the newLimitValue matches the No-Go Zone maximum or minimum
         const isNoGoneZoneMax = newLimitValue === noGoZoneMax;
         const isNoGoneZoneMin = newLimitValue === noGoZoneMin;
 
@@ -1101,11 +1116,14 @@ export default function Chart(props: propsIF) {
                 ? pinTickLower(limit, chainData.gridSize)
                 : pinTickUpper(limit, chainData.gridSize);
 
+            // If it is equal to the minimum value of no go zone, value is rounded lower tick
             if (isNoGoneZoneMin) {
                 pinnedTick = isDenomBase
                     ? pinTickUpper(limit, chainData.gridSize)
                     : pinTickLower(limit, chainData.gridSize);
             }
+
+            // If it is equal to the max value of no go zone, value is rounded upper tick
             if (isNoGoneZoneMax) {
                 pinnedTick = isDenomBase
                     ? pinTickLower(limit, chainData.gridSize)
@@ -1121,6 +1139,8 @@ export default function Chart(props: propsIF) {
                     const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
 
                     newLimitValue = displayPriceWithDenom;
+
+                    // Update newLimitValue if it's outside the No-Go Zone
                     if (
                         !(
                             newLimitValue >= noGoZoneMin &&
@@ -1371,6 +1391,7 @@ export default function Chart(props: propsIF) {
             let oldRangeMinValue: number | undefined = undefined;
             let oldRangeMaxValue: number | undefined = undefined;
 
+            // *** RANGE LINES DRAG ***
             const dragRange = d3
                 .drag<d3.DraggedElementBaseType, unknown, d3.SubjectPosition>()
                 .on('start', (event) => {
@@ -1758,34 +1779,48 @@ export default function Chart(props: propsIF) {
 
             let oldLimitValue: number | undefined = undefined;
 
+            // *** LIMIT LINE DRAG ***
             const dragLimit = d3
                 .drag<d3.DraggedElementBaseType, unknown, d3.SubjectPosition>()
                 .on('start', () => {
+                    // When the drag starts:
+                    // hide the cursor
                     d3.select(d3CanvasMain.current).style('cursor', 'none');
-
-                    document.addEventListener('keydown', cancelDragEvent);
-
+                    // hide the cursor over the y-axis canvas.
                     d3.select('#y-axis-canvas').style('cursor', 'none');
 
+                    // add a keydown event listener to cancel the drag.
+                    document.addEventListener('keydown', cancelDragEvent);
+
+                    // Store the initial value of the limit for potential cancellation.
                     oldLimitValue = limit;
                 })
                 .on('drag', function (event) {
+                    // During the drag:
                     if (!event.sourceEvent.type.includes('touch')) {
                         if (!cancelDrag) {
+                            // to hide the crosshair when dragging the line set the crosshairActive to 'none'.
                             setCrosshairActive('none');
+
+                            // Indicate that line is dragging
                             setIsLineDrag(true);
+
+                            // Determine the event point's Y-coordinate based on the event type.
                             const eventPoint =
                                 event.sourceEvent.type === 'mousemove'
                                     ? event.sourceEvent.clientY
                                     : event.sourceEvent.targetTouches[0]
                                           .clientY;
 
+                            // Calculate the new limit value based on the Y-coordinate.
                             newLimitValue = scaleData?.yScale.invert(
                                 eventPoint - rectCanvas.top,
                             );
 
+                            // Perform calculations based on the new limit value
                             calculateLimit(newLimitValue);
                         } else {
+                            // If the drag is canceled, restore the previous limit value.
                             if (oldLimitValue !== undefined) {
                                 setLimit(() => {
                                     return oldLimitValue as number;
@@ -1794,12 +1829,13 @@ export default function Chart(props: propsIF) {
                         }
                     }
                 })
+                // Handle the drag end event
                 .on('end', () => {
                     setIsLineDrag(false);
 
-                    draggingLine = undefined;
-
+                    // If the drag is not canceled
                     if (!cancelDrag) {
+                        // Change the cursor to 'row-resize'
                         d3.select(d3Container.current).style(
                             'cursor',
                             'row-resize',
@@ -1815,11 +1851,9 @@ export default function Chart(props: propsIF) {
                         }
                     }
 
+                    // Restore default cursor styles
                     d3.select(d3CanvasMain.current).style('cursor', 'default');
-
                     d3.select('#y-axis-canvas').style('cursor', 'default');
-
-                    setCrosshairActive('none');
                 });
 
             setDragRange(() => {
@@ -1867,7 +1901,6 @@ export default function Chart(props: propsIF) {
         }
     }, [reset]);
 
-    // create x axis
     useEffect(() => {
         if (mainZoom && d3CanvasMain.current) {
             d3.select<Element, unknown>(d3CanvasMain.current)
@@ -1895,14 +1928,7 @@ export default function Chart(props: propsIF) {
             }
             renderCanvasArray([d3CanvasMain]);
         }
-    }, [
-        location.pathname,
-        mainZoom,
-        dragLimit,
-        dragRange,
-        // d3.select('#range-line-canvas')?.node(),
-        // d3.select('#limit-line-canvas')?.node(),
-    ]);
+    }, [location.pathname, mainZoom, dragLimit, dragRange]);
 
     // create market line and liquidity tooltip
     useEffect(() => {
@@ -2395,156 +2421,6 @@ export default function Chart(props: propsIF) {
         renderCanvasArray([d3CanvasMarketLine]);
     }, [market, marketLine]);
 
-    // function changeScale(isChangeDenom = false) {
-    //     if (poolPriceDisplay && scaleData && rescale) {
-    //         const xmin = scaleData?.xScale.domain()[0];
-    //         const xmax = scaleData?.xScale.domain()[1];
-
-    //         const filtered = unparsedCandleData.filter(
-    //             (data: CandleData) =>
-    //                 data.time * 1000 >= xmin && data.time * 1000 <= xmax,
-    //         );
-
-    //         if (
-    //             filtered !== undefined &&
-    //             (isChangeDenom || filtered.length > 10)
-    //         ) {
-    //             const minYBoundary = d3.min(filtered, (d) =>
-    //                 isDenomBase
-    //                     ? d.invMaxPriceExclMEVDecimalCorrected
-    //                     : d.minPriceExclMEVDecimalCorrected,
-    //             );
-    //             const maxYBoundary = d3.max(filtered, (d) =>
-    //                 isDenomBase
-    //                     ? d.invMinPriceExclMEVDecimalCorrected
-    //                     : d.maxPriceExclMEVDecimalCorrected,
-    //             );
-
-    //             const marketPrice = market;
-
-    //             if (minYBoundary && maxYBoundary) {
-    //                 const diffBoundray = Math.abs(maxYBoundary - minYBoundary);
-    //                 const buffer = diffBoundray
-    //                     ? diffBoundray / 6
-    //                     : minYBoundary / 2;
-    //                 if (
-    //                     location.pathname.includes('pool') ||
-    //                     location.pathname.includes('reposition')
-    //                 ) {
-    //                     if (
-    //                         simpleRangeWidth !== 100 ||
-    //                         tradeData.advancedMode
-    //                     ) {
-    //                         const min = ranges.filter(
-    //                             (target: lineValue) => target.name === 'Min',
-    //                         )[0].value;
-    //                         const max = ranges.filter(
-    //                             (target: lineValue) => target.name === 'Max',
-    //                         )[0].value;
-
-    //                         const low = Math.min(
-    //                             min,
-    //                             max,
-    //                             minYBoundary,
-    //                             marketPrice,
-    //                         );
-
-    //                         const high = Math.max(
-    //                             min,
-    //                             max,
-    //                             maxYBoundary,
-    //                             marketPrice,
-    //                         );
-
-    //                         const bufferForRange = Math.abs(
-    //                             (low - high) /
-    //                                 (simpleRangeWidth !== 100 ? 6 : 90),
-    //                         );
-
-    //                         const domain = [
-    //                             Math.min(low, high) - bufferForRange,
-    //                             Math.max(low, high) + bufferForRange / 2,
-    //                         ];
-
-    //                         setYaxisDomain(domain[0], domain[1]);
-    //                     } else {
-    //                         const lowTick =
-    //                             currentPoolPriceTick - simpleRangeWidth * 100;
-    //                         const highTick =
-    //                             currentPoolPriceTick + simpleRangeWidth * 100;
-
-    //                         const pinnedDisplayPrices =
-    //                             getPinnedPriceValuesFromTicks(
-    //                                 isDenomBase,
-    //                                 baseTokenDecimals,
-    //                                 quoteTokenDecimals,
-    //                                 lowTick,
-    //                                 highTick,
-    //                                 lookupChain(chainId).gridSize,
-    //                             );
-
-    //                         const low = 0;
-    //                         const high = parseFloat(
-    //                             pinnedDisplayPrices.pinnedMaxPriceDisplayTruncated,
-    //                         );
-
-    //                         const bufferForRange = Math.abs(
-    //                             (low - high) /
-    //                                 (simpleRangeWidth !== 100 ? 6 : 90),
-    //                         );
-
-    //                         const domain = [
-    //                             Math.min(low, high) - bufferForRange,
-    //                             Math.max(low, high) + bufferForRange / 2,
-    //                         ];
-
-    //                         scaleData?.yScale.domain(domain);
-    //                     }
-    //                 } else if (location.pathname.includes('/limit')) {
-    //                     const value = limit;
-    //                     const low = Math.min(
-    //                         minYBoundary,
-    //                         value,
-    //                         minTickForLimit,
-    //                         marketPrice,
-    //                     );
-
-    //                     const high = Math.max(
-    //                         maxYBoundary,
-    //                         value,
-    //                         maxTickForLimit,
-    //                         marketPrice,
-    //                     );
-
-    //                     const bufferForLimit = Math.abs((low - high) / 6);
-    //                     if (value > 0 && Math.abs(value) !== Infinity) {
-    //                         const domain = [
-    //                             Math.min(low, high) - bufferForLimit,
-    //                             Math.max(low, high) + bufferForLimit / 2,
-    //                         ];
-
-    //                         setYaxisDomain(domain[0], domain[1]);
-    //                     }
-    //                 } else {
-    //                     const domain = [
-    //                         Math.min(minYBoundary, maxYBoundary, marketPrice) -
-    //                             buffer,
-    //                         Math.max(minYBoundary, maxYBoundary, marketPrice) +
-    //                             buffer / 2,
-    //                     ];
-
-    //                     setYaxisDomain(domain[0], domain[1]);
-    //                 }
-    //             }
-    //         }
-    //         render();
-    //     }
-    // }
-
-    // useEffect(() => {
-    //     changeScale(true);
-    // }, [isDenomBase]);
-
     const mouseLeaveCanvas = () => {
         if (crosshairActive !== 'none') {
             setCrosshairActive('none');
@@ -2729,15 +2605,21 @@ export default function Chart(props: propsIF) {
         });
     }, [isChartZoom]);
 
+    /**
+     * This useEffect block handles various interactions with the chart canvas based on user actions and context.
+     * It includes logic for handling clicks on the canvas, mouseleave events, and chart rendering.
+     */
     useEffect(() => {
         if (scaleData !== undefined) {
+            // Define the 'onClickCanvas' event handler for canvas clicks
             const onClickCanvas = (event: PointerEvent) => {
+                // If the candle or volume click
                 const { isHoverCandleOrVolumeData, nearest } =
                     candleOrVolumeDataHoverStatus(event.offsetX, event.offsetY);
-
                 selectedDateEvent(isHoverCandleOrVolumeData, nearest);
 
                 setCrosshairActive('none');
+                // Check if the location pathname includes 'pool' or 'reposition' and handle the click event.
 
                 if (
                     (location.pathname.includes('pool') ||
@@ -2748,6 +2630,7 @@ export default function Chart(props: propsIF) {
                     onClickRange(event);
                 }
 
+                // Check if the location pathname includes '/limit' and handle the click event.
                 if (
                     location.pathname.includes('/limit') &&
                     scaleData !== undefined &&
@@ -3245,6 +3128,12 @@ export default function Chart(props: propsIF) {
         }
     };
 
+    /**
+     *  This method updates the global limitTick value according to local limit value
+     *  and It trigger sell or buy changes if necessary
+     * @param limitPreviousData  limit value before the operation started
+     * @param newLimitValue  limit value the operation finished
+     */
     const onBlurLimitRate = (
         limitPreviousData: number,
         newLimitValue: number,
