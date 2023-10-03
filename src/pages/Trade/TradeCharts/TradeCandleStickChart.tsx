@@ -220,8 +220,6 @@ function TradeCandleStickChart(props: propsIF) {
             const lowTick = currentPoolPriceTick - 100 * 101;
             const highTick = currentPoolPriceTick + 100 * 101;
 
-            console.log('üf', Date.now());
-
             const rangeBoundary = getPinnedPriceValuesFromTicks(
                 denominationsInBase.isDenomBase,
                 baseTokenDecimals,
@@ -307,7 +305,6 @@ function TradeCandleStickChart(props: propsIF) {
                 .range([30, 550]);
             topBoundary = limitBoundary;
             lowBoundary = parseFloat(rangeBoundary.pinnedMinPriceDisplay);
-            console.log('ppüf', Date.now());
             return {
                 liquidityScale: liquidityScale,
                 depthLiquidityScale: depthLiquidityScale,
