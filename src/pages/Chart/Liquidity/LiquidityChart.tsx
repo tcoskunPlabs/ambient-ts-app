@@ -17,33 +17,28 @@ import {
 import { useAppSelector } from '../../../utils/hooks/reduxToolkit';
 import { PoolContext } from '../../../contexts/PoolContext';
 import { formatAmountWithoutDigit } from '../../../utils/numbers';
+import { LiquidityHoverData } from '../../Trade/TradeCharts/TradeCharts';
 import {
-    LiquidityDataLocal,
-    LiquidityHoverData,
-} from '../../Trade/TradeCharts/TradeCharts';
-import {
+    fillLiqAdvanced,
     lineValue,
     liquidityChartData,
     renderCanvasArray,
     scaleData,
     setCanvasResolution,
+    standardDeviation,
 } from '../ChartUtils/chartUtils';
-import { createAreaSeriesLiquidity } from './LiquiditySeries/AreaSeries';
 import {
-    createLineSeries,
-    decorateForLiquidityLine,
-} from './LiquiditySeries/LineSeries';
-import {
-    LiquidityDataIF,
-    LiquidityRangeIF,
-} from '../../../App/functions/fetchPoolLiquidity';
+    createAreaSeriesLiquidity,
+    getAskPriceValue,
+    getBidPriceValue,
+} from './LiquiditySeries/AreaSeries';
+import { createLineSeries } from './LiquiditySeries/LineSeries';
+import { LiquidityRangeIF } from '../../../App/functions/fetchPoolLiquidity';
 
 interface liquidityPropsIF {
     liqMode: string;
     liquidityData: liquidityChartData;
     scaleData: scaleData | undefined;
-    liquidityScale: d3.ScaleLinear<number, number> | undefined;
-    liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
     ranges: lineValue[];
     chartMousemoveEvent: MouseEvent<HTMLDivElement> | undefined;
     liqTooltip:
@@ -217,16 +212,16 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                         a.upperBoundInvPriceDecimalCorrected,
                 );
             } else {
-                const minUpperBoundInvPriceDecimalCorrected = d3.min(
-                    data,
-                    (d: any) => d.upperBoundPriceDecimalCorrected,
-                );
+                // const minUpperBoundInvPriceDecimalCorrected = d3.min(
+                //     data,
+                //     (d: any) => d.upperBoundPriceDecimalCorrected,
+                // );
 
-                const activeLiq = data.find(
-                    (liqData: any) =>
-                        minUpperBoundInvPriceDecimalCorrected ===
-                        liqData.upperBoundPriceDecimalCorrected,
-                )?.activeLiq;
+                // const activeLiq = data.find(
+                //     (liqData: any) =>
+                //         minUpperBoundInvPriceDecimalCorrected ===
+                //         liqData.upperBoundPriceDecimalCorrected,
+                // )?.activeLiq;
                 // data.push({
                 //     ...data[0],
                 //     activeLiq: activeLiq,
@@ -235,7 +230,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 // });
 
                 return data.sort(
-                    (a: any, b: any) =>
+                    (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
                         b.upperBoundPriceDecimalCorrected -
                         a.upperBoundPriceDecimalCorrected,
                 );
@@ -278,8 +273,8 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 })
                 .sort(
                     (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
-                        b.upperBoundInvPriceDecimalCorrected -
-                        a.upperBoundInvPriceDecimalCorrected,
+                        getAskPriceValue(b, isDenomBase) -
+                        getAskPriceValue(a, isDenomBase),
                 );
 
             if (isDenomBase) {
@@ -307,10 +302,6 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     const liqUpperPrices = isDenomBase
                         ? i.upperBoundInvPriceDecimalCorrected
                         : i.lowerBoundPriceDecimalCorrected;
-
-                    const liqLowerPrices = isDenomBase
-                        ? i.lowerBoundInvPriceDecimalCorrected
-                        : i.upperBoundPriceDecimalCorrected;
 
                     if (isDenomBase) {
                         return (
@@ -365,19 +356,19 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                         a.upperBoundInvPriceDecimalCorrected,
                 );
             } else {
-                const minUpperBoundInvPriceDecimalCorrected = d3.min(
-                    data,
-                    (d: any) => d.upperBoundPriceDecimalCorrected,
-                );
+                // const minUpperBoundInvPriceDecimalCorrected = d3.min(
+                //     data,
+                //     (d: LiquidityRangeIF) => d.upperBoundPriceDecimalCorrected,
+                // );
 
-                const activeLiq = data.find(
-                    (liqData: any) =>
-                        minUpperBoundInvPriceDecimalCorrected ===
-                        liqData.upperBoundPriceDecimalCorrected,
-                )?.activeLiq;
+                // const activeLiq = data.find(
+                //     (liqData: LiquidityRangeIF) =>
+                //         minUpperBoundInvPriceDecimalCorrected ===
+                //         liqData.upperBoundPriceDecimalCorrected,
+                // )?.activeLiq;
 
                 return data.sort(
-                    (a: any, b: any) =>
+                    (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
                         b.upperBoundPriceDecimalCorrected -
                         a.upperBoundPriceDecimalCorrected,
                 );
@@ -444,6 +435,21 @@ export default function LiquidityChart(props: liquidityPropsIF) {
     );
 
     useEffect(() => {
+        if (liqDepthDataAsk && liqDepthDataAsk.length > 1) {
+            const liqMinAskPrice = d3.max(
+                liqDepthDataAsk,
+                function (d: LiquidityRangeIF) {
+                    return getAskPriceValue(d, isDenomBase);
+                },
+            );
+
+            if (liqMinAskPrice) {
+                liquidityData.liqTransitionPointforDepth = liqMinAskPrice;
+            }
+        }
+    }, [liqDepthDataAsk, isDenomBase]);
+
+    useEffect(() => {
         if (liqDataAsk !== undefined && liqDataBid !== undefined) {
             const liquidityScale = d3.scaleLinear();
             const liquidityDepthScale = d3.scaleLinear();
@@ -452,7 +458,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 .extentLinear()
                 .include([0])
                 .accessors([
-                    (d: any) =>
+                    (d: LiquidityRangeIF) =>
                         parseFloat(liquidityData.liquidityScale(d.activeLiq)),
                 ]);
 
@@ -464,7 +470,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 .extentLinear()
                 .include([0])
                 .accessors([
-                    (d: any) => {
+                    (d: LiquidityRangeIF) => {
                         return parseFloat(
                             liquidityData.depthLiquidityScale(
                                 d.cumAskLiq ? d.cumAskLiq : d.cumBidLiq,
@@ -482,10 +488,13 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         }
     }, [liqDataBid, liqDataAsk, liqDepthDataBid, liqDepthDataAsk]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [liqAskSeries, setLiqAskSeries] = useState<any>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [liqBidSeries, setLiqBidSeries] = useState<any>();
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [lineAskSeries, setLineAskSeries] = useState<any>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [lineBidSeries, setLineBidSeries] = useState<any>();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -633,6 +642,20 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         setHighlightedAreaDepthAskSeries(() => liqDepthAskSeries);
     }, [liqAskSeries, liqBidSeries, liqDepthBidSeries, liqDepthAskSeries]);
 
+    useEffect(() => {
+        if (tradeData.advancedMode && liquidityData) {
+            const liqAllBidPrices = liqDataBid.map(
+                (liqData: LiquidityRangeIF) =>
+                    getBidPriceValue(liqData, isDenomBase),
+            );
+            const liqBidDeviation = standardDeviation(liqAllBidPrices);
+
+            if (scaleData) {
+                fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
+            }
+        }
+    }, [diffHashSigScaleData(scaleData, 'y')]);
+
     const drawCurveLines = (canvas: HTMLCanvasElement) => {
         const isRange =
             location.pathname.includes('pool') ||
@@ -655,7 +678,9 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         }
     };
 
-    const findLiqNearest = (liqDataAll: any[]): nearestLiquidity => {
+    const findLiqNearest = (
+        liqDataAll: LiquidityHoverData[],
+    ): nearestLiquidity => {
         if (scaleData !== undefined) {
             const point = scaleData?.yScale.domain()[0];
 
@@ -809,13 +834,14 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 poolPriceDisplay !== undefined ? poolPriceDisplay : 0;
 
             const liqBoundaryData = unparsedLiquidityData?.ranges.find(
-                (liq: any) => {
+                (liq: LiquidityRangeIF) => {
                     return isDenomBase
                         ? liq.upperBoundInvPriceDecimalCorrected <
                               barThreshold &&
-                              liq.lowerBoundInvPriceDecimalCorrected !== '-inf'
+                              liq.lowerBoundInvPriceDecimalCorrected !==
+                                  -Infinity
                         : liq.upperBoundPriceDecimalCorrected > barThreshold &&
-                              liq.upperBoundPriceDecimalCorrected !== '+inf';
+                              liq.upperBoundPriceDecimalCorrected !== +Infinity;
                 },
             );
 
@@ -830,6 +856,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     ? liqBoundaryArg
                     : parseFloat(liqBoundaryArg);
 
+            liquidityData.liqTransitionPointforCurve = liqBoundary;
             setLiqBoundary(() => liqBoundary);
         }
     }, [
@@ -844,7 +871,15 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             .select('canvas')
             .node() as HTMLCanvasElement;
         const ctx = canvas.getContext('2d');
-        if (scaleData && liquidityDepthScale && liquidityScale) {
+        if (
+            scaleData &&
+            liqDepthBidSeries &&
+            liqDepthAskSeries &&
+            liqBidSeries &&
+            liqAskSeries &&
+            liquidityDepthScale &&
+            liquidityScale
+        ) {
             d3.select(d3CanvasLiq.current)
                 .on('draw', () => {
                     setCanvasResolution(canvas);
@@ -870,15 +905,23 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                         event.detail.width * 0.5,
                     ]);
                     scaleData?.yScale.range([event.detail.height, 0]);
-                    liqAskSeries.context(ctx);
-                    liqBidSeries.context(ctx);
-                    liqDepthBidSeries.context(ctx);
-                    liqDepthAskSeries.context(ctx);
-                    lineAskSeries.context(ctx);
-                    lineBidSeries.context(ctx);
-                    lineAskDepthSeries.context(ctx);
-                    lineBidDepthSeries.context(ctx);
+                    if (liqMode === 'curve') {
+                        liqAskSeries.context(ctx);
+                        liqBidSeries.context(ctx);
+                        lineAskSeries.context(ctx);
+                        lineBidSeries.context(ctx);
+                    }
+
+                    if (liqMode === 'depth') {
+                        liqDepthBidSeries.context(ctx);
+                        liqDepthAskSeries.context(ctx);
+
+                        lineAskDepthSeries.context(ctx);
+                        lineBidDepthSeries.context(ctx);
+                    }
                 });
+
+            renderCanvasArray([d3CanvasLiq]);
         }
     }, [
         liqDepthDataAsk,
@@ -913,6 +956,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             .select(d3CanvasLiqHover.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
+
         const ctx = canvas.getContext('2d');
         if (chartMousemoveEvent) {
             d3.select(d3CanvasLiqHover.current)
@@ -988,8 +1032,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 if (liquidityMouseMoveActive === 'ask') {
                     liqDataAsk.map((liqData: LiquidityRangeIF) => {
                         if (
-                            getAskPriceValue(liqData) >
-                            getAskPriceValue(liqTooltipSelectedLiqBar)
+                            getAskPriceValue(liqData, isDenomBase) >
+                            getAskPriceValue(
+                                liqTooltipSelectedLiqBar,
+                                isDenomBase,
+                            )
                         ) {
                             liqTextData.totalValue =
                                 liqTextData.totalValue +
@@ -999,8 +1046,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 } else {
                     liqDataBid.map((liqData: LiquidityRangeIF) => {
                         if (
-                            getBidPriceValue(liqData) <
-                            getBidPriceValue(liqTooltipSelectedLiqBar)
+                            getBidPriceValue(liqData, isDenomBase) <
+                            getBidPriceValue(
+                                liqTooltipSelectedLiqBar,
+                                isDenomBase,
+                            )
                         ) {
                             liqTextData.totalValue =
                                 liqTextData.totalValue +
@@ -1067,18 +1117,21 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             const mousePosition = scaleData?.yScale.invert(offsetY);
 
             const minBidPriceValue = d3.min(liqDataBid, (d: LiquidityRangeIF) =>
-                getBidPriceValue(d),
+                getBidPriceValue(d, isDenomBase),
             );
 
             let closest = liqDataBid.find((item: LiquidityRangeIF) => {
-                return getBidPriceValue(item) === minBidPriceValue;
+                return getBidPriceValue(item, isDenomBase) === minBidPriceValue;
             });
 
             if (closest !== undefined) {
                 liqDataBid.map((data: LiquidityRangeIF) => {
                     if (closest) {
-                        const liqPrice = getBidPriceValue(data);
-                        const closestLiqPrice = getBidPriceValue(closest);
+                        const liqPrice = getBidPriceValue(data, isDenomBase);
+                        const closestLiqPrice = getBidPriceValue(
+                            closest,
+                            isDenomBase,
+                        );
 
                         if (
                             mousePosition > liqPrice &&
@@ -1114,22 +1167,6 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         }
     };
 
-    const getAskPriceValue = (data: LiquidityRangeIF) => {
-        if (isDenomBase) {
-            return data.lowerBoundInvPriceDecimalCorrected;
-        } else {
-            return data.upperBoundPriceDecimalCorrected;
-        }
-    };
-
-    const getBidPriceValue = (data: LiquidityRangeIF) => {
-        if (isDenomBase) {
-            return data.upperBoundInvPriceDecimalCorrected;
-        } else {
-            return data.lowerBoundPriceDecimalCorrected;
-        }
-    };
-
     const askAreaFunc = (event: MouseEvent) => {
         if (scaleData) {
             const canvas = d3
@@ -1149,18 +1186,21 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
             const mousePosition = scaleData?.yScale.invert(offsetY);
             const maxAskPriceValue = d3.max(liqDataAsk, (d: LiquidityRangeIF) =>
-                getAskPriceValue(d),
+                getAskPriceValue(d, isDenomBase),
             );
 
             let closest = liqDataAsk.find((item: LiquidityRangeIF) => {
-                return getAskPriceValue(item) === maxAskPriceValue;
+                return getAskPriceValue(item, isDenomBase) === maxAskPriceValue;
             });
 
             if (closest !== undefined) {
                 liqDataAsk.map((data: LiquidityRangeIF) => {
                     if (closest) {
-                        const liqPrice = getAskPriceValue(data);
-                        const closestLiqPrice = getAskPriceValue(closest);
+                        const liqPrice = getAskPriceValue(data, isDenomBase);
+                        const closestLiqPrice = getAskPriceValue(
+                            closest,
+                            isDenomBase,
+                        );
 
                         if (
                             mousePosition < liqPrice &&
@@ -1234,6 +1274,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         diffHashSigScaleData(scaleData, 'y'),
         hoverDepthAskData,
         hoverDepthBidData,
+        liquidityDepthScale,
     ]);
 
     useEffect(() => {

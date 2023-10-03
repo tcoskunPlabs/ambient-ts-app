@@ -22,6 +22,28 @@ export function getActiveLiqDepth(
     }
 }
 
+export const getAskPriceValue = (
+    data: LiquidityRangeIF,
+    isDenomBase: boolean,
+) => {
+    if (isDenomBase) {
+        return data.lowerBoundInvPriceDecimalCorrected;
+    } else {
+        return data.upperBoundPriceDecimalCorrected;
+    }
+};
+
+export const getBidPriceValue = (
+    data: LiquidityRangeIF,
+    isDenomBase: boolean,
+) => {
+    if (isDenomBase) {
+        return data.upperBoundInvPriceDecimalCorrected;
+    } else {
+        return data.lowerBoundPriceDecimalCorrected;
+    }
+};
+
 export function createAreaSeriesLiquidity(
     liqScale: d3.ScaleLinear<number, number>,
     xScale: d3.ScaleLinear<number, number>,

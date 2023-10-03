@@ -46,7 +46,6 @@ import { CandleData } from '../../App/functions/fetchCandleSeries';
 import CandleChart from './Candle/CandleChart';
 import LiquidityChart from './Liquidity/LiquidityChart';
 import VolumeBarCanvas from './Volume/VolumeBarCanvas';
-import { LiquidityDataLocal } from '../Trade/TradeCharts/TradeCharts';
 import { createIndicatorLine } from './ChartUtils/indicatorLineSeries';
 import { CSSTransition } from 'react-transition-group';
 import Divider from '../../components/Global/Divider/Divider';
@@ -102,8 +101,6 @@ interface propsIF {
     showLatest: boolean | undefined;
     setShowLatest: React.Dispatch<React.SetStateAction<boolean>>;
     setShowTooltip: React.Dispatch<React.SetStateAction<boolean>>;
-    liquidityScale: d3.ScaleLinear<number, number> | undefined;
-    liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
     candleTime: candleTimeIF;
     prevPeriod: number;
     candleTimeInSeconds: number;
@@ -142,8 +139,6 @@ export default function Chart(props: propsIF) {
         latest,
         setLatest,
         liquidityData,
-        liquidityScale,
-        liquidityDepthScale,
         prevPeriod,
         candleTimeInSeconds,
         changeScale,
@@ -745,26 +740,6 @@ export default function Chart(props: propsIF) {
                                     if (domain) {
                                         setYaxisDomain(domain[0], domain[1]);
                                     }
-
-                                    if (
-                                        tradeData.advancedMode &&
-                                        liquidityData
-                                    ) {
-                                        const liqAllBidPrices =
-                                            liquidityData?.liqBidData.map(
-                                                (
-                                                    liqPrices: LiquidityDataLocal,
-                                                ) => liqPrices.liqPrices,
-                                            );
-                                        const liqBidDeviation =
-                                            standardDeviation(liqAllBidPrices);
-
-                                        fillLiqAdvanced(
-                                            liqBidDeviation,
-                                            scaleData,
-                                            liquidityData,
-                                        );
-                                    }
                                 }
 
                                 clickedForLine = true;
@@ -952,23 +927,9 @@ export default function Chart(props: propsIF) {
 
     // when the auto button is clicked, the chart is auto scale
     useEffect(() => {
-        if (scaleData !== undefined && liquidityData !== undefined) {
+        if (scaleData !== undefined) {
             if (rescale) {
                 changeScale();
-
-                if (
-                    location.pathname.includes('pool') ||
-                    location.pathname.includes('reposition')
-                ) {
-                    const liqAllBidPrices = liquidityData?.liqBidData.map(
-                        (liqData: LiquidityDataLocal) => liqData.liqPrices,
-                    );
-                    // enlarges data to the end of the domain
-                    const liqBidDeviation = standardDeviation(liqAllBidPrices);
-
-                    // liq for advance mod is drawn forever
-                    fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
-                }
             }
         }
     }, [rescale]);
@@ -1078,19 +1039,18 @@ export default function Chart(props: propsIF) {
             liquidityData &&
             isDenomBase === boundaries
         ) {
-            const liqAllBidPrices = liquidityData?.liqBidData.map(
-                (liqData: LiquidityDataLocal) => liqData.liqPrices,
-            );
-            const liqBidDeviation = standardDeviation(liqAllBidPrices);
-
-            fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
+            // const liqAllBidPrices = liquidityData?.liqBidData.map(
+            //     (liqData: LiquidityDataLocal) => liqData.liqPrices,
+            // );
+            // const liqBidDeviation = standardDeviation(liqAllBidPrices);
+            // fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
         } else {
             setBoundaries(isDenomBase);
         }
     }, [
         tradeData.advancedMode,
         ranges,
-        liquidityData?.liqBidData,
+        // liquidityData?.liqBidData,
         diffHashSigScaleData(scaleData, 'y'),
     ]);
 
@@ -1991,7 +1951,7 @@ export default function Chart(props: propsIF) {
                 return marketLine;
             });
         }
-    }, [scaleData, liquidityDepthScale, liquidityScale, isUserConnected]);
+    }, [scaleData, isUserConnected]);
 
     // when click reset chart should be auto scale
     useEffect(() => {
@@ -2884,8 +2844,6 @@ export default function Chart(props: propsIF) {
         isChartZoom,
         limit,
         ranges,
-        liquidityScale,
-        liquidityDepthScale,
         isLineDrag,
         unparsedCandleData?.length,
         tradeData.advancedMode,
@@ -3465,9 +3423,7 @@ export default function Chart(props: propsIF) {
                             <LiquidityChart
                                 liqMode={liqMode}
                                 liquidityData={liquidityData}
-                                liquidityScale={liquidityScale}
                                 scaleData={scaleData}
-                                liquidityDepthScale={liquidityDepthScale}
                                 ranges={ranges}
                                 chartMousemoveEvent={chartMousemoveEvent}
                                 liqTooltip={liqTooltip}

@@ -1,7 +1,6 @@
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import { LiquidityRangeIF } from '../../../../App/functions/fetchPoolLiquidity';
-import { LiquidityDataLocal } from '../../../Trade/TradeCharts/TradeCharts';
 import { getActiveLiqDepth } from './AreaSeries';
 const lineSellColor = 'rgba(115, 113, 252)';
 const lineBuyColor = 'rgba(205, 193, 255)';
@@ -45,17 +44,4 @@ export function createLineSeries(
                 context.strokeStyle = lineBuyColor;
             }
         });
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function decorateForLiquidityLine(series: any, threshold: number) {
-    series.decorate(
-        (context: CanvasRenderingContext2D, d: LiquidityDataLocal[]) => {
-            if (d[0]?.liqPrices > threshold) {
-                context.strokeStyle = lineSellColor;
-            } else {
-                context.strokeStyle = lineBuyColor;
-            }
-        },
-    );
 }

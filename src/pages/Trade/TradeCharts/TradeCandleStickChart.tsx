@@ -7,7 +7,6 @@ import {
     useMemo,
     useState,
 } from 'react';
-import Chart from '../../Chart/Chart';
 import './TradeCandleStickChart.css';
 
 // import candleStikPlaceholder from '../../../assets/images/charts/candlestick.png';
@@ -27,7 +26,6 @@ import { PoolContext } from '../../../contexts/PoolContext';
 import { ChartContext } from '../../../contexts/ChartContext';
 import { candleScale } from '../../../utils/state/tradeDataSlice';
 import { TradeTokenContext } from '../../../contexts/TradeTokenContext';
-import { LiquidityDataLocal } from './TradeCharts';
 import { CandleData } from '../../../App/functions/fetchCandleSeries';
 import {
     chartItemStates,
@@ -72,12 +70,11 @@ function TradeCandleStickChart(props: propsIF) {
         chartItemStates,
     } = props;
 
-    const { candleData, isFetchingCandle, isCandleDataNull, setCandleScale } =
+    const { candleData, isCandleDataNull, setCandleScale } =
         useContext(CandleContext);
     const { chartSettings } = useContext(ChartContext);
     const { chainData } = useContext(CrocEnvContext);
-    const { poolPriceDisplay: poolPriceWithoutDenom, isPoolInitialized } =
-        useContext(PoolContext);
+    const { poolPriceDisplay: poolPriceWithoutDenom } = useContext(PoolContext);
     const {
         baseToken: { address: baseTokenAddress },
         quoteToken: { address: quoteTokenAddress },
@@ -91,12 +88,7 @@ function TradeCandleStickChart(props: propsIF) {
     const unparsedCandleData = candleData?.candles;
 
     const [scaleData, setScaleData] = useState<scaleData | undefined>();
-    const [liquidityScale, setLiquidityScale] = useState<
-        d3.ScaleLinear<number, number> | undefined
-    >(undefined);
-    const [liquidityDepthScale, setLiquidityDepthScale] = useState<
-        d3.ScaleLinear<number, number> | undefined
-    >();
+
     const [prevPeriod, setPrevPeriod] = useState<any>();
     const [prevFirsCandle, setPrevFirsCandle] = useState<any>();
 
@@ -222,12 +214,6 @@ function TradeCandleStickChart(props: propsIF) {
             unparsedLiquidityData.curveState.chainId === chainData.chainId
         ) {
             IS_LOCAL_ENV && console.debug('parsing liquidity data');
-
-            const liqAskData: LiquidityDataLocal[] = [];
-            const liqBidData: LiquidityDataLocal[] = [];
-            const depthLiqBidData: LiquidityDataLocal[] = [];
-            const depthLiqAskData: LiquidityDataLocal[] = [];
-
             let topBoundary = 0;
             let lowBoundary = 0;
 
@@ -317,40 +303,16 @@ function TradeCandleStickChart(props: propsIF) {
                         : depthAskRight,
                 ])
                 .range([30, 550]);
-
-            let liqBoundaryDepth = liqBoundary;
-
-            unparsedLiquidityData.ranges.map((data: any) => {
-                const liqUpperPrices = denominationsInBase.isDenomBase
-                    ? data.upperBoundInvPriceDecimalCorrected
-                    : data.lowerBoundPriceDecimalCorrected;
-
-                const liqLowerPrices = denominationsInBase.isDenomBase
-                    ? data.lowerBoundInvPriceDecimalCorrected
-                    : data.upperBoundPriceDecimalCorrected;
-
-                liqBoundaryDepth = liqLowerPrices;
-
-                liqBoundaryDepth = liqUpperPrices;
-            });
-
             topBoundary = limitBoundary;
             lowBoundary = parseFloat(rangeBoundary.pinnedMinPriceDisplay);
 
             return {
                 liquidityScale: liquidityScale,
                 depthLiquidityScale: depthLiquidityScale,
-                allData: unparsedLiquidityData.ranges,
-
                 topBoundary: topBoundary,
                 lowBoundary: lowBoundary,
-                liqTransitionPointforCurve: liqBoundary
-                    ? liqBoundary
-                    : poolPriceDisplay,
-                liqTransitionPointforDepth: liqBoundaryDepth
-                    ? liqBoundaryDepth
-                    : poolPriceDisplay,
-
+                liqTransitionPointforCurve: poolPriceDisplay,
+                liqTransitionPointforDepth: poolPriceDisplay,
                 limitBoundary: limitBoundary,
             };
         } else {
@@ -553,8 +515,7 @@ function TradeCandleStickChart(props: propsIF) {
                 scaleData === undefined ||
                 unparsedCandleData?.length === 0 ||
                 poolPriceDisplay === 0 ||
-                poolPriceNonDisplay === 0 ||
-                liquidityData === undefined;
+                poolPriceNonDisplay === 0;
 
             if (isLoading !== shouldReload) {
                 IS_LOCAL_ENV &&
@@ -569,9 +530,6 @@ function TradeCandleStickChart(props: propsIF) {
         poolPriceDisplay,
         poolPriceNonDisplay,
         scaleData === undefined,
-        liquidityScale,
-        liquidityDepthScale,
-        liquidityData,
         isLoading,
     ]);
 
@@ -600,8 +558,6 @@ function TradeCandleStickChart(props: propsIF) {
                     setCurrentData={props.setCurrentData}
                     liquidityData={liquidityData}
                     setCurrentVolumeData={props.setCurrentVolumeData}
-                    liquidityScale={liquidityScale}
-                    liquidityDepthScale={liquidityDepthScale}
                     poolPriceNonDisplay={poolPriceNonDisplay}
                     chartSettings={chartSettings}
                     scaleData={scaleData}

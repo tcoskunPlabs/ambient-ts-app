@@ -8,7 +8,6 @@ import {
     formatPoolPriceAxis,
 } from '../../../../utils/numbers';
 import { createRectLabel } from './YaxisUtils';
-import { LiquidityDataLocal } from '../../../Trade/TradeCharts/TradeCharts';
 import {
     diffHashSig,
     diffHashSigScaleData,
@@ -749,21 +748,6 @@ function YAxisCanvas(props: yAxisIF) {
                             }
                         }
                     });
-                    if (tradeData.advancedMode && liquidityData) {
-                        const liqAllBidPrices = liquidityData?.liqBidData.map(
-                            (liqData: LiquidityDataLocal) => liqData.liqPrices,
-                        );
-                        const liqBidDeviation =
-                            standardDeviation(liqAllBidPrices);
-
-                        if (scaleData) {
-                            fillLiqAdvanced(
-                                liqBidDeviation,
-                                scaleData,
-                                liquidityData,
-                            );
-                        }
-                    }
 
                     setRescale(() => {
                         return false;
@@ -790,11 +774,7 @@ function YAxisCanvas(props: yAxisIF) {
                 return yAxisZoom;
             });
         }
-    }, [
-        diffHashSigScaleData(scaleData, 'y'),
-        liquidityData?.liqBidData,
-        isChartZoom,
-    ]);
+    }, [diffHashSigScaleData(scaleData, 'y'), isChartZoom]);
 
     useEffect(() => {
         if (yAxis && yAxisZoom && d3Yaxis.current) {

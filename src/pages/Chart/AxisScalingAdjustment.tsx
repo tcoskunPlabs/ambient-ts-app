@@ -55,8 +55,6 @@ interface propsIF {
     setCurrentVolumeData: React.Dispatch<
         React.SetStateAction<number | undefined>
     >;
-    liquidityScale: d3.ScaleLinear<number, number> | undefined;
-    liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
     poolPriceNonDisplay: number;
     chartSettings: chartSettingsMethodsIF;
     scaleData: scaleData | undefined;
@@ -86,8 +84,6 @@ export default function AxisScalingAdjustment(props: propsIF) {
         setCurrentData,
         setCurrentVolumeData,
         liquidityData,
-        liquidityScale,
-        liquidityDepthScale,
         poolPriceNonDisplay,
         chartSettings,
         scaleData,
@@ -464,13 +460,7 @@ export default function AxisScalingAdjustment(props: propsIF) {
 
     // autoScaleF
     useEffect(() => {
-        if (
-            rescale &&
-            !isLineDrag &&
-            prevPeriod === period
-            // &&
-            // candleTimeInSeconds === period
-        ) {
+        if (rescale && !isLineDrag && prevPeriod === period) {
             changeScale();
         }
     }, [
@@ -528,8 +518,6 @@ export default function AxisScalingAdjustment(props: propsIF) {
                     showLatest={showLatest}
                     setShowLatest={setShowLatest}
                     setShowTooltip={setShowTooltip}
-                    liquidityScale={liquidityScale}
-                    liquidityDepthScale={liquidityDepthScale}
                     candleTime={chartSettings.candleTime.global}
                     changeScale={changeScale}
                     setYaxisDomain={setYaxisDomain}
