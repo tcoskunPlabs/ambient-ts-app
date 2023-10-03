@@ -485,7 +485,8 @@ export default function AxisScalingAdjustment(props: propsIF) {
         !isLoading &&
         isPoolInitialized !== undefined &&
         prevPeriod === period &&
-        !isFetchingCandle;
+        !isFetchingCandle &&
+        liquidityData !== undefined;
 
     return (
         <div style={{ height: '100%', width: '100%' }}>

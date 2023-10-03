@@ -219,8 +219,8 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
     const liqDepthDataAsk = useMemo<LiquidityRangeIF[]>(() => {
         if (liqBoundary && unparsedLiquidityData) {
-            const data = unparsedLiquidityData?.ranges
-                .filter((i: LiquidityRangeIF) => {
+            const data = unparsedLiquidityData?.ranges.filter(
+                (i: LiquidityRangeIF) => {
                     const liqUpperPrices = isDenomBase
                         ? i.upperBoundInvPriceDecimalCorrected
                         : i.lowerBoundPriceDecimalCorrected;
@@ -247,12 +247,8 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                         liqUpperPrices <= liquidityData.limitBoundary &&
                         liqUpperPrices > liqBoundary / 10
                     );
-                })
-                .sort(
-                    (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
-                        getAskPriceValue(b, isDenomBase) -
-                        getAskPriceValue(a, isDenomBase),
-                );
+                },
+            );
 
             if (isDenomBase) {
                 data.push({
@@ -262,11 +258,15 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             } else {
                 data.push({
                     ...data[data.length - 1],
-                    upperBoundInvPriceDecimalCorrected: 0,
+                    upperBoundPriceDecimalCorrected: 0,
                 });
             }
 
-            return data;
+            return data.sort(
+                (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
+                    getAskPriceValue(b, isDenomBase) -
+                    getAskPriceValue(a, isDenomBase),
+            );
         }
 
         return [];
