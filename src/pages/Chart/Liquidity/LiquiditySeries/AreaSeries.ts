@@ -1,4 +1,3 @@
-import { LiquidityDataLocal } from '../../../Trade/TradeCharts/TradeCharts';
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import { LiquidityRangeIF } from '../../../../App/functions/fetchPoolLiquidity';

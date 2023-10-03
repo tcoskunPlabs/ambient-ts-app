@@ -98,7 +98,6 @@ export default function AxisScalingAdjustment(props: propsIF) {
     const { isFetchingCandle } = useContext(CandleContext);
     const {
         baseToken: { address: baseTokenAddress },
-        quoteToken: { address: quoteTokenAddress },
     } = useContext(TradeTokenContext);
 
     const isTokenABase = tokenPair?.dataTokenA.address === baseTokenAddress;

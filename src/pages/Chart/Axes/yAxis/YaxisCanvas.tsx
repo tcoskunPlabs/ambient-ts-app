@@ -14,14 +14,12 @@ import {
 } from '../../../../utils/functions/diffHashSig';
 import {
     crosshair,
-    fillLiqAdvanced,
     lineValue,
     liquidityChartData,
     renderCanvasArray,
     renderSubchartCrCanvas,
     scaleData,
     setCanvasResolution,
-    standardDeviation,
 } from '../../ChartUtils/chartUtils';
 import { getFormattedNumber } from '../../../../App/functions/getFormattedNumber';
 

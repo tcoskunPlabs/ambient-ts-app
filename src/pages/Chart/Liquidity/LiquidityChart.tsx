@@ -651,7 +651,14 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             const liqBidDeviation = standardDeviation(liqAllBidPrices);
 
             if (scaleData) {
-                fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
+                fillLiqAdvanced(
+                    liqBidDeviation,
+                    scaleData,
+                    liqDataBid,
+                    liqDepthDataBid,
+                    isDenomBase,
+                );
+                renderCanvasArray([d3CanvasLiq]);
             }
         }
     }, [diffHashSigScaleData(scaleData, 'y')]);
@@ -884,13 +891,13 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 .on('draw', () => {
                     setCanvasResolution(canvas);
                     if (liqMode === 'curve' && liqBoundary) {
-                        liqBidSeries(liqDataBid);
                         liqAskSeries(liqDataAsk);
+                        liqBidSeries(liqDataBid);
                         drawCurveLines(canvas);
                     }
                     if (liqMode === 'depth') {
-                        liqDepthBidSeries(liqDepthDataBid);
                         liqDepthAskSeries(liqDepthDataAsk);
+                        liqDepthBidSeries(liqDepthDataBid);
                         drawDepthLines(canvas);
                     }
                 })

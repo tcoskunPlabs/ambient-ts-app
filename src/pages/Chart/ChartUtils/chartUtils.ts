@@ -1,8 +1,9 @@
 // eslint-disable-next-line quotes
 import { DetailedHTMLProps, HTMLAttributes, MutableRefObject } from 'react';
 import * as d3 from 'd3';
-import { LiquidityDataLocal } from '../../Trade/TradeCharts/TradeCharts';
 import { CandleData } from '../../../App/functions/fetchCandleSeries';
+import { LiquidityRangeIF } from '../../../App/functions/fetchPoolLiquidity';
+import { getBidPriceValue } from '../Liquidity/LiquiditySeries/AreaSeries';
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -30,7 +31,9 @@ export interface CandleDataChart extends CandleData {
     isFakeData: boolean;
 }
 export type liquidityChartData = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     liquidityScale: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     depthLiquidityScale: any;
     topBoundary: number;
     lowBoundary: number;
@@ -150,7 +153,9 @@ export function fillLiqAdvanced(
     standardDeviation: number,
     scaleData: scaleData,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    liquidityData: any,
+    liqBidData: LiquidityRangeIF[],
+    depthLiqBidData: LiquidityRangeIF[],
+    isDenomBase: boolean,
 ) {
     const border = scaleData?.yScale.domain()[1];
 
@@ -158,32 +163,52 @@ export function fillLiqAdvanced(
 
     standardDeviation =
         filledTickNumber === 150
-            ? (border - liquidityData?.liqBidData[0]?.liqPrices) / 150
+            ? (border - getBidPriceValue(liqBidData[0], isDenomBase)) / 150
             : standardDeviation;
 
     if (scaleData !== undefined) {
         if (
             border + standardDeviation >=
-            liquidityData?.liqBidData[0]?.liqPrices
+            getBidPriceValue(liqBidData[0], isDenomBase)
         ) {
             for (let index = 0; index < filledTickNumber; index++) {
-                liquidityData?.liqBidData.unshift({
-                    activeLiq: 30,
-                    liqPrices:
-                        liquidityData?.liqBidData[0]?.liqPrices +
-                        standardDeviation,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                });
+                if (isDenomBase) {
+                    liqBidData.unshift({
+                        ...liqBidData[0],
+                        activeLiq: 30,
+                        upperBoundInvPriceDecimalCorrected:
+                            liqBidData[0]?.upperBoundInvPriceDecimalCorrected +
+                            standardDeviation,
+                    });
 
-                liquidityData?.depthLiqBidData.unshift({
-                    activeLiq: liquidityData?.depthLiqBidData[1]?.activeLiq,
-                    liqPrices:
-                        liquidityData?.depthLiqBidData[0]?.liqPrices +
-                        standardDeviation,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                });
+                    depthLiqBidData.unshift({
+                        ...depthLiqBidData[0],
+                        cumBidLiq: depthLiqBidData[1]?.cumBidLiq,
+                        upperBoundInvPriceDecimalCorrected:
+                            depthLiqBidData[0]
+                                ?.upperBoundInvPriceDecimalCorrected +
+                            standardDeviation,
+                    });
+                } else {
+                    if (isDenomBase) {
+                        liqBidData.unshift({
+                            ...liqBidData[0],
+                            activeLiq: 30,
+                            lowerBoundPriceDecimalCorrected:
+                                liqBidData[0]?.lowerBoundPriceDecimalCorrected +
+                                standardDeviation,
+                        });
+
+                        depthLiqBidData.unshift({
+                            ...depthLiqBidData[0],
+                            cumAskLiq: depthLiqBidData[0]?.cumAskLiq,
+                            lowerBoundPriceDecimalCorrected:
+                                depthLiqBidData[0]
+                                    ?.lowerBoundPriceDecimalCorrected +
+                                standardDeviation,
+                        });
+                    }
+                }
             }
         }
     }

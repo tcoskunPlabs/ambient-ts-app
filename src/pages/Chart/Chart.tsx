@@ -11,7 +11,6 @@ import {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../utils/hooks/reduxToolkit';
-import { CandlesByPoolAndDuration } from '../../utils/state/graphDataSlice';
 import {
     setLimitTick,
     setIsLinesSwitched,
@@ -60,14 +59,12 @@ import {
     chartItemStates,
     crosshair,
     defaultCandleBandwith,
-    fillLiqAdvanced,
     lineValue,
     liquidityChartData,
     renderCanvasArray,
     renderSubchartCrCanvas,
     scaleData,
     setCanvasResolution,
-    standardDeviation,
 } from './ChartUtils/chartUtils';
 import { Zoom } from './ChartUtils/zoom';
 import XAxisCanvas from './Axes/xAxis/XaxisCanvas';
@@ -104,8 +101,8 @@ interface propsIF {
     candleTime: candleTimeIF;
     prevPeriod: number;
     candleTimeInSeconds: number;
-    changeScale: any;
-    setYaxisDomain: any;
+    changeScale: () => void;
+    setYaxisDomain: (minDomain: number, maxDomain: number) => void;
     limit: number;
     setLimit: React.Dispatch<React.SetStateAction<number>>;
     market: number;
@@ -115,11 +112,12 @@ interface propsIF {
     unparsedCandleData: CandleDataChart[];
     minTickForLimit: number;
     maxTickForLimit: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getNoZoneData: any;
-    noGoZoneBoudnaries: any;
+    noGoZoneBoudnaries: number[][];
     isLineDrag: boolean;
     setIsLineDrag: React.Dispatch<React.SetStateAction<boolean>>;
-    render: any;
+    render: () => void;
     isLoadingChart: boolean;
 }
 
@@ -139,7 +137,6 @@ export default function Chart(props: propsIF) {
         latest,
         setLatest,
         liquidityData,
-        prevPeriod,
         candleTimeInSeconds,
         changeScale,
         setYaxisDomain,
@@ -153,7 +150,6 @@ export default function Chart(props: propsIF) {
         minTickForLimit,
         maxTickForLimit,
         getNoZoneData,
-        noGoZoneBoudnaries,
         isLineDrag,
         setIsLineDrag,
         render,
@@ -1034,25 +1030,16 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         if (
-            tradeData.advancedMode &&
-            scaleData &&
-            liquidityData &&
-            isDenomBase === boundaries
+            !(
+                tradeData.advancedMode &&
+                scaleData &&
+                liquidityData &&
+                isDenomBase === boundaries
+            )
         ) {
-            // const liqAllBidPrices = liquidityData?.liqBidData.map(
-            //     (liqData: LiquidityDataLocal) => liqData.liqPrices,
-            // );
-            // const liqBidDeviation = standardDeviation(liqAllBidPrices);
-            // fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
-        } else {
             setBoundaries(isDenomBase);
         }
-    }, [
-        tradeData.advancedMode,
-        ranges,
-        // liquidityData?.liqBidData,
-        diffHashSigScaleData(scaleData, 'y'),
-    ]);
+    }, [tradeData.advancedMode, ranges, diffHashSigScaleData(scaleData, 'y')]);
 
     // performs reverse token function when limit line position (sell /buy) changes
     function reverseTokenForChart(
