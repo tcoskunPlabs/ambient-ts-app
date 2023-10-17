@@ -2025,27 +2025,12 @@ export default function Chart(props: propsIF) {
             reset &&
             poolPriceDisplay !== undefined
         ) {
-            const nowDate = Date.now();
-
-            const snapDiff = nowDate % (period * 1000);
-
-            const snappedTime =
-                nowDate -
-                (snapDiff > period * 1000 - snapDiff
-                    ? -1 * (period * 1000 - snapDiff)
-                    : snapDiff);
-
-            const minDomain = snappedTime - 100 * 1000 * period;
-            const maxDomain = snappedTime + 39 * 1000 * period;
-
-            scaleData?.xScale.domain([minDomain, maxDomain]);
-
             changeScale();
 
             setReset(false);
             setShowLatest(false);
         }
-    }, [reset, minTickForLimit, maxTickForLimit]);
+    }, [reset, minTickForLimit, maxTickForLimit, lastCandleData]);
 
     useEffect(() => {
         if (
@@ -3432,7 +3417,7 @@ export default function Chart(props: propsIF) {
                             data={visibleCandleData}
                             denomInBase={denomInBase}
                             lastCandleData={lastCandleData}
-                            period={period}
+                            reset={reset}
                             scaleData={scaleData}
                             selectedDate={selectedDate}
                             showLatest={showLatest}
