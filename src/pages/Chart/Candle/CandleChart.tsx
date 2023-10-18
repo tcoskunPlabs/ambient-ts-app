@@ -83,14 +83,6 @@ export default function CandleChart(props: candlePropsIF) {
     }, [tradeTableState, JSON.stringify(lastCandleData), reset]);
 
     useEffect(() => {
-        console.log({ tradeTableState });
-    }, [tradeTableState]);
-
-    useEffect(() => {
-        console.log({ lastCandleData });
-    }, [lastCandleData]);
-
-    useEffect(() => {
         renderCanvasArray([d3CanvasCandle]);
     }, [diffHashSigScaleData(scaleData)]);
 
