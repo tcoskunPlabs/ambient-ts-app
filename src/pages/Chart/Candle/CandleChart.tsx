@@ -21,7 +21,7 @@ interface candlePropsIF {
     showLatest: boolean | undefined;
     isDenomBase: boolean;
     data: CandleData[];
-    period: number;
+    reset: boolean | undefined;
     lastCandleData: CandleData;
 }
 
@@ -33,7 +33,7 @@ export default function CandleChart(props: candlePropsIF) {
         showLatest,
         isDenomBase,
         data,
-        period,
+        reset,
         lastCandleData,
     } = props;
     const d3CanvasCandle = useRef<HTMLCanvasElement | null>(null);
@@ -63,19 +63,24 @@ export default function CandleChart(props: candlePropsIF) {
 
     useEffect(() => {
         IS_LOCAL_ENV && console.debug('re-rending chart');
-        if (tradeTableState === 'Expanded') return;
+        if (tradeTableState === 'Expanded' && lastCandleData === undefined)
+            return;
         if (data && data.length > 0 && scaleData) {
-            if (!showLatest) {
+            if (!showLatest || reset) {
                 const domainLeft = scaleData?.xScale.domain()[0];
                 const domainRight = scaleData?.xScale.domain()[1];
 
-                scaleData?.xScale.domain([
-                    domainLeft + period * 1000,
-                    domainRight + period * 1000,
-                ]);
+                const lastCandleXValue = lastCandleData.time * 1000;
+
+                const domainWidth = domainRight - domainLeft;
+
+                const newDomainLeft = lastCandleXValue - 0.8 * domainWidth;
+                const newDomainRight = lastCandleXValue + 0.2 * domainWidth;
+
+                scaleData?.xScale.domain([newDomainLeft, newDomainRight]);
             }
         }
-    }, [tradeTableState, lastCandleData]);
+    }, [tradeTableState, JSON.stringify(lastCandleData), reset]);
 
     useEffect(() => {
         renderCanvasArray([d3CanvasCandle]);
