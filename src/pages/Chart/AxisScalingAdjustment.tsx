@@ -22,6 +22,7 @@ import { getPinnedPriceValuesFromTicks } from '../Trade/Range/rangeFunctions';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import { CrocEnvContext } from '../../contexts/CrocEnvContext';
 import { pinTickLower, pinTickUpper, tickToPrice } from '@crocswap-libs/sdk';
+import { updatesIF } from '../../utils/hooks/useUrlParams';
 
 interface propsIF {
     changeState: (
@@ -60,6 +61,7 @@ interface propsIF {
     scaleData: scaleData | undefined;
     tradeData: TradeDataIF;
     currentPoolPriceTick: number;
+    updateURL: (changes: updatesIF) => void;
 }
 export default function AxisScalingAdjustment(props: propsIF) {
     const {
@@ -89,6 +91,7 @@ export default function AxisScalingAdjustment(props: propsIF) {
         scaleData,
         tradeData,
         currentPoolPriceTick,
+        updateURL,
     } = props;
     const {
         isPoolInitialized,
@@ -155,20 +158,30 @@ export default function AxisScalingAdjustment(props: propsIF) {
                 isFakeData: false,
             }));
         if (poolPriceWithoutDenom && data && data.length > 0) {
+            const closePriceWithDenom =
+                data[0].invPriceCloseExclMEVDecimalCorrected;
+            const poolPriceWithDenom = 1 / poolPriceWithoutDenom;
+
+            const fakeDataOpenWithDenom = closePriceWithDenom;
+
+            const fakeDataCloseWithDenom = poolPriceWithDenom;
+
+            const closePrice = data[0].priceCloseExclMEVDecimalCorrected;
+
+            const fakeDataOpen = closePrice;
+
+            const fakeDataClose = poolPriceWithoutDenom;
+
             const fakeData = {
                 time: data[0].time + period,
-                invMinPriceExclMEVDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                maxPriceExclMEVDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                invMaxPriceExclMEVDecimalCorrected: 1 / poolPriceWithoutDenom,
-                minPriceExclMEVDecimalCorrected: poolPriceWithoutDenom,
-                invPriceOpenExclMEVDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                priceOpenExclMEVDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                invPriceCloseExclMEVDecimalCorrected: 1 / poolPriceWithoutDenom,
-                priceCloseExclMEVDecimalCorrected: poolPriceWithoutDenom,
+                invMinPriceExclMEVDecimalCorrected: fakeDataOpenWithDenom,
+                maxPriceExclMEVDecimalCorrected: fakeDataOpen,
+                invMaxPriceExclMEVDecimalCorrected: fakeDataCloseWithDenom,
+                minPriceExclMEVDecimalCorrected: fakeDataClose,
+                invPriceOpenExclMEVDecimalCorrected: fakeDataOpenWithDenom,
+                priceOpenExclMEVDecimalCorrected: fakeDataOpen,
+                invPriceCloseExclMEVDecimalCorrected: fakeDataCloseWithDenom,
+                priceCloseExclMEVDecimalCorrected: fakeDataClose,
                 period: period,
                 tvlData: {
                     time: data[0].time,
@@ -176,20 +189,14 @@ export default function AxisScalingAdjustment(props: propsIF) {
                 },
                 volumeUSD: 0,
                 averageLiquidityFee: data[0].averageLiquidityFee,
-                minPriceDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
+                minPriceDecimalCorrected: fakeDataClose,
                 maxPriceDecimalCorrected: 0,
-                priceOpenDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                priceCloseDecimalCorrected:
-                    data[0].priceOpenExclMEVDecimalCorrected,
-                invMinPriceDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
+                priceOpenDecimalCorrected: fakeDataOpen,
+                priceCloseDecimalCorrected: fakeDataClose,
+                invMinPriceDecimalCorrected: fakeDataCloseWithDenom,
                 invMaxPriceDecimalCorrected: 0,
-                invPriceOpenDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
-                invPriceCloseDecimalCorrected:
-                    data[0].invPriceOpenExclMEVDecimalCorrected,
+                invPriceOpenDecimalCorrected: fakeDataOpenWithDenom,
+                invPriceCloseDecimalCorrected: fakeDataCloseWithDenom,
                 isCrocData: false,
                 isFakeData: true,
             };
@@ -543,6 +550,7 @@ export default function AxisScalingAdjustment(props: propsIF) {
                     isLineDrag={isLineDrag}
                     render={render}
                     isLoadingChart={isLoadingChart}
+                    updateURL={updateURL}
                 />
             )}
         </div>

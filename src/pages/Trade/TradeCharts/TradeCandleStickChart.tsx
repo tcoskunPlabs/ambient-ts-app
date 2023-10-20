@@ -34,6 +34,7 @@ import {
 } from '../../Chart/ChartUtils/chartUtils';
 import useMediaQuery from '../../../utils/hooks/useMediaQuery';
 import AxisScalingAdjustment from '../../Chart/AxisScalingAdjustment';
+import { updatesIF } from '../../../utils/hooks/useUrlParams';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface propsIF {
@@ -55,9 +56,9 @@ interface propsIF {
     showLatest: boolean | undefined;
     setShowLatest: Dispatch<SetStateAction<boolean>>;
     setShowTooltip: Dispatch<SetStateAction<boolean>>;
-
     setIsLoading: Dispatch<SetStateAction<boolean>>;
     isLoading: boolean;
+    updateURL: (changes: updatesIF) => void;
 }
 
 function TradeCandleStickChart(props: propsIF) {
@@ -68,6 +69,7 @@ function TradeCandleStickChart(props: propsIF) {
         setIsLoading,
         changeState,
         chartItemStates,
+        updateURL,
     } = props;
 
     const { candleData, isCandleDataNull, setCandleScale } =
@@ -562,6 +564,7 @@ function TradeCandleStickChart(props: propsIF) {
                     scaleData={scaleData}
                     tradeData={tradeData}
                     currentPoolPriceTick={currentPoolPriceTick}
+                    updateURL={updateURL}
                 />
             </div>
         </>
