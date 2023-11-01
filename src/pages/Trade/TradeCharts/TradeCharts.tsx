@@ -92,6 +92,7 @@ function TradeCharts(props: propsIF) {
     const [showLatest, setShowLatest] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [reset, setReset] = useState(false);
+    const [isReadOnlyChart, setIsReadOnlyChart] = useState(true);
 
     // ---------------------END OF TRADE DATA CALCULATIONS------------------------
 
@@ -143,6 +144,12 @@ function TradeCharts(props: propsIF) {
     });
 
     // END OF GRAPH SETTINGS CONTENT------------------------------------------------------
+
+    const chartKey = 'UVVLZ5qb';
+
+    useEffect(() => {
+        setIsReadOnlyChart(chartKey.toString() === 'UVVLZ5qb');
+    }, [chartKey]);
 
     const timeFrameContent = (
         <FlexContainer
@@ -207,7 +214,7 @@ function TradeCharts(props: propsIF) {
                     </FlexContainer>
                 )}
                 {isChartFullScreen && <TradeChartsHeader />}
-                {timeFrameContent}
+                {!isReadOnlyChart && timeFrameContent}
 
                 <CurrentDataInfo
                     showTooltip={showTooltip}
@@ -241,6 +248,7 @@ function TradeCharts(props: propsIF) {
                     isLoading={props.isChartLoading}
                     setIsLoading={props.setIsChartLoading}
                     updateURL={updateURL}
+                    isReadOnlyChart={isReadOnlyChart}
                 />
             </div>
             <TutorialOverlay

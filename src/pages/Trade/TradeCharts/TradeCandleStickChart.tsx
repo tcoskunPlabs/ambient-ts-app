@@ -63,6 +63,7 @@ interface propsIF {
     setIsLoading: Dispatch<SetStateAction<boolean>>;
     isLoading: boolean;
     updateURL: (changes: updatesIF) => void;
+    isReadOnlyChart: boolean;
 }
 
 function TradeCandleStickChart(props: propsIF) {
@@ -72,6 +73,7 @@ function TradeCandleStickChart(props: propsIF) {
         isLoading,
         setIsLoading,
         updateURL,
+        isReadOnlyChart,
     } = props;
 
     const { candleData, isFetchingCandle, isCandleDataNull, setCandleScale } =
@@ -859,6 +861,7 @@ function TradeCandleStickChart(props: propsIF) {
                         deleteItem={deleteItem}
                         updateURL={updateURL}
                         addDrawActionStack={addDrawActionStack}
+                        isReadOnlyChart={isReadOnlyChart}
                     />
                 ) : (
                     <Spinner size={100} bg='var(--dark2)' centered />
