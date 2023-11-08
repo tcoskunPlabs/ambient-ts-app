@@ -143,6 +143,7 @@ interface propsIF {
     updateURL: (changes: updatesIF) => void;
     addDrawActionStack: (item: drawDataHistory) => void;
     isReadOnlyChart: boolean;
+    userSharebaleData: any;
 }
 
 export default function Chart(props: propsIF) {
@@ -176,6 +177,7 @@ export default function Chart(props: propsIF) {
         updateURL,
         addDrawActionStack,
         isReadOnlyChart,
+        userSharebaleData,
     } = props;
 
     const {
@@ -314,287 +316,6 @@ export default function Chart(props: propsIF) {
 
     const [isToolbarOpen, setIsToolbarOpen] = useState(true);
 
-    const data = [
-        {
-            data: [
-                {
-                    x: 1698314114594.5933,
-                    y: 1643.314830966333,
-                    denomInBase: true,
-                },
-                {
-                    x: 1698314114594.5933,
-                    y: 1643.314830966333,
-                    denomInBase: true,
-                },
-            ],
-            type: 'Ray',
-            time: 1698872412046,
-            pool: {
-                tokenA: {
-                    address: '0x0000000000000000000000000000000000000000',
-                    chainId: 5,
-                    decimals: 18,
-                    fromList: '/testnet-token-list.json',
-                    listedBy: [
-                        '/testnet-token-list.json',
-                        '/ambient-token-list.json',
-                    ],
-                    logoURI:
-                        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                    name: 'Native Ether',
-                    symbol: 'ETH',
-                },
-                tokenB: {
-                    address: '0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C',
-                    chainId: 5,
-                    decimals: 6,
-                    fromList: '/ambient-token-list.json',
-                    listedBy: ['/ambient-token-list.json'],
-                    logoURI:
-                        'https://assets.coingecko.com/coins/images/6319/thumb/USD_Coin_icon.png',
-                    name: 'USDCoin',
-                    symbol: 'USDC',
-                },
-                baseToken: {
-                    address: '0x0000000000000000000000000000000000000000',
-                    chainId: 5,
-                    decimals: 18,
-                    fromList: '/testnet-token-list.json',
-                    listedBy: [
-                        '/testnet-token-list.json',
-                        '/ambient-token-list.json',
-                    ],
-                    logoURI:
-                        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                    name: 'Native Ether',
-                    symbol: 'ETH',
-                },
-                quoteToken: {
-                    address: '0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C',
-                    chainId: 5,
-                    decimals: 6,
-                    fromList: '/ambient-token-list.json',
-                    listedBy: ['/ambient-token-list.json'],
-                    logoURI:
-                        'https://assets.coingecko.com/coins/images/6319/thumb/USD_Coin_icon.png',
-                    name: 'USDCoin',
-                    symbol: 'USDC',
-                },
-                isTokenABase: true,
-                liquidityFee: 0.0005,
-                didUserFlipDenom: false,
-                shouldSwapConverterUpdate: false,
-                shouldLimitConverterUpdate: false,
-                shouldSwapDirectionReverse: false,
-                shouldRangeDirectionReverse: false,
-                isDenomBase: true,
-                advancedMode: false,
-                isTokenAPrimary: true,
-                primaryQuantity: '',
-                isTokenAPrimaryRange: true,
-                primaryQuantityRange: '',
-                rangeTicksCopied: false,
-                poolPriceNonDisplay: 609326401.3136151,
-                advancedLowTick: 0,
-                advancedHighTick: 0,
-                simpleRangeWidth: 10,
-                slippageTolerance: 0.05,
-                candleDomains: {},
-                mainnetBaseTokenAddress: '',
-                mainnetQuoteTokenAddress: '',
-            },
-            color: 'rgba(115, 113, 252, 1)',
-            lineWidth: 1.5,
-            style: [0, 0],
-        },
-        {
-            data: [
-                {
-                    x: 1698860138939.671,
-                    y: 1640.138997166775,
-                    denomInBase: true,
-                },
-                {
-                    x: 1698448475319.927,
-                    y: 1637.6915117520864,
-                    denomInBase: true,
-                },
-            ],
-            type: 'Square',
-            time: 1698875094428,
-            pool: {
-                tokenA: {
-                    address: '0x0000000000000000000000000000000000000000',
-                    chainId: 5,
-                    decimals: 18,
-                    fromList: '/testnet-token-list.json',
-                    listedBy: [
-                        '/testnet-token-list.json',
-                        '/ambient-token-list.json',
-                    ],
-                    logoURI:
-                        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                    name: 'Native Ether',
-                    symbol: 'ETH',
-                },
-                tokenB: {
-                    address: '0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C',
-                    chainId: 5,
-                    decimals: 6,
-                    fromList: '/ambient-token-list.json',
-                    listedBy: ['/ambient-token-list.json'],
-                    logoURI:
-                        'https://assets.coingecko.com/coins/images/6319/thumb/USD_Coin_icon.png',
-                    name: 'USDCoin',
-                    symbol: 'USDC',
-                },
-                baseToken: {
-                    address: '0x0000000000000000000000000000000000000000',
-                    chainId: 5,
-                    decimals: 18,
-                    fromList: '/testnet-token-list.json',
-                    listedBy: [
-                        '/testnet-token-list.json',
-                        '/ambient-token-list.json',
-                    ],
-                    logoURI:
-                        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                    name: 'Native Ether',
-                    symbol: 'ETH',
-                },
-                quoteToken: {
-                    address: '0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C',
-                    chainId: 5,
-                    decimals: 6,
-                    fromList: '/ambient-token-list.json',
-                    listedBy: ['/ambient-token-list.json'],
-                    logoURI:
-                        'https://assets.coingecko.com/coins/images/6319/thumb/USD_Coin_icon.png',
-                    name: 'USDCoin',
-                    symbol: 'USDC',
-                },
-                isTokenABase: true,
-                liquidityFee: 0.0005,
-                didUserFlipDenom: false,
-                shouldSwapConverterUpdate: false,
-                shouldLimitConverterUpdate: false,
-                shouldSwapDirectionReverse: false,
-                shouldRangeDirectionReverse: false,
-                isDenomBase: true,
-                advancedMode: false,
-                isTokenAPrimary: true,
-                primaryQuantity: '',
-                isTokenAPrimaryRange: true,
-                primaryQuantityRange: '',
-                rangeTicksCopied: false,
-                poolPriceNonDisplay: 609326401.3136151,
-                advancedLowTick: 0,
-                advancedHighTick: 0,
-                simpleRangeWidth: 10,
-                slippageTolerance: 0.05,
-                candleDomains: {},
-                mainnetBaseTokenAddress: '',
-                mainnetQuoteTokenAddress: '',
-            },
-            color: 'rgba(115, 113, 252, 1)',
-            lineWidth: 1.5,
-            style: [0, 0],
-        },
-        {
-            data: [
-                {
-                    x: 1699123603656.3071,
-                    y: 1640.0890484848428,
-                    denomInBase: true,
-                },
-                {
-                    x: 1699123603656.3071,
-                    y: 1640.0890484848428,
-                    denomInBase: true,
-                },
-            ],
-            type: 'Ray',
-            time: 1698875096388,
-            pool: {
-                tokenA: {
-                    address: '0x0000000000000000000000000000000000000000',
-                    chainId: 5,
-                    decimals: 18,
-                    fromList: '/testnet-token-list.json',
-                    listedBy: [
-                        '/testnet-token-list.json',
-                        '/ambient-token-list.json',
-                    ],
-                    logoURI:
-                        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                    name: 'Native Ether',
-                    symbol: 'ETH',
-                },
-                tokenB: {
-                    address: '0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C',
-                    chainId: 5,
-                    decimals: 6,
-                    fromList: '/ambient-token-list.json',
-                    listedBy: ['/ambient-token-list.json'],
-                    logoURI:
-                        'https://assets.coingecko.com/coins/images/6319/thumb/USD_Coin_icon.png',
-                    name: 'USDCoin',
-                    symbol: 'USDC',
-                },
-                baseToken: {
-                    address: '0x0000000000000000000000000000000000000000',
-                    chainId: 5,
-                    decimals: 18,
-                    fromList: '/testnet-token-list.json',
-                    listedBy: [
-                        '/testnet-token-list.json',
-                        '/ambient-token-list.json',
-                    ],
-                    logoURI:
-                        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-                    name: 'Native Ether',
-                    symbol: 'ETH',
-                },
-                quoteToken: {
-                    address: '0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C',
-                    chainId: 5,
-                    decimals: 6,
-                    fromList: '/ambient-token-list.json',
-                    listedBy: ['/ambient-token-list.json'],
-                    logoURI:
-                        'https://assets.coingecko.com/coins/images/6319/thumb/USD_Coin_icon.png',
-                    name: 'USDCoin',
-                    symbol: 'USDC',
-                },
-                isTokenABase: true,
-                liquidityFee: 0.0005,
-                didUserFlipDenom: false,
-                shouldSwapConverterUpdate: false,
-                shouldLimitConverterUpdate: false,
-                shouldSwapDirectionReverse: false,
-                shouldRangeDirectionReverse: false,
-                isDenomBase: true,
-                advancedMode: false,
-                isTokenAPrimary: true,
-                primaryQuantity: '',
-                isTokenAPrimaryRange: true,
-                primaryQuantityRange: '',
-                rangeTicksCopied: false,
-                poolPriceNonDisplay: 609326401.3136151,
-                advancedLowTick: 0,
-                advancedHighTick: 0,
-                simpleRangeWidth: 10,
-                slippageTolerance: 0.05,
-                candleDomains: {},
-                mainnetBaseTokenAddress: '',
-                mainnetQuoteTokenAddress: '',
-            },
-            color: 'rgba(115, 113, 252, 1)',
-            lineWidth: 1.5,
-            style: [0, 0],
-        },
-    ] as drawDataHistory[];
     const unparsedCandleData = useMemo(() => {
         const data = unparsedData.candles
             .sort((a, b) => b.time - a.time)
@@ -800,7 +521,9 @@ export default function Chart(props: propsIF) {
     }, [debouncedGetNewCandleDataRight]);
 
     useEffect(() => {
-        isReadOnlyChart && setDrawnShapeHistory(data);
+        if (isReadOnlyChart) {
+            setDrawnShapeHistory(userSharebaleData.drawData);
+        }
     }, [isReadOnlyChart]);
 
     // calculates time croc icon will be found
