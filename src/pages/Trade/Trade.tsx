@@ -37,6 +37,7 @@ import {
     TradeDropdownButton,
 } from '../../styled/Components/Trade';
 import { Direction } from 're-resizable/lib/resizer';
+import useChatApi from '../../components/Chat/Service/ChatApi';
 
 const TRADE_CHART_MIN_HEIGHT = 175;
 
@@ -47,6 +48,7 @@ function Trade() {
         provider,
     } = useContext(CrocEnvContext);
     const { setIsCandleSelected, isCandleDataNull } = useContext(CandleContext);
+    const { getID } = useChatApi();
 
     const {
         isFullScreen: isChartFullScreen,
@@ -189,19 +191,31 @@ function Trade() {
         tokens,
     };
 
+    async function saveChartValuesFunc() {
+        let pageUrl = window.location.href;
+        await getID().then((result) => {
+            const id = result.userData._id;
+            if (id) {
+                pageUrl = pageUrl + '&chart=' + id;
+            }
+        });
+
+        return pageUrl;
+    }
+
     const mobileTrade = (
         <MainSection>
             {mobileTradeDropdown}
             {activeMobileComponent === 'chart' && isPoolInitialized && (
                 <div style={{ marginLeft: '2rem', flex: 1 }}>
-                    <TradeChartsHeader />
+                    <TradeChartsHeader saveChartValues={saveChartValuesFunc} />
                     {!isCandleDataNull && <TradeCharts {...tradeChartsProps} />}
                 </div>
             )}
 
             {activeMobileComponent === 'transactions' && (
                 <div style={{ marginLeft: '2rem', flex: 1 }}>
-                    <TradeChartsHeader />
+                    <TradeChartsHeader saveChartValues={saveChartValuesFunc} />
                     <TradeTabs2 {...tradeTabsProps} />
                 </div>
             )}
@@ -232,7 +246,10 @@ function Trade() {
                 style={{ height: 'calc(100vh - 56px)' }}
                 ref={canvasRef}
             >
-                <TradeChartsHeader tradePage />
+                <TradeChartsHeader
+                    tradePage
+                    saveChartValues={saveChartValuesFunc}
+                />
                 {/* This div acts as a parent to maintain a min/max for the resizable element below */}
                 <FlexContainer
                     flexDirection='column'

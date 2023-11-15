@@ -58,6 +58,7 @@ import FeeRateChart from './FeeRate/FeeRateChart';
 import RangeLinesChart from './RangeLine/RangeLinesChart';
 import {
     CandleDataChart,
+    ShareableChartData,
     SubChartValue,
     bandLineData,
     chartItemStates,
@@ -143,7 +144,7 @@ interface propsIF {
     updateURL: (changes: updatesIF) => void;
     addDrawActionStack: (item: drawDataHistory) => void;
     isReadOnlyChart: boolean;
-    userSharebaleData: any;
+    userSharebaleData: ShareableChartData | undefined;
 }
 
 export default function Chart(props: propsIF) {
@@ -521,7 +522,11 @@ export default function Chart(props: propsIF) {
     }, [debouncedGetNewCandleDataRight]);
 
     useEffect(() => {
-        if (isReadOnlyChart) {
+        if (
+            isReadOnlyChart &&
+            userSharebaleData &&
+            userSharebaleData.drawData
+        ) {
             setDrawnShapeHistory(userSharebaleData.drawData);
         }
     }, [isReadOnlyChart]);

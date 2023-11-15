@@ -49,6 +49,8 @@ import {
 import { FlexContainer } from '../../../styled/Common';
 import Button from '../../../components/Form/Button';
 import { version as appVersion } from '../../../../package.json';
+import readOnly from '../../../assets/images/icons/read_only.svg';
+import { ChartContext } from '../../../contexts/ChartContext';
 
 const PageHeader = function () {
     const {
@@ -64,6 +66,8 @@ const PageHeader = function () {
     const { poolPriceDisplay } = useContext(PoolContext);
     const { recentPools } = useContext(SidebarContext);
     const { setShowAllData } = useContext(TradeTableContext);
+
+    const { isReadOnlyChart } = useContext(ChartContext);
     const {
         baseToken: {
             setBalance: setBaseTokenBalance,
@@ -347,22 +351,37 @@ const PageHeader = function () {
         };
     }, []);
 
+    const readOnlyDiv = (
+        <div style={{ display: 'flex' }}>
+            <div>
+                <img src={readOnly}></img>
+            </div>
+            <div style={{ marginLeft: 6, color: '#8b98a5' }}>
+                READ ONLY MODE
+            </div>
+        </div>
+    );
+
     return (
         <PrimaryHeader
             data-testid={'page-header'}
             fixed={location.pathname === '/'}
+            isReadOnly={isReadOnlyChart}
         >
-            <div>
-                <LogoContainer to='/' aria-label='Home'>
-                    {desktopScreen ? (
-                        <img src={mainLogo} alt='ambient' />
-                    ) : (
-                        <LogoText src={logo} alt='ambient' />
-                    )}
-                </LogoContainer>
-            </div>
+            {!isReadOnlyChart && (
+                <div>
+                    <LogoContainer to='/' aria-label='Home'>
+                        {desktopScreen ? (
+                            <img src={mainLogo} alt='ambient' />
+                        ) : (
+                            <LogoText src={logo} alt='ambient' />
+                        )}
+                    </LogoContainer>
+                </div>
+            )}
 
-            {routeDisplay}
+            {isReadOnlyChart && readOnlyDiv}
+            {!isReadOnlyChart && routeDisplay}
             <RightSide>
                 {show ? (
                     <TradeNowDiv justifyContent='flex-end' alignItems='center'>

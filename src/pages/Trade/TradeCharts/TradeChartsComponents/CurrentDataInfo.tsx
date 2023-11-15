@@ -4,8 +4,7 @@ import { Dispatch, memo, SetStateAction } from 'react';
 import { useAppSelector } from '../../../../utils/hooks/reduxToolkit';
 import { CandleData } from '../../../../App/functions/fetchCandleSeries';
 import { getFormattedNumber } from '../../../../App/functions/getFormattedNumber';
-import { FlexContainer } from '../../../../styled/Common';
-import readOnly from '../../../../assets/images/icons/read_only.svg';
+import { ShareableChartData } from '../../../Chart/ChartUtils/chartUtils';
 
 interface CurrentDataInfoPropsIF {
     showTooltip: boolean;
@@ -18,7 +17,7 @@ interface CurrentDataInfoPropsIF {
     rescale: boolean;
     reset: boolean;
     isReadOnlyChart: boolean;
-    userSharebaleData: any;
+    userSharebaleData: ShareableChartData | undefined;
 }
 function CurrentDataInfo(props: CurrentDataInfoPropsIF) {
     const {
@@ -31,8 +30,6 @@ function CurrentDataInfo(props: CurrentDataInfoPropsIF) {
         setRescale,
         rescale,
         reset,
-        isReadOnlyChart,
-        userSharebaleData,
     } = props;
 
     function formattedCurrentData(data: number | undefined) {
@@ -42,33 +39,8 @@ function CurrentDataInfo(props: CurrentDataInfoPropsIF) {
     const tradeData = useAppSelector((state) => state.tradeData);
     const denominationsInBase = tradeData.isDenomBase;
 
-    const readOnlyHeader = (
-        <FlexContainer
-            justifyContent='space-between'
-            alignItems='center'
-            padding='4px 4px 8px 4px'
-        >
-            <div
-                style={{
-                    marginLeft: 5,
-                    padding: '0.3rem 0 0 0.3rem',
-                    display: 'flex',
-                    flexDirection: 'row',
-                }}
-            >
-                <img src={readOnly} alt='' />
-                <p style={{ marginLeft: 8 }}> READ ONLY MODE</p>
-            </div>
-            <div style={{ marginLeft: 3, padding: '0.3rem 0 0 0.3rem' }}>
-                {userSharebaleData.timeframe}
-            </div>
-        </FlexContainer>
-    );
-
     return (
-        <div className={styles.chart_tooltips_read_only}>
-            {isReadOnlyChart && readOnlyHeader}
-
+        <div className={styles.chart_tooltips}>
             {showTooltip ? (
                 <div className={styles.current_data_info}>
                     {currentData &&

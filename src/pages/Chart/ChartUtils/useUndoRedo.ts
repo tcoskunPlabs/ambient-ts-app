@@ -52,7 +52,7 @@ export function useUndoRedo(denomInBase: boolean) {
     }, [poolIndex, currentPool.tokenA, currentPool.tokenB]);
 
     useEffect(() => {
-        initialArray.forEach((element: drawDataHistory) => {
+        initialArray?.forEach((element: drawDataHistory) => {
             const tempData = {
                 data: [
                     {

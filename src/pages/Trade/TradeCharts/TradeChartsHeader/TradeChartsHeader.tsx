@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { AiOutlineFullscreen } from 'react-icons/ai';
+import { AiOutlineFullscreen, AiOutlineShareAlt } from 'react-icons/ai';
 import { FiCopy } from 'react-icons/fi';
 import { DefaultTooltip } from '../../../../components/Global/StyledTooltip/StyledTooltip';
 import { AppStateContext } from '../../../../contexts/AppStateContext';
@@ -12,7 +12,10 @@ import { useSimulatedIsPoolInitialized } from '../../../../App/hooks/useSimulate
 import { FlexContainer } from '../../../../styled/Common';
 import { HeaderButtons } from '../../../../styled/Components/Chart';
 
-export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
+export const TradeChartsHeader = (props: {
+    tradePage?: boolean;
+    saveChartValues?: () => Promise<string>;
+}) => {
     const {
         isFullScreen: isChartFullScreen,
         setIsFullScreen: setIsChartFullScreen,
@@ -20,6 +23,7 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
         chartCanvasRef,
         chartHeights,
         tradeTableState,
+        isReadOnlyChart,
     } = useContext(ChartContext);
     const { isCandleDataNull } = useContext(CandleContext);
 
@@ -50,8 +54,42 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
         }
     };
 
+    const shareChartViaUrl = () => {
+        if (
+            navigator.clipboard &&
+            window.isSecureContext &&
+            props.saveChartValues
+        ) {
+            props.saveChartValues().then((pageUrl) => {
+                navigator.clipboard
+                    .writeText(pageUrl)
+                    .then(() => {
+                        openSnackbar('Chart url copied to clipboard', 'info');
+                    })
+                    .catch((e) => {
+                        console.warn(e);
+                    });
+            });
+        }
+    };
+
     const graphSettingsContent = (
         <FlexContainer justifyContent='flex-end' alignItems='center' gap={16}>
+            {!isReadOnlyChart && (
+                <DefaultTooltip
+                    interactive
+                    title={'Share Chart Via Url'}
+                    enterDelay={500}
+                >
+                    <HeaderButtons mobileHide onClick={shareChartViaUrl}>
+                        <AiOutlineShareAlt
+                            size={20}
+                            id='trade_chart_full_screen_button'
+                            aria-label='Full screen chart button'
+                        />
+                    </HeaderButtons>
+                </DefaultTooltip>
+            )}
             <DefaultTooltip
                 interactive
                 title={'Toggle Full Screen Chart'}

@@ -52,6 +52,16 @@ export type selectedDrawnData = {
 export interface CandleDataChart extends CandleData {
     isFakeData: boolean;
 }
+
+export type ShareableChartData = {
+    liqMode: string;
+    timeframe: number;
+    showTvl: boolean;
+    showFeeRate: boolean;
+    showVolume: boolean;
+    drawData: drawDataHistory[] | undefined;
+};
+
 export type liquidityChartData = {
     liqAskData: LiquidityDataLocal[];
     liqBidData: LiquidityDataLocal[];

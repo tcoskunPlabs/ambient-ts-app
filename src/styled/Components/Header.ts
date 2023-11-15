@@ -13,6 +13,7 @@ z-index: 3;
 interface PrimaryHeaderProps {
     'data-testid': string;
     fixed: boolean;
+    isReadOnly: boolean;
 }
 
 // Define the styles for PrimaryHeader
@@ -28,7 +29,8 @@ export const PrimaryHeader = styled.header<PrimaryHeaderProps>`
 
     @media only screen and (min-width: 800px) {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: ${({ isReadOnly }) =>
+            isReadOnly ? '2fr 1fr' : 'repeat(3, 1fr)'};
         padding: 0 16px;
     }
 `;

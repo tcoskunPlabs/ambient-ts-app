@@ -1,5 +1,6 @@
 import { useAccount } from 'wagmi';
 import { CHAT_BACKEND_URL } from '../../../constants';
+import { ShareableChartData } from '../../../pages/Chart/ChartUtils/chartUtils';
 
 const host = CHAT_BACKEND_URL;
 
@@ -127,6 +128,37 @@ const useChatApi = () => {
 
         return data;
     }
+
+    async function getChartValues(userId: string) {
+        const response = await fetch(
+            host + '/chat/api/chart/getChartValuesByUser?id' + userId,
+            {
+                method: 'GET',
+            },
+        );
+
+        const data = await response.json();
+
+        return data;
+    }
+
+    async function saveChartValues(sharableUserData: ShareableChartData) {
+        const response = await fetch(
+            host + '/chat/api/chart/saveChartValuesByUser',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    address: address,
+                    sharableUserData: sharableUserData,
+                }),
+            },
+        );
+        const data = await response.json();
+
+        return data;
+    }
+
     return {
         getStatus,
         getID,
@@ -137,6 +169,8 @@ const useChatApi = () => {
         updateMessageUser,
         saveUser,
         deleteMessage,
+        getChartValues,
+        saveChartValues,
     };
 };
 export default useChatApi;

@@ -39,6 +39,7 @@ import {
 import useMediaQuery from '../../../utils/hooks/useMediaQuery';
 import { useUndoRedo } from '../../Chart/ChartUtils/useUndoRedo';
 import { updatesIF } from '../../../utils/hooks/useUrlParams';
+import useChatApi from '../../../components/Chat/Service/ChatApi';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface propsIF {
@@ -116,6 +117,7 @@ function TradeCandleStickChart(props: propsIF) {
         (state) => state.graphData,
     );
     const denominationsInBase = tradeData.isDenomBase;
+    const { saveChartValues } = useChatApi();
 
     const {
         undo,
@@ -164,15 +166,28 @@ function TradeCandleStickChart(props: propsIF) {
     const mobileView = useMediaQuery('(max-width: 600px)');
 
     useEffect(() => {
+        saveChartValues({
+            drawData: drawnShapeHistory,
+            showFeeRate: props.chartItemStates.showFeeRate,
+            showTvl: props.chartItemStates.showTvl,
+            showVolume: props.chartItemStates.showVolume,
+            liqMode: props.chartItemStates.liqMode,
+            timeframe: period,
+        });
+    }, [JSON.stringify(drawnShapeHistory), props.chartItemStates]);
+
+    useEffect(() => {
         setIsLoading(true);
     }, [period, denominationsInBase]);
 
     useEffect(() => {
-        localStorage.setItem(
-            CHART_ANNOTATIONS_LS_KEY,
-            JSON.stringify(drawnShapeHistory),
-        );
-    }, [JSON.stringify(drawnShapeHistory)]);
+        if (!isReadOnlyChart) {
+            localStorage.setItem(
+                CHART_ANNOTATIONS_LS_KEY,
+                JSON.stringify(drawnShapeHistory),
+            );
+        }
+    }, [isReadOnlyChart, JSON.stringify(drawnShapeHistory)]);
 
     useEffect(() => {
         if (unparsedLiquidityData !== undefined) {

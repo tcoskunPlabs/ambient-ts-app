@@ -4,12 +4,14 @@ export interface swapParamsIF {
     chain: string;
     tokenA: string;
     tokenB: string;
+    chart?: string;
 }
 
 export interface marketParamsIF {
     chain: string;
     tokenA: string;
     tokenB: string;
+    chart?: string;
 }
 
 export interface limitParamsIF {
@@ -17,6 +19,7 @@ export interface limitParamsIF {
     tokenA: string;
     tokenB: string;
     limitTick?: number;
+    chart?: string;
 }
 
 export interface poolParamsIF {
@@ -25,6 +28,7 @@ export interface poolParamsIF {
     tokenB: string;
     lowTick?: string;
     highTick?: string;
+    chart?: string;
 }
 
 export interface initParamsIF {
