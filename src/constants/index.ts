@@ -27,7 +27,8 @@ export const HISTORICAL_CANDLES_URL =
     process.env.REACT_APP_HISTORICAL_CANDLES_URL || 'https://ambindexer.net';
 
 export const CHAT_BACKEND_URL =
-    process.env.REACT_APP_CHAT_URL || `${HISTORICAL_CANDLES_URL}`;
+    'https://ambient-proven-test-chat.herokuapp.com' ||
+    `${HISTORICAL_CANDLES_URL}`;
 
 export const CHAT_BACKEND_WSS_URL =
     process.env.REACT_APP_CHAT_WSS_URL ||
