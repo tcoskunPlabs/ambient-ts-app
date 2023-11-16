@@ -11,6 +11,7 @@ import { CandleContext } from '../../../../contexts/CandleContext';
 import { useSimulatedIsPoolInitialized } from '../../../../App/hooks/useSimulatedIsPoolInitialized';
 import { FlexContainer } from '../../../../styled/Common';
 import { HeaderButtons } from '../../../../styled/Components/Chart';
+import { useAccount } from 'wagmi';
 
 export const TradeChartsHeader = (props: {
     tradePage?: boolean;
@@ -26,6 +27,7 @@ export const TradeChartsHeader = (props: {
         isReadOnlyChart,
     } = useContext(ChartContext);
     const { isCandleDataNull } = useContext(CandleContext);
+    const { isConnected } = useAccount();
 
     const [, copy] = useCopyToClipboard();
     const {
@@ -75,7 +77,7 @@ export const TradeChartsHeader = (props: {
 
     const graphSettingsContent = (
         <FlexContainer justifyContent='flex-end' alignItems='center' gap={16}>
-            {!isReadOnlyChart && (
+            {!isReadOnlyChart && isConnected && (
                 <DefaultTooltip
                     interactive
                     title={'Share Chart Via Url'}
@@ -90,22 +92,24 @@ export const TradeChartsHeader = (props: {
                     </HeaderButtons>
                 </DefaultTooltip>
             )}
-            <DefaultTooltip
-                interactive
-                title={'Toggle Full Screen Chart'}
-                enterDelay={500}
-            >
-                <HeaderButtons
-                    mobileHide
-                    onClick={() => setIsChartFullScreen(!isChartFullScreen)}
+            {!isReadOnlyChart && (
+                <DefaultTooltip
+                    interactive
+                    title={'Toggle Full Screen Chart'}
+                    enterDelay={500}
                 >
-                    <AiOutlineFullscreen
-                        size={20}
-                        id='trade_chart_full_screen_button'
-                        aria-label='Full screen chart button'
-                    />
-                </HeaderButtons>
-            </DefaultTooltip>
+                    <HeaderButtons
+                        mobileHide
+                        onClick={() => setIsChartFullScreen(!isChartFullScreen)}
+                    >
+                        <AiOutlineFullscreen
+                            size={20}
+                            id='trade_chart_full_screen_button'
+                            aria-label='Full screen chart button'
+                        />
+                    </HeaderButtons>
+                </DefaultTooltip>
+            )}
             <DefaultTooltip
                 interactive
                 title={'Copy to Clipboard'}
