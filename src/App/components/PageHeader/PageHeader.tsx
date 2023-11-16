@@ -115,6 +115,7 @@ const PageHeader = function () {
 
     const connectWagmiButton = (
         <Button
+            idForDOM='connect_wallet_button_page_header'
             title={desktopScreen ? 'Connect Wallet' : 'Connect'}
             action={openWagmiModal}
             thin
@@ -379,13 +380,15 @@ const PageHeader = function () {
                     </LogoContainer>
                 </div>
             )}
-
             {isReadOnlyChart && readOnlyDiv}
             {!isReadOnlyChart && routeDisplay}
             <RightSide>
                 {show ? (
                     <TradeNowDiv justifyContent='flex-end' alignItems='center'>
-                        <TradeNowButton inNav />
+                        <TradeNowButton
+                            inNav
+                            fieldId='trade_now_btn_in_page_header'
+                        />
                     </TradeNowDiv>
                 ) : (
                     <div>
