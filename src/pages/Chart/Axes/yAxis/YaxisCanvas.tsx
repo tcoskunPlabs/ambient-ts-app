@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState, MouseEvent, memo } from 'react';
+import {
+    useEffect,
+    useRef,
+    useState,
+    MouseEvent,
+    memo,
+    useContext,
+} from 'react';
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
-import { useAppSelector } from '../../../../utils/hooks/reduxToolkit';
 import { useLocation } from 'react-router-dom';
 import {
     formatAmountChartData,
@@ -26,6 +32,7 @@ import {
     standardDeviation,
 } from '../../ChartUtils/chartUtils';
 import { getFormattedNumber } from '../../../../App/functions/getFormattedNumber';
+import { RangeContext } from '../../../../contexts/RangeContext';
 
 interface yAxisIF {
     scaleData: scaleData | undefined;
@@ -117,7 +124,7 @@ function YAxisCanvas(props: yAxisIF) {
 
     const [yAxisCanvasWidth, setYaxisCanvasWidth] = useState(70);
 
-    const tradeData = useAppSelector((state) => state.tradeData);
+    const { advancedMode } = useContext(RangeContext);
 
     const location = useLocation();
 
@@ -390,7 +397,7 @@ function YAxisCanvas(props: yAxisIF) {
                         : liqTransitionPointforDepth
                     : poolPriceDisplay;
 
-                if (simpleRangeWidth !== 100 || tradeData.advancedMode) {
+                if (simpleRangeWidth !== 100 || advancedMode) {
                     const isScientificlowTick = low.toString().includes('e');
 
                     let lowTick = getFormattedNumber({
@@ -577,7 +584,7 @@ function YAxisCanvas(props: yAxisIF) {
                     const rectHeight =
                         yScale(secondPointInDenom) - yScale(firstPointInDenom);
 
-                    context.fillStyle = '#7674ff1e';
+                    context.fillStyle = 'rgba(41, 98, 255, 0.15)';
                     context.fillRect(
                         0,
                         yScale(firstPointInDenom),
@@ -589,7 +596,7 @@ function YAxisCanvas(props: yAxisIF) {
                         context,
                         yScale(shapePoint),
                         X,
-                        '#5553be',
+                        '#2962ff',
                         'white',
                         shapePointTick,
                         undefined,
@@ -818,7 +825,7 @@ function YAxisCanvas(props: yAxisIF) {
                             }
                         }
                     });
-                    if (tradeData.advancedMode && liquidityData) {
+                    if (advancedMode && liquidityData) {
                         const liqAllBidPrices = liquidityData?.liqBidData.map(
                             (liqData: LiquidityDataLocal) => liqData.liqPrices,
                         );
@@ -967,7 +974,7 @@ function YAxisCanvas(props: yAxisIF) {
         d3.select(d3Yaxis.current).on('mouseover', () => {
             setCrosshairActive('none');
         });
-    }, [denomInBase, liqMode, location.pathname, tradeData.advancedMode]);
+    }, [denomInBase, liqMode, location.pathname, advancedMode]);
 
     return (
         <d3fc-canvas
