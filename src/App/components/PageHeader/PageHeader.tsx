@@ -345,10 +345,27 @@ const PageHeader = function () {
     const readOnlyDiv = (
         <div style={{ display: 'flex' }}>
             <div>
-                <img src={readOnly}></img>
+                <LogoContainer to='/' aria-label='Home'>
+                    <img src={logo}></img>
+                </LogoContainer>
             </div>
-            <div style={{ marginLeft: 6, color: '#8b98a5' }}>
-                READ ONLY MODE
+            <div
+                style={{ background: '#242f3f', width: '1px', marginLeft: 6 }}
+            ></div>
+            <div
+                style={{
+                    display: 'flex',
+                    marginBottom: 'auto',
+                    marginTop: 'auto',
+                    marginLeft: 6,
+                }}
+            >
+                <div>
+                    <img src={readOnly}></img>
+                </div>
+                <div style={{ marginLeft: 6, color: '#8b98a5' }}>
+                    READ ONLY MODE
+                </div>
             </div>
         </div>
     );

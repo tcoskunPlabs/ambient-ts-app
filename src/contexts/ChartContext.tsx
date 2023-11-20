@@ -154,8 +154,6 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const chart = getParamFromPathname()?.split('chart')[1];
-        console.log({ chart });
-
         if (chart) {
             setIsReadOnlyChart(true);
             getChartValues(chart).then((result) => {
