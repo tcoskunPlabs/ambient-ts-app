@@ -189,7 +189,6 @@ export default function TransactionDetailsGraph(
                         );
 
                         if (graphData) {
-                            setIsDataLoading(false);
                             setIsDataEmpty(false);
                             setGraphData(() => {
                                 return graphData.candles;
@@ -198,7 +197,6 @@ export default function TransactionDetailsGraph(
                             setGraphData(() => {
                                 return undefined;
                             });
-                            setIsDataLoading(false);
                             setIsDataEmpty(true);
                         }
                     } catch (error) {
@@ -1077,6 +1075,16 @@ export default function TransactionDetailsGraph(
                         ]).call(lineSeries);
                     },
                 );
+
+                if (
+                    graphData &&
+                    scaleData &&
+                    scaleData.xScale &&
+                    scaleData.yScale &&
+                    isDataLoading
+                ) {
+                    setIsDataLoading(false);
+                }
 
                 render();
             }
