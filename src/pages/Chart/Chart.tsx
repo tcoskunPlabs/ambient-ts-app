@@ -487,7 +487,58 @@ export default function Chart(props: propsIF) {
                     data.time * 1000 >= xmin && data.time * 1000 <= xmax,
             );
 
-            return filtered;
+            const newXArray: number[][] | undefined = filtered
+                .filter(
+                    (item) => item.volumeUSD === 0 && item.isFakeData === false,
+                )
+                .map((item) => [
+                    scaleData.xScale.invert(
+                        scaleData.xScale(item.time * 1000) - 5 / 2,
+                    ),
+                    scaleData.xScale.invert(
+                        scaleData.xScale(item.time * 1000) + 5 / 2,
+                    ),
+                ]);
+
+            console.log({ newXArray });
+
+            console.log('scaleData.xScale', scaleData.xScale.range());
+
+            scaleData.xScale.discontinuityProvider(
+                d3fc.discontinuityRange(newXArray),
+            );
+
+            // scaleData.xScale.discontinuityProvider(d3fc.discontinuityRange.apply(d3fc.discontinuityRange ,newXArray))
+
+            // console.log(newXArray[1],new Date(newXArray[1][0]));
+
+            return filtered; // .filter((i)=>i.volumeUSD!==0 || i.isFakeData === true )
+
+            // .filter((item:CandleDataChart)=>{
+
+            //     // console.log('item.tvlData.tvl',item);
+
+            //     const highValue = denomInBase
+            //             ? item.invMinPriceExclMEVDecimalCorrected
+            //             : item.maxPriceExclMEVDecimalCorrected;
+
+            //     const lowValue =
+            //         denomInBase
+            //             ? item.invMaxPriceExclMEVDecimalCorrected
+            //             : item.minPriceExclMEVDecimalCorrected;
+
+            //     return item.volumeUSD !== 0 || item.isFakeData;
+
+            //     // if (highValue === lowValue) {
+            //     //     console.log('1111111');
+
+            //     //     item.invMinPriceExclMEVDecimalCorrected = NaN;
+            //     //     item.maxPriceExclMEVDecimalCorrected = NaN;
+            //     //     item.invMaxPriceExclMEVDecimalCorrected = NaN;
+            //     //     item.minPriceExclMEVDecimalCorrected = NaN;
+            //     // }
+
+            // });
         }
         return unparsedCandleData;
     };

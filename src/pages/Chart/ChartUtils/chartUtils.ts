@@ -98,7 +98,7 @@ export type liquidityChartData = {
 };
 
 export type scaleData = {
-    xScale: d3.ScaleLinear<number, number>;
+    xScale: any /* d3.ScaleLinear<number, number>; */;
     xScaleTime: d3.ScaleTime<number, number>;
     yScale: d3.ScaleLinear<number, number>;
     volumeScale: d3.ScaleLinear<number, number>;
