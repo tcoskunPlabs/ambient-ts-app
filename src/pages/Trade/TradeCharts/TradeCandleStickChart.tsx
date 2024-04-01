@@ -637,7 +637,7 @@ function TradeCandleStickChart(props: propsIF) {
 
             const xScaleTime = d3.scaleTime();
             const yScale = d3.scaleLinear();
-            xScale = d3.scaleLinear();
+            xScale = d3fc.scaleDiscontinuous(d3.scaleLinear());
             xScale.domain(xExtent(boundaryCandles));
 
             resetXScale(xScale);

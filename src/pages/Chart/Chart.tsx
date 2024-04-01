@@ -374,6 +374,8 @@ export default function Chart(props: propsIF) {
     const [selectedOrderTooltipPlacement, setSelectedOrderTooltipPlacement] =
         useState<{ top: number; left: number; isOnLeftSide: boolean }>();
 
+    const [discontinuityProvider, setDiscontinuityProvider] = useState(null);
+
     const [circleScale, setCircleScale] =
         useState<d3.ScaleLinear<number, number>>();
 
@@ -732,6 +734,71 @@ export default function Chart(props: propsIF) {
 
         return false;
     }, [hoveredDrawnShape, chartMousemoveEvent, mainCanvasBoundingClientRect]);
+
+    useEffect(() => {
+        if (scaleData && unparsedCandleData) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const timeGaps: any = [];
+            let notTransactionDataTime: undefined | number = undefined;
+            let transationDataTime: undefined | number = undefined;
+            let previousTvl: undefined | number = undefined;
+            unparsedCandleData
+                .sort((a, b) => a.time - b.time)
+                .forEach((item) => {
+                    const isChangeTvl = previousTvl === item.tvlData.tvl;
+                    console.log(
+                        'previousTvl,item.tvlData.tvl',
+                        new Date(item.time * 1000),
+                        previousTvl,
+                        item.tvlData.tvl,
+                        previousTvl !== item.tvlData.tvl,
+                    );
+
+                    if (
+                        item.volumeUSD === 0 &&
+                        isChangeTvl &&
+                        notTransactionDataTime === undefined
+                    ) {
+                        notTransactionDataTime = item.time * 1000;
+                    }
+
+                    if (
+                        (item.volumeUSD !== 0 ||
+                            !isChangeTvl ||
+                            item.isFakeData === true) &&
+                        notTransactionDataTime !== undefined
+                    ) {
+                        transationDataTime = item.time * 1000;
+                    }
+
+                    if (
+                        notTransactionDataTime !== undefined &&
+                        transationDataTime !== undefined
+                    ) {
+                        timeGaps.push([
+                            notTransactionDataTime,
+                            transationDataTime,
+                        ]);
+                        notTransactionDataTime = undefined;
+                        transationDataTime = undefined;
+                    }
+
+                    previousTvl = item.tvlData.tvl;
+                });
+
+            const newDiscontinuityProvider = d3fc.discontinuityRange(
+                ...timeGaps,
+            );
+            setDiscontinuityProvider(newDiscontinuityProvider);
+        }
+    }, [scaleData, unparsedCandleData]);
+
+    useEffect(() => {
+        if (scaleData && discontinuityProvider) {
+            scaleData.xScale.discontinuityProvider(discontinuityProvider);
+            render();
+        }
+    }, [scaleData, discontinuityProvider]);
 
     function updateDrawnShapeHistoryonLocalStorage() {
         const storedData = localStorage.getItem(LS_KEY_CHART_ANNOTATIONS);

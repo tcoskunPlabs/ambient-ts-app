@@ -98,7 +98,8 @@ export type liquidityChartData = {
 };
 
 export type scaleData = {
-    xScale: d3.ScaleLinear<number, number>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    xScale: any;
     xScaleTime: d3.ScaleTime<number, number>;
     yScale: d3.ScaleLinear<number, number>;
     volumeScale: d3.ScaleLinear<number, number>;
