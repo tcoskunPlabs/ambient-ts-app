@@ -489,7 +489,24 @@ export default function Chart(props: propsIF) {
                     data.time * 1000 >= xmin && data.time * 1000 <= xmax,
             );
 
-            return filtered;
+            return filtered
+                .sort((a, b) => a.time - b.time)
+                .filter((item, index, array) => {
+                    if (index === 0) {
+                        return true;
+                    }
+
+                    const previousTvlData = array[index - 1].tvlData;
+                    if (
+                        item.volumeUSD !== 0 ||
+                        item.isFakeData === true ||
+                        item.tvlData.tvl !== previousTvlData.tvl
+                    ) {
+                        return true;
+                    }
+
+                    return false;
+                });
         }
         return unparsedCandleData;
     };
@@ -893,10 +910,13 @@ export default function Chart(props: propsIF) {
     // finds candle closest to the mouse
     const snapForCandle = (point: number, filtered: Array<CandleDataIF>) => {
         if (scaleData) {
-            if (point == undefined) return [];
             if (filtered.length > 1) {
-                const nearest = minimum(filtered, point)[1];
-                return nearest;
+                const nearestValue = minimum(filtered, point);
+
+                if (nearestValue) {
+                    const nearest = nearestValue[1];
+                    return nearest;
+                }
             }
         }
 
@@ -4976,6 +4996,7 @@ export default function Chart(props: propsIF) {
         longestValue = longestValue / 2;
 
         const nearest = snapForCandle(mouseX, filtered);
+
         const dateControl =
             nearest?.time * 1000 > startDate && nearest?.time * 1000 < lastDate;
 
@@ -5013,13 +5034,13 @@ export default function Chart(props: propsIF) {
                 denomInBase
                     ? d?.invMinPriceExclMEVDecimalCorrected
                     : d?.minPriceExclMEVDecimalCorrected,
-            );
+            ) as number;
 
             open = d3.min(tempFilterData, (d: CandleDataIF) =>
                 denomInBase
                     ? d?.invMaxPriceExclMEVDecimalCorrected
                     : d?.maxPriceExclMEVDecimalCorrected,
-            );
+            ) as number;
         }
 
         const diff = Math.abs(close - open);
@@ -5159,25 +5180,26 @@ export default function Chart(props: propsIF) {
         }
     };
 
-    const minimum = (data: CandleDataIF[], mouseX: number) => {
+    const minimum = (
+        data: CandleDataIF[],
+        mouseX: number,
+    ): [number, CandleDataIF] | undefined => {
         const xScale = scaleData?.xScale;
         if (xScale) {
-            const accessor = (d: CandleDataIF) =>
-                Math.abs(mouseX - xScale(d.time * 1000));
+            const distances = data.map((dataPoint) =>
+                Math.abs(mouseX - xScale(dataPoint.time * 1000)),
+            );
 
-            return data
-                .map(function (dataPoint: CandleDataIF) {
-                    return [accessor(dataPoint), dataPoint];
-                })
-                .reduce(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    function (accumulator: any, dataPoint: any) {
-                        return accumulator[0] > dataPoint[0]
-                            ? dataPoint
-                            : accumulator;
-                    },
-                    [Number.MAX_VALUE, null],
-                );
+            const minIndex = distances.indexOf(Math.min(...distances));
+
+            console.log(
+                'data[minIndex].time',
+                data[minIndex],
+                data[minIndex].time,
+                new Date(data[minIndex].time * 1000),
+            );
+
+            return [distances[minIndex], data[minIndex]];
         }
     };
 
