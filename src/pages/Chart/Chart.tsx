@@ -5211,7 +5211,11 @@ export default function Chart(props: propsIF) {
         renderSubchartCrCanvas();
     }, [crosshairActive]);
 
-    const setCrossHairDataFunc = (offsetX: number, offsetY: number) => {
+    const setCrossHairDataFunc = (
+        nearestTime: number,
+        offsetX: number,
+        offsetY: number,
+    ) => {
         if (scaleData) {
             const snapDiff =
                 scaleData?.xScale.invert(offsetX) % (period * 1000);
@@ -5222,11 +5226,17 @@ export default function Chart(props: propsIF) {
                     ? -1 * (period * 1000 - snapDiff)
                     : snapDiff);
 
+            const crTime =
+                snappedTime <= lastCandleData.time * 1000 &&
+                snappedTime >= firstCandleData.time * 1000
+                    ? nearestTime * 1000
+                    : snappedTime;
+
             setCrosshairActive('chart');
 
             setCrosshairData([
                 {
-                    x: snappedTime,
+                    x: crTime,
                     y: scaleData?.yScale.invert(offsetY),
                 },
             ]);
@@ -5241,10 +5251,11 @@ export default function Chart(props: propsIF) {
 
             if (!isLineDrag) {
                 setChartMousemoveEvent(event);
-                setCrossHairDataFunc(offsetX, offsetY);
 
-                const { isHoverCandleOrVolumeData } =
+                const { isHoverCandleOrVolumeData, nearest } =
                     candleOrVolumeDataHoverStatus(offsetX, offsetY);
+
+                setCrossHairDataFunc(nearest.time, offsetX, offsetY);
 
                 let isOrderHistorySelected = undefined;
                 if (
