@@ -489,10 +489,10 @@ export default function Chart(props: propsIF) {
                     data.time * 1000 >= xmin && data.time * 1000 <= xmax,
             );
 
-            return filtered
+            const filteredByNonTransaction = filtered
                 .sort((a, b) => a.time - b.time)
                 .filter((item, index, array) => {
-                    if (index === 0) {
+                    if (index === 0 || index === array.length - 2) {
                         return true;
                     }
 
@@ -507,6 +507,8 @@ export default function Chart(props: propsIF) {
 
                     return false;
                 });
+
+            return filteredByNonTransaction;
         }
         return unparsedCandleData;
     };
@@ -761,28 +763,32 @@ export default function Chart(props: propsIF) {
             let previousTvl: undefined | number = undefined;
             unparsedCandleData
                 .sort((a, b) => a.time - b.time)
-                .forEach((item) => {
+                .forEach((item, index, array) => {
                     const isChangeTvl = previousTvl === item.tvlData.tvl;
+
                     console.log(
-                        'previousTvl,item.tvlData.tvl',
-                        new Date(item.time * 1000),
-                        previousTvl,
-                        item.tvlData.tvl,
-                        previousTvl !== item.tvlData.tvl,
+                        index,
+                        array.length - 2,
+                        new Date(array[array.length - 2].time * 1000),
                     );
 
                     if (
                         item.volumeUSD === 0 &&
                         isChangeTvl &&
-                        notTransactionDataTime === undefined
+                        notTransactionDataTime === undefined &&
+                        item.isFakeData === false &&
+                        array.length - 2 !== index
                     ) {
+                        console.log({ item }, new Date(item.time * 1000));
+
                         notTransactionDataTime = item.time * 1000;
                     }
 
                     if (
                         (item.volumeUSD !== 0 ||
                             !isChangeTvl ||
-                            item.isFakeData === true) &&
+                            item.isFakeData === true ||
+                            array.length - 2 === index) &&
                         notTransactionDataTime !== undefined
                     ) {
                         transationDataTime = item.time * 1000;
@@ -5192,13 +5198,6 @@ export default function Chart(props: propsIF) {
 
             const minIndex = distances.indexOf(Math.min(...distances));
 
-            console.log(
-                'data[minIndex].time',
-                data[minIndex],
-                data[minIndex].time,
-                new Date(data[minIndex].time * 1000),
-            );
-
             return [distances[minIndex], data[minIndex]];
         }
     };
@@ -5228,7 +5227,8 @@ export default function Chart(props: propsIF) {
 
             const crTime =
                 snappedTime <= lastCandleData.time * 1000 &&
-                snappedTime >= firstCandleData.time * 1000
+                snappedTime >= firstCandleData.time * 1000 &&
+                nearestTime
                     ? nearestTime * 1000
                     : snappedTime;
 
@@ -5255,7 +5255,7 @@ export default function Chart(props: propsIF) {
                 const { isHoverCandleOrVolumeData, nearest } =
                     candleOrVolumeDataHoverStatus(offsetX, offsetY);
 
-                setCrossHairDataFunc(nearest.time, offsetX, offsetY);
+                setCrossHairDataFunc(nearest?.time, offsetX, offsetY);
 
                 let isOrderHistorySelected = undefined;
                 if (
