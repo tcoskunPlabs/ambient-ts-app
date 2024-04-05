@@ -172,10 +172,8 @@ export class Zoom {
     private wheelWithoutPressKey(
         deltaX: number,
         scaleData: scaleData,
-        // firstTime: number,
         firstCandleDate: number,
         lastCandleDate: number,
-        // lastTime: number,-
         checkTouchPadZeroNegative: boolean,
     ) {
         const newMinDomain = scaleData?.xScale.invert(
@@ -325,19 +323,12 @@ export class Zoom {
         firstCandleDate: number,
         lastCandleDate: number,
     ) {
-        const domainX = scaleData?.xScale.domain();
-        const linearX = d3
-            .scaleTime()
-            .domain(scaleData?.xScale.range())
-            .range([0, domainX[1] - domainX[0]]);
-
         const touch = event.changedTouches[0];
         const currentPageX = touch.pageX;
         const previousTouchPageX = previousTouch.pageX;
         const movement = currentPageX - previousTouchPageX;
         // calculate panning speed based on bandwidth
-        const deltaX =
-            linearX(movement) * (bandwidth < 1 ? 1 : Math.sqrt(bandwidth));
+        const deltaX = movement * (bandwidth < 1 ? 1 : Math.sqrt(bandwidth));
 
         this.wheelWithoutPressKey(
             deltaX,
@@ -355,12 +346,6 @@ export class Zoom {
         previousDeltaTouch: number,
         previousDeltaTouchLocation: number,
     ) {
-        const domainX = scaleData?.xScale.domain();
-        const linearX = d3
-            .scaleTime()
-            .domain(scaleData?.xScale.range())
-            .range([0, domainX[1] - domainX[0]]);
-
         const touch1 = event.touches[0];
         const touch2 = event.touches[1];
 
@@ -380,7 +365,7 @@ export class Zoom {
                 // zoom in
                 movement = -movement / 10;
             }
-            const deltaX = linearX(movement);
+            const deltaX = movement;
 
             const firstTouch = scaleData?.xScale.invert(
                 previousDeltaTouchLocation,
