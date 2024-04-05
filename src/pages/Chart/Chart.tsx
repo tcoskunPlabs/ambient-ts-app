@@ -766,12 +766,6 @@ export default function Chart(props: propsIF) {
                 .forEach((item, index, array) => {
                     const isChangeTvl = previousTvl === item.tvlData.tvl;
 
-                    console.log(
-                        index,
-                        array.length - 2,
-                        new Date(array[array.length - 2].time * 1000),
-                    );
-
                     if (
                         item.volumeUSD === 0 &&
                         isChangeTvl &&
@@ -779,8 +773,6 @@ export default function Chart(props: propsIF) {
                         item.isFakeData === false &&
                         array.length - 2 !== index
                     ) {
-                        console.log({ item }, new Date(item.time * 1000));
-
                         notTransactionDataTime = item.time * 1000;
                     }
 
