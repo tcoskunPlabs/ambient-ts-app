@@ -118,6 +118,7 @@ import OrderHistoryCanvas from './OrderHistoryCh/OrderHistoryCanvas';
 import OrderHistoryTooltip from './OrderHistoryCh/OrderHistoryTooltip';
 import { TradeTableContext } from '../../contexts/TradeTableContext';
 import useDollarPrice from './ChartUtils/getDollarPrice';
+import { ItemContainer } from '../../styled/Components/Sidebar';
 
 interface propsIF {
     isTokenABase: boolean;
@@ -232,6 +233,7 @@ export default function Chart(props: propsIF) {
             domainBoundry: undefined,
         });
 
+    const [discontinuityScaleData] = useState<any[]>([]);
     const {
         minRangePrice: minPrice,
         setMinRangePrice: setMinPrice,
@@ -402,6 +404,7 @@ export default function Chart(props: propsIF) {
             .map((item) => ({
                 ...item,
                 isFakeData: false,
+                isShowData: false,
             }));
 
         if (
@@ -451,6 +454,7 @@ export default function Chart(props: propsIF) {
                 invPriceCloseDecimalCorrected: fakeDataCloseWithDenom,
                 isCrocData: false,
                 isFakeData: true,
+                isShowData: false,
             };
 
             // added candle for pool price market price match
@@ -460,6 +464,8 @@ export default function Chart(props: propsIF) {
                 data[0] = placeHolderCandle;
             }
         }
+
+        console.log({ data });
 
         return data;
     }, [
@@ -489,24 +495,41 @@ export default function Chart(props: propsIF) {
                     data.time * 1000 >= xmin && data.time * 1000 <= xmax,
             );
 
-            const filteredByNonTransaction = filtered
+            const filteredByNonTransaction = unparsedCandleData
                 .sort((a, b) => a.time - b.time)
-                .filter((item, index, array) => {
-                    if (index === 0 || index === array.length - 2) {
-                        return true;
+                .map((item, index, array) => {
+                    let isShowData = false;
+
+                    // İlk veya son öğe ise
+                    if (
+                        index === 0 ||
+                        index === array.length - 1 ||
+                        index === array.length - 2
+                    ) {
+                        isShowData = true;
                     }
 
-                    const previousTvlData = array[index - 1].tvlData;
+                    // Geçerli öğenin önceki öğesinin TVL verilerini al
+                    const previousTvlData =
+                        index > 0 ? array[index - 1].tvlData : null;
+
+                    // TVL verisi yoksa veya volumeUSD değeri sıfır değilse veya isFakeData true ise
                     if (
+                        !previousTvlData ||
                         item.volumeUSD !== 0 ||
                         item.isFakeData === true ||
                         item.tvlData.tvl !== previousTvlData.tvl
                     ) {
-                        return true;
+                        isShowData = true;
                     }
 
-                    return false;
+                    return {
+                        ...item,
+                        isShowData: isShowData,
+                    };
                 });
+
+            console.log({ filteredByNonTransaction });
 
             return filteredByNonTransaction;
         }
@@ -766,6 +789,8 @@ export default function Chart(props: propsIF) {
                 .forEach((item, index, array) => {
                     const isChangeTvl = previousTvl === item.tvlData.tvl;
 
+                    // console.log('gaps',new Date(item.time*1000),previousTvl,item.tvlData.tvl);
+
                     if (
                         item.volumeUSD === 0 &&
                         isChangeTvl &&
@@ -790,10 +815,14 @@ export default function Chart(props: propsIF) {
                         notTransactionDataTime !== undefined &&
                         transationDataTime !== undefined
                     ) {
-                        timeGaps.push([
+                        discontinuityScaleData.push([
                             notTransactionDataTime,
                             transationDataTime,
                         ]);
+
+                        // timeGaps.push([ notTransactionDataTime,
+                        //     transationDataTime,])
+
                         notTransactionDataTime = undefined;
                         transationDataTime = undefined;
                     }
@@ -801,19 +830,493 @@ export default function Chart(props: propsIF) {
                     previousTvl = item.tvlData.tvl;
                 });
 
-            const newDiscontinuityProvider = d3fc.discontinuityRange(
-                ...timeGaps,
-            );
+            console.log({ discontinuityScaleData });
+
+            const t1: any = [
+                // [
+                //     1709889300000,
+                //     1710003600000
+                // ],
+                // [
+                //     1710006300000,
+                //     1710007200000
+                // ],
+                // [
+                //     1710016200000,
+                //     1710017100000
+                // ],
+                // [
+                //     1710021600000,
+                //     1710025200000
+                // ],
+                // [
+                //     1710026100000,
+                //     1710035100000
+                // ],
+                // [
+                //     1710036000000,
+                //     1710049500000
+                // ],
+                // [
+                //     1710050400000,
+                //     1710165600000
+                // ],
+                // [
+                //     1710166500000,
+                //     1710167400000
+                // ],
+                // [
+                //     1710168300000,
+                //     1710169200000
+                // ],
+                // [
+                //     1710175500000,
+                //     1710176400000
+                // ],
+                // [
+                //     1710177300000,
+                //     1710179100000
+                // ],
+                // [
+                //     1710181800000,
+                //     1710182700000
+                // ],
+                // [
+                //     1710193500000,
+                //     1710198000000
+                // ],
+                // [
+                //     1710199800000,
+                //     1710211500000
+                // ],
+                // [
+                //     1710212400000,
+                //     1710227700000
+                // ],
+                // [
+                //     1710230400000,
+                //     1710232200000
+                // ],
+                // [
+                //     1710234000000,
+                //     1710238500000
+                // ],
+                // [
+                //     1710240300000,
+                //     1710269100000
+                // ],
+                // [
+                //     1710270900000,
+                //     1710285300000
+                // ],
+                // [
+                //     1710286200000,
+                //     1710293400000
+                // ],
+                // [
+                //     1710294300000,
+                //     1710295200000
+                // ],
+                // [
+                //     1710296100000,
+                //     1710353700000
+                // ],
+                // [
+                //     1710354600000,
+                //     1710396000000
+                // ],
+                // [
+                //     1710396900000,
+                //     1710401400000
+                // ],
+                // [
+                //     1710402300000,
+                //     1710412200000
+                // ],
+                // [
+                //     1710413100000,
+                //     1710414000000
+                // ],
+                // [
+                //     1710414900000,
+                //     1710415800000
+                // ],
+                // [
+                //     1710416700000,
+                //     1710425700000
+                // ],
+                // [
+                //     1710426600000,
+                //     1710529200000
+                // ],
+                // [
+                //     1710531900000,
+                //     1710788400000
+                // ],
+                // [
+                //     1710789300000,
+                //     1710844200000
+                // ],
+                // [
+                //     1710845100000,
+                //     1710848700000
+                // ],
+                // [
+                //     1710849600000,
+                //     1710851400000
+                // ],
+                // [
+                //     1710852300000,
+                //     1710854100000
+                // ],
+                // [
+                //     1710855000000,
+                //     1710861300000
+                // ],
+                // [
+                //     1710862200000,
+                //     1710870300000
+                // ],
+                // [
+                //     1710871200000,
+                //     1710873000000
+                // ],
+                // [
+                //     1710873900000,
+                //     1710919800000
+                // ],
+                // [
+                //     1710920700000,
+                //     1710933300000
+                // ],
+                // [
+                //     1710934200000,
+                //     1710935100000
+                // ],
+                // [
+                //     1710936900000,
+                //     1710944100000
+                // ],
+                // [
+                //     1710945000000,
+                //     1711044900000
+                // ],
+                // [
+                //     1711045800000,
+                //     1711047600000
+                // ],
+                // [
+                //     1711049400000,
+                //     1711055700000
+                // ],
+                // [
+                //     1711056600000,
+                //     1711141200000
+                // ],
+                // [
+                //     1711142100000,
+                //     1711319400000
+                // ],
+                // [
+                //     1711321200000,
+                //     1711359000000
+                // ],
+                // [
+                //     1711359900000,
+                //     1711362600000
+                // ],
+                // [
+                //     1711363500000,
+                //     1711566000000
+                // ],
+                // [
+                //     1711566900000,
+                //     1711612800000
+                // ],
+                // [
+                //     1711616400000,
+                //     1711697400000
+                // ],
+                // [
+                //     1711699200000,
+                //     1712016000000
+                // ],
+                // [
+                //     1712016900000,
+                //     1712071800000
+                // ],
+                // [
+                //     1712072700000,
+                //     1712074500000
+                // ],
+                // [
+                //     1712075400000,
+                //     1712097000000
+                // ],
+                // [
+                //     1712097900000,
+                //     1712162700000
+                // ],
+                // [
+                //     1712163600000,
+                //     1712281500000
+                // ],
+                // [
+                //     1712282400000,
+                //     1712340000000
+                // ],
+                // [
+                //     1712340900000,
+                //     1712585700000
+                // ],
+                // [
+                //     1709889300000,
+                //     1710003600000
+                // ],
+                // [
+                //     1710006300000,
+                //     1710007200000
+                // ],
+                // [
+                //     1710016200000,
+                //     1710017100000
+                // ],
+                // [
+                //     1710021600000,
+                //     1710025200000
+                // ],
+                // [
+                //     1710026100000,
+                //     1710035100000
+                // ],
+                // [
+                //     1710036000000,
+                //     1710049500000
+                // ],
+                // [
+                //     1710050400000,
+                //     1710165600000
+                // ],
+                // [
+                //     1710166500000,
+                //     1710167400000
+                // ],
+                // [
+                //     1710168300000,
+                //     1710169200000
+                // ],
+                // [
+                //     1710175500000,
+                //     1710176400000
+                // ],
+                // [
+                //     1710177300000,
+                //     1710179100000
+                // ],
+                // [
+                //     1710181800000,
+                //     1710182700000
+                // ],
+                // [
+                //     1710193500000,
+                //     1710198000000
+                // ],
+                // [
+                //     1710199800000,
+                //     1710211500000
+                // ],
+                // [
+                //     1710212400000,
+                //     1710227700000
+                // ],
+                // [
+                //     1710230400000,
+                //     1710232200000
+                // ],
+                // [
+                //     1710234000000,
+                //     1710238500000
+                // ],
+                // [
+                //     1710240300000,
+                //     1710269100000
+                // ],
+                // [
+                //     1710270900000,
+                //     1710285300000
+                // ],
+                // [
+                //     1710286200000,
+                //     1710293400000
+                // ],
+                // [
+                //     1710294300000,
+                //     1710295200000
+                // ],
+                // [
+                //     1710296100000,
+                //     1710353700000
+                // ],
+                // [
+                //     1710354600000,
+                //     1710396000000
+                // ],
+                // [
+                //     1710396900000,
+                //     1710401400000
+                // ],
+                // [
+                //     1710402300000,
+                //     1710412200000
+                // ],
+                // [
+                //     1710413100000,
+                //     1710414000000
+                // ],
+                // [
+                //     1710414900000,
+                //     1710415800000
+                // ],
+                // [
+                //     1710416700000,
+                //     1710425700000
+                // ],
+                // [
+                //     1710426600000,
+                //     1710529200000
+                // ],
+                // [
+                //     1710531900000,
+                //     1710788400000
+                // ],
+                // [
+                //     1710789300000,
+                //     1710844200000
+                // ],
+                // [
+                //     1710845100000,
+                //     1710848700000
+                // ],
+                // [
+                //     1710849600000,
+                //     1710851400000
+                // ],
+                // [
+                //     1710852300000,
+                //     1710854100000
+                // ],
+                // [
+                //     1710855000000,
+                //     1710861300000
+                // ],
+                // [
+                //     1710862200000,
+                //     1710870300000
+                // ],
+                // [
+                //     1710871200000,
+                //     1710873000000
+                // ],
+                // [
+                //     1710873900000,
+                //     1710919800000
+                // ],
+                // [
+                //     1710920700000,
+                //     1710933300000
+                // ],
+                // [
+                //     1710934200000,
+                //     1710935100000
+                // ],
+                // [
+                //     1710936900000,
+                //     1710944100000
+                // ],
+                // [
+                //     1710945000000,
+                //     1711044900000
+                // ],
+                // [
+                //     1711045800000,
+                //     1711047600000
+                // ],
+                // [
+                //     1711049400000,
+                //     1711055700000
+                // ],
+                // [
+                //     1711056600000,
+                //     1711141200000
+                // ],
+                // [
+                //     1711142100000,
+                //     1711319400000
+                // ],
+                // [
+                //     1711321200000,
+                //     1711359000000
+                // ],
+                // [
+                //     1711359900000,
+                //     1711362600000
+                // ],
+                // [
+                //     1711363500000,
+                //     1711566000000
+                // ],
+                // [
+                //     1711566900000,
+                //     1711612800000
+                // ],
+                // [
+                //     1711616400000,
+                //     1711697400000
+                // ],
+                // [
+                //     1711699200000,
+                //     1712016000000
+                // ],
+                // [
+                //     1712016900000,
+                //     1712071800000
+                // ],
+                // [
+                //     1712072700000,
+                //     1712074500000
+                // ],
+                // [
+                //     1712075400000,
+                //     1712097000000
+                // ],
+                // [
+                //     1712097900000,
+                //     1712162700000
+                // ],
+                // [
+                //     1712163600000,
+                //     1712281500000
+                // ],
+                // [
+                //     1712282400000,
+                //     1712340000000
+                // ],
+                [1712340000000, 1712588400000],
+            ];
+
+            const newDiscontinuityProvider = d3fc.discontinuityRange(...t1);
+            scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
+
             setDiscontinuityProvider(newDiscontinuityProvider);
         }
-    }, [scaleData, unparsedCandleData]);
+    }, [unparsedCandleData]);
 
     useEffect(() => {
         if (scaleData && discontinuityProvider) {
             scaleData.xScale.discontinuityProvider(discontinuityProvider);
             render();
         }
-    }, [scaleData, discontinuityProvider]);
+    }, [discontinuityProvider]);
 
     function updateDrawnShapeHistoryonLocalStorage() {
         const storedData = localStorage.getItem(LS_KEY_CHART_ANNOTATIONS);
@@ -2359,10 +2862,29 @@ export default function Chart(props: propsIF) {
             const snappedTime = nowDate + (period * 1000 - snapDiff);
 
             const centerX = snappedTime;
+            console.log({ centerX }, new Date(centerX));
+
             const diff =
                 (localInitialDisplayCandleCount * period * 1000) / xAxisBuffer;
 
+            const width = scaleData.xScale.range()[1];
+            console.log('chart', { width });
+
+            const newMaxDomain = scaleData.xScale.invert(
+                scaleData.xScale(snappedTime) + width * (1 - xAxisBuffer),
+            );
+            const newMinDomain = scaleData.xScale.invert(
+                scaleData.xScale(snappedTime) - width * xAxisBuffer,
+            );
+
             setPrevLastCandleTime(snappedTime / 1000);
+            // console.log({newMinDomain,newMaxDomain},new Date(newMinDomain),new Date(newMaxDomain));
+
+            // scaleData?.xScale.domain([
+            //     newMinDomain,
+            //     newMaxDomain,
+            // ]);
+            // }
 
             scaleData?.xScale.domain([
                 centerX - diff * xAxisBuffer,
@@ -2390,6 +2912,8 @@ export default function Chart(props: propsIF) {
         }
     }
     function resetFunc() {
+        console.log('reset');
+
         if (scaleData) {
             setBandwidth(defaultCandleBandwith);
             setXScaleDefault();
@@ -4968,7 +5492,7 @@ export default function Chart(props: propsIF) {
         const xmin = scaleData?.xScale.domain()[0] as number;
         const xmax = scaleData?.xScale.domain()[1] as number;
 
-        visibleCandleData.map((d: CandleDataIF) => {
+        visibleCandleData.map((d: CandleDataChart) => {
             avaregeHeight =
                 avaregeHeight +
                 Math.abs(
@@ -4985,7 +5509,7 @@ export default function Chart(props: propsIF) {
                     longestValue = d.volumeUSD;
                 }
 
-                filtered.push(d);
+                d.isShowData && filtered.push(d);
             }
         });
 

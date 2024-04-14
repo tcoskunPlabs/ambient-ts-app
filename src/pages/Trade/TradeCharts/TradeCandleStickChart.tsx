@@ -814,6 +814,21 @@ function TradeCandleStickChart(props: propsIF) {
         const diff =
             (localInitialDisplayCandleCount * period * 1000) / xAxisBuffer;
 
+        const width = xScale.range()[1];
+        const newMaxDomain = xScale.invert(
+            xScale(snappedTime) + width * (1 - xAxisBuffer),
+        );
+        const newMinDomain = xScale.invert(
+            xScale(snappedTime) - width * xAxisBuffer,
+        );
+
+        // setPrevLastCandleTime(snappedTime / 1000);
+        // console.log({newMinDomain,newMaxDomain},new Date(newMinDomain),new Date(newMaxDomain));
+
+        // scaleData?.xScale.domain([
+        //     newMinDomain,
+        //     newMaxDomain,
+        // ]);
         xScale.domain([
             centerX - diff * xAxisBuffer,
             centerX + diff * (1 - xAxisBuffer),

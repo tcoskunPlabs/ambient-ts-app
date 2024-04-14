@@ -85,7 +85,9 @@ export type selectedDrawnData = {
 
 export interface CandleDataChart extends CandleDataIF {
     isFakeData: boolean;
+    isShowData: boolean;
 }
+
 export type liquidityChartData = {
     liqAskData: LiquidityDataLocal[];
     liqBidData: LiquidityDataLocal[];
