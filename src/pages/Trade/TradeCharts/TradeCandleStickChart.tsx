@@ -34,6 +34,7 @@ import {
 import {
     chartItemStates,
     getInitialDisplayCandleCount,
+    getMinTimeWithTransaction,
     liquidityChartData,
     scaleData,
 } from '../../Chart/ChartUtils/chartUtils';
@@ -42,6 +43,7 @@ import { updatesIF } from '../../../utils/hooks/useUrlParams';
 import { GraphDataContext } from '../../../contexts/GraphDataContext';
 import { TradeDataContext } from '../../../contexts/TradeDataContext';
 import { xAxisBuffer } from '../../Chart/ChartUtils/chartConstants';
+import { filterCandleWithTransaction } from '../../Chart/ChartUtils/discontinuityScaleUtils';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface propsIF {
@@ -103,6 +105,7 @@ function TradeCandleStickChart(props: propsIF) {
     const [prevPeriod, setPrevPeriod] = useState<any>();
     const [prevFirsCandle, setPrevFirsCandle] = useState<any>();
 
+    const [prevCandleCount, setPrevCandleCount] = useState(100);
     const [isCandleAdded, setIsCandleAdded] = useState<boolean>(false);
 
     const [liqBoundary, setLiqBoundary] = useState<number | undefined>(
@@ -707,12 +710,14 @@ function TradeCandleStickChart(props: propsIF) {
                     }
 
                     const diffDomain = Math.abs(domain[1] - domain[0]);
-                    const factorDomain = diffDomain / (prevPeriod * 1000);
+                    // const factorDomain = diffDomain / (prevPeriod * 1000);
+
+                    console.log(prevCandleCount);
 
                     const domainCenter =
                         Math.max(domain[1], domain[0]) - diffDomain / 2;
 
-                    const newDiffDomain = period * 1000 * factorDomain;
+                    const newDiffDomain = period * 1000 * prevCandleCount;
 
                     const d1 = domainCenter + newDiffDomain / 2;
                     const d0 = domainCenter - newDiffDomain / 2;
@@ -746,6 +751,23 @@ function TradeCandleStickChart(props: propsIF) {
                         isChangeScaleChart &&
                         !isShowLatestCandle
                     ) {
+                        console.log(
+                            'TCS   hekkoooooooooooo',
+                            new Date(domainRight),
+                            new Date(domainLeft),
+                            domainRight,
+                            domainLeft,
+                        );
+
+                        console.log(
+                            'PERRRRRRRRRRR',
+                            Math.abs(domainRight - domainLeft) /
+                                (1000 * period),
+                        );
+
+                        const minDom = scaleData?.xScale.domain()[0];
+                        const maxDom = scaleData?.xScale.domain()[1];
+
                         scaleData.xScale.domain([domainLeft, domainRight]);
 
                         let nCandles = Math.floor(
@@ -790,16 +812,45 @@ function TradeCandleStickChart(props: propsIF) {
                                 isFetchFirst200Candle: false,
                             };
                         });
+
+                        // if (prevPeriod) {
+                        //     console.log('ÜFFFFFFFFFFFFF',new Date(maxDom),new Date(minDom),maxDom,minDom, Math.floor(
+                        //         Math.abs(maxDom  - minDom) /
+                        //             (1000 * prevPeriod),
+                        //     ),);
+
+                        //     setPrevCandleCount(
+                        //         Math.floor(
+                        //             Math.abs(maxDom  - minDom) /
+                        //                 (1000 * prevPeriod),
+                        //         ),
+                        //     );
+                        // }
                     } else {
                         // resets the graph if the calculated domain is less than the value with min time
                         resetChart();
                     }
                 }
             }
+
             setPrevFirsCandle(() => firtCandleTimeState);
             setPrevPeriod(() => period);
         }
     }, [period, diffHashSig(unparsedCandleData)]);
+
+    //   useEffect(() => {
+    //     console.log('***************************',prevCandleCount);
+
+    //     if (scaleData && unparsedCandleData && period && prevCandleCount) {
+    //         const isShowLatestCandle = candleScale?.isShowLatestCandle;
+
+    //         const minTime=getMinTimeWithTransaction(filterCandleWithTransaction(unparsedCandleData),period, isShowLatestCandle ? prevCandleCount+1 : prevCandleCount);
+    //            console.log('55555555555555555555555555555',{minTime},minTime && new Date(minTime));
+
+    //         scaleData.xScale.domain([minTime, scaleData.xScale.domain()[1]]);
+    //     }
+
+    // }, [prevCandleCount]);
 
     const resetXScale = (xScale: d3.ScaleLinear<number, number, never>) => {
         if (!period) return;
@@ -814,25 +865,40 @@ function TradeCandleStickChart(props: propsIF) {
         const diff =
             (localInitialDisplayCandleCount * period * 1000) / xAxisBuffer;
 
-        const width = xScale.range()[1];
-        const newMaxDomain = xScale.invert(
-            xScale(snappedTime) + width * (1 - xAxisBuffer),
-        );
-        const newMinDomain = xScale.invert(
-            xScale(snappedTime) - width * xAxisBuffer,
-        );
-
-        // setPrevLastCandleTime(snappedTime / 1000);
-        // console.log({newMinDomain,newMaxDomain},new Date(newMinDomain),new Date(newMaxDomain));
-
-        // scaleData?.xScale.domain([
-        //     newMinDomain,
-        //     newMaxDomain,
-        // ]);
         xScale.domain([
             centerX - diff * xAxisBuffer,
             centerX + diff * (1 - xAxisBuffer),
         ]);
+
+        // console.log('PERRRRRRRRRRR',Math.abs((snappedTime)-(centerX - diff * xAxisBuffer))/(1000*period));
+
+        // const xmin =
+        // centerX - diff * xAxisBuffer -
+        // period * 1000 * 300;
+        // const xmax =
+        // centerX + diff * (1 - xAxisBuffer) +
+        // period * 1000 * 300;
+
+        // if (unparsedCandleData) {
+        //     console.log({unparsedCandleData});
+
+        //     const data =filterCandleWithTransaction(unparsedCandleData);
+        //     const minTime=getMinTimeWithTransaction(data,period,100);
+
+        //     console.log({minTime},minTime && new Date(minTime));
+
+        //     minTime && xScale.domain([minTime, xScale.domain()[1]]);
+        // }
+        // if (scaleData && unparsedCandleData) {
+        //     const data:CandleDataChart[] = filterCandleWithTransaction(unparsedCandleData).filter((item)=> (item.time * 1000 >= xmin && item.time * 1000 <= xmax && item.isShowData));
+
+        //     const candleCount = (diff * (1 - xAxisBuffer)+(diff * xAxisBuffer))/(period*1000);
+        //     // if (data.length < candleCount) {
+        //         const minTime=getMinTimeWithTransaction(data,period,(diff * (1 - xAxisBuffer)+(diff * xAxisBuffer))/(period*1000) );
+        //         scaleData.xScale.domain([minTime,scaleData.xScale.domain()[1]])
+        //     // }
+
+        // }
     };
     const resetChart = () => {
         if (scaleData && unparsedCandleData) {
@@ -921,6 +987,8 @@ function TradeCandleStickChart(props: propsIF) {
                         unparsedData={candleData}
                         updateURL={updateURL}
                         userTransactionData={userTransactionData}
+                        setPrevCandleCount={setPrevCandleCount}
+                        prevCandleCount={prevCandleCount}
                     />
                 ) : (
                     <Spinner size={100} bg='var(--dark2)' centered />

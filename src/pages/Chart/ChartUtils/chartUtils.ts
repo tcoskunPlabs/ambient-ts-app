@@ -555,3 +555,58 @@ export function checkShowLatestCandle(
     }
     return false;
 }
+
+export function getMinTimeWithTransaction(
+    data: CandleDataChart[],
+    period: number,
+    candleCount: number,
+    domain: number[],
+) {
+    const allShowData = data.filter((item) => item.isShowData);
+    const filtered = data.filter((data: CandleDataChart) => {
+        return (
+            data.isShowData &&
+            data.time * 1000 <= domain[1] &&
+            data.time * 1000 >= domain[0]
+        );
+    });
+
+    const filteredLength = filtered.length;
+
+    if (filteredLength > 1 && filteredLength < candleCount) {
+        const filteredShowData = data.filter((data: CandleDataChart) => {
+            return (
+                data.isShowData && filtered[filteredLength - 1].time > data.time
+            );
+        });
+
+        const filteredShowDataLength = filteredShowData.length;
+        const needBufferCandleCount = candleCount - filteredLength;
+
+        let minTime = 0;
+
+        if (filteredShowDataLength > 0) {
+            if (needBufferCandleCount > filteredShowDataLength - 1) {
+                const beforeTime =
+                    filteredShowData[filteredShowDataLength - 1].time;
+
+                const needCandleCountForFilter =
+                    needBufferCandleCount - filteredShowDataLength;
+                console.log({ needCandleCountForFilter });
+
+                minTime = beforeTime - needCandleCountForFilter * period;
+            } else {
+                minTime = filteredShowData[needBufferCandleCount].time;
+            }
+        } else {
+            minTime =
+                Math.floor(domain[0] / 1000) - needBufferCandleCount * period;
+        }
+
+        console.log('hekkoooooooooooo', new Date(minTime, minTime * 1000));
+
+        return minTime * 1000;
+    }
+
+    return undefined;
+}

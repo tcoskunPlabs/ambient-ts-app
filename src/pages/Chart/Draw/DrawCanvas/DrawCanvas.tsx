@@ -80,6 +80,7 @@ interface DrawCanvasProps {
     quoteTokenDecimals: number;
     baseTokenDecimals: number;
     setIsUpdatingShape: React.Dispatch<React.SetStateAction<boolean>>;
+    bandwidth: number;
 }
 
 function DrawCanvas(props: DrawCanvasProps) {
@@ -110,6 +111,7 @@ function DrawCanvas(props: DrawCanvasProps) {
         baseTokenDecimals,
         period,
         setIsUpdatingShape,
+        bandwidth,
     } = props;
 
     const {
@@ -813,9 +815,9 @@ function DrawCanvas(props: DrawCanvasProps) {
                             0,
                         );
 
-                        const lengthAsBars = Math.abs(
-                            lineData[0].x - lineData[1].x,
-                        );
+                        // const lengthAsBars = Math.abs(
+                        //     lineData[0].x - lineData[1].x,
+                        // );
                         const lengthAsDate =
                             (lineData[0].x > lineData[1].x ? '-' : '') +
                             formatTimeDifference(
@@ -923,7 +925,8 @@ function DrawCanvas(props: DrawCanvasProps) {
                                 dpRangeLabelYPlacement + 16,
                             );
                             ctx.fillText(
-                                (lengthAsBars / (1000 * period))
+                                (width / bandwidth)
+                                    // (lengthAsBars / (1000 * period))
                                     .toFixed(0)
                                     .toString() +
                                     ' bars,  ' +

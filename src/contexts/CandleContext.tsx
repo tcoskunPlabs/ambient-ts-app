@@ -25,6 +25,7 @@ import {
 } from '../ambient-utils/constants';
 import { getLocalStorageItem } from '../ambient-utils/dataLayer';
 import { chartSettingsIF } from '../App/hooks/useChartSettings';
+import { filterCandleWithTransaction } from '../pages/Chart/ChartUtils/discontinuityScaleUtils';
 
 interface CandleContextIF {
     candleData: CandlesByPoolAndDurationIF | undefined;
@@ -83,10 +84,13 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
         value: false,
     });
 
+    const [isFetchNewDataWithTs, setIsFetchNewDataWithTs] = useState(false);
+
     const [timeOfEndCandle, setTimeOfEndCandle] = useState<
         number | undefined
     >();
 
+    const [needCandleForZoom, setNeedCandleForZoom] = useState(0);
     useEffect(() => {
         // If there is no data in the range in which the data is received, it will send a pull request for the first 200 candles
         if (
@@ -179,12 +183,15 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
 
     useEffect(() => {
         if (isChartEnabled && isUserOnline && candleScale.isShowLatestCandle) {
-            fetchCandles(true);
+            const nowTime = Math.floor(Date.now() / 1000);
+
+            if (candleData && candleData.candles && candleTimeLocal) {
+                fetchCandlesByNumDurations(200, nowTime, false);
+            }
         }
     }, [
         isChartEnabled,
         isUserOnline,
-
         isUserIdle
             ? Math.floor(Date.now() / CACHE_UPDATE_FREQ_IN_MS)
             : Math.floor(Date.now() / (2 * CACHE_UPDATE_FREQ_IN_MS)),
@@ -239,6 +246,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                 setCandleData(candles);
 
                 const candleSeries = candles?.candles;
+
                 if (candleSeries && candleSeries.length > 0) {
                     if (candles?.candles.length < nCandles) {
                         const localCandles = candles?.candles;
@@ -254,8 +262,13 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                     }
                 }
 
-                if (candleSeries && candles?.candles.length >= 7) {
-                    setIsFetchingCandle(false);
+                if (candleSeries) {
+                    const filtered = filterCandleWithTransaction(
+                        candleSeries,
+                    ).filter((item) => item.isShowData);
+                    if (candles?.candles.length >= 7 && filtered.length > 125) {
+                        setIsFetchingCandle(false);
+                    }
                 }
                 setIsFirstFetch(false);
             });
@@ -284,16 +297,57 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     }, [candleData?.candles?.length, lastCandleDateInSeconds]);
 
     const numDurationsNeeded = useMemo(() => {
+        console.log(
+            { domainBoundaryInSeconds },
+            { minTimeMemo },
+            candleTimeLocal,
+        );
+
         if (candleTimeLocal === undefined) return;
         if (!minTimeMemo || !domainBoundaryInSeconds) return;
         const numDurations = Math.floor(
             (minTimeMemo - domainBoundaryInSeconds) / candleTimeLocal + 1,
         );
 
+        console.log({ numDurations });
+
         return numDurations > 2999 ? 2999 : numDurations;
     }, [minTimeMemo, domainBoundaryInSeconds]);
 
-    const fetchCandlesByNumDurations = (numDurations: number) => {
+    useEffect(() => {
+        if (candleData) {
+            const data = candleData?.candles;
+            const filtered = filterCandleWithTransaction(data).filter(
+                (item) => item.isShowData,
+            );
+
+            if (filtered.length < 125) {
+                if (candleTimeLocal) {
+                    const candleDomain = {
+                        lastCandleDate: data[0].time * 1000,
+                        domainBoundry:
+                            (data[0].time - 200 * data[0].period) * 1000,
+                    };
+
+                    console.log({ candleDomain });
+
+                    setCandleDomains(candleDomain);
+
+                    setIsFetchNewDataWithTs(!isFetchNewDataWithTs);
+                }
+            } else {
+                console.log('hellö');
+
+                setIsFetchingCandle(false);
+            }
+        }
+    }, [candleData?.candles, candleTimeLocal === undefined]);
+
+    const fetchCandlesByNumDurations = (
+        numDurations: number,
+        minTimeMemo: number,
+        isFirstFetch: boolean,
+    ) => {
         if (!crocEnv || !candleTimeLocal) {
             return;
         }
@@ -307,7 +361,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
             candleTimeLocal,
             baseTokenAddress,
             quoteTokenAddress,
-            minTimeMemo ? minTimeMemo : 0,
+            minTimeMemo,
             numDurations,
             crocEnv,
             cachedFetchTokenPrice,
@@ -315,7 +369,10 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
             signal,
         )
             .then((incrCandles) => {
-                if (incrCandles && candleData && !isZoomRequestCanceled.value) {
+                if (
+                    incrCandles &&
+                    candleData /* && !isZoomRequestCanceled.value */
+                ) {
                     const newCandles: CandleDataIF[] = [];
                     if (incrCandles.candles.length === 0) {
                         candleData.candles.sort(
@@ -351,6 +408,35 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                     const newSeries = Object.assign({}, candleData, {
                         candles: candleData.candles.concat(newCandles),
                     });
+
+                    const filtered = filterCandleWithTransaction(
+                        incrCandles.candles,
+                    ).filter((item) => item.isShowData);
+
+                    console.log('filtereDLEENg', filtered.length);
+
+                    // if (filtered.length < numDurations && isFirstFetch) {
+                    //     console.log('heeeeeeeeeeeeeeeelp',filtered.length,{numDurations});
+
+                    //     if (!needCandleForZoom) {
+                    //         setNeedCandleForZoom(numDurations);
+                    //     }
+
+                    //     const nCandle = !needCandleForZoom ? numDurations : needCandleForZoom;
+
+                    //     // setCandleDomains({
+                    //     //     domainBoundry: (newSeries.candles[0].time - (nCandle-(filtered.length)*candleTimeLocal))*1000,
+                    //     //     lastCandleDate:newSeries.candles[0].time*1000,
+                    //     // })
+                    //     // setNeedCandleForZoom(
+
+                    //     //     {
+                    //     //         minTimeMemo:newSeries.candles[newSeries.candles.length-1].time,
+                    //     //         needCandle:numDurations-(filtered.length)
+                    //     //     })
+
+                    // }
+
                     setCandleData(newSeries);
                 }
             })
@@ -367,12 +453,28 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     useEffect(() => {
         if (!numDurationsNeeded) return;
         if (numDurationsNeeded > 0 && numDurationsNeeded < 3000) {
-            fetchCandlesByNumDurations(numDurationsNeeded);
+            minTimeMemo &&
+                fetchCandlesByNumDurations(
+                    numDurationsNeeded,
+                    minTimeMemo,
+                    true,
+                );
         }
-    }, [numDurationsNeeded]);
+    }, [numDurationsNeeded, isFetchNewDataWithTs]);
+
+    // useEffect(() => {
+
+    //     if (candleTimeLocal) {
+    //         const newDate = needCandleForZoom.minTimeMemo-needCandleForZoom.needCandle *candleTimeLocal;
+
+    //         fetchCandlesByNumDurations(needCandleForZoom.needCandle, newDate,true);
+    //     }
+
+    // }, [needCandleForZoom])
+
     useEffect(() => {
         if (abortController && isZoomRequestCanceled.value) {
-            abortController.abort();
+            // abortController.abort();
         }
     }, [isZoomRequestCanceled.value]);
 
