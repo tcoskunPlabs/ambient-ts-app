@@ -605,7 +605,7 @@ export function getMinTimeWithTransaction(
 
         console.log('hekkoooooooooooo', new Date(minTime, minTime * 1000));
 
-        return minTime * 1000;
+        // return minTime * 1000;
     }
 
     return undefined;

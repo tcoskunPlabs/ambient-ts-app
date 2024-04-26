@@ -45,6 +45,8 @@ interface CandleContextIF {
     setCandleScale: Dispatch<SetStateAction<CandleScaleIF>>;
     candleTimeLocal: number | undefined;
     timeOfEndCandle: number | undefined;
+    isDiscontinuityScaleEnabled: boolean;
+    setIsDiscontinuityScaleEnabled: Dispatch<SetStateAction<boolean>>;
 }
 
 export const CandleContext = createContext<CandleContextIF>(
@@ -89,6 +91,9 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     const [timeOfEndCandle, setTimeOfEndCandle] = useState<
         number | undefined
     >();
+
+    const [isDiscontinuityScaleEnabled, setIsDiscontinuityScaleEnabled] =
+        useState(true);
 
     const [needCandleForZoom, setNeedCandleForZoom] = useState(0);
     useEffect(() => {
@@ -153,6 +158,8 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
         setCandleScale,
         candleTimeLocal,
         timeOfEndCandle,
+        isDiscontinuityScaleEnabled,
+        setIsDiscontinuityScaleEnabled,
     };
 
     useEffect(() => {
@@ -297,19 +304,11 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     }, [candleData?.candles?.length, lastCandleDateInSeconds]);
 
     const numDurationsNeeded = useMemo(() => {
-        console.log(
-            { domainBoundaryInSeconds },
-            { minTimeMemo },
-            candleTimeLocal,
-        );
-
         if (candleTimeLocal === undefined) return;
         if (!minTimeMemo || !domainBoundaryInSeconds) return;
         const numDurations = Math.floor(
             (minTimeMemo - domainBoundaryInSeconds) / candleTimeLocal + 1,
         );
-
-        console.log({ numDurations });
 
         return numDurations > 2999 ? 2999 : numDurations;
     }, [minTimeMemo, domainBoundaryInSeconds]);
@@ -329,15 +328,11 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                             (data[0].time - 200 * data[0].period) * 1000,
                     };
 
-                    console.log({ candleDomain });
-
                     setCandleDomains(candleDomain);
 
                     setIsFetchNewDataWithTs(!isFetchNewDataWithTs);
                 }
             } else {
-                console.log('hellö');
-
                 setIsFetchingCandle(false);
             }
         }
@@ -412,8 +407,6 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                     const filtered = filterCandleWithTransaction(
                         incrCandles.candles,
                     ).filter((item) => item.isShowData);
-
-                    console.log('filtereDLEENg', filtered.length);
 
                     // if (filtered.length < numDurations && isFirstFetch) {
                     //     console.log('heeeeeeeeeeeeeeeelp',filtered.length,{numDurations});

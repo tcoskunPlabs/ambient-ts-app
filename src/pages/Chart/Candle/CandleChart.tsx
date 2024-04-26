@@ -178,10 +178,10 @@ export default function CandleChart(props: candlePropsIF) {
                             ? uniswapBorderColor
                             : crocBorderColor;
 
-                    if (!d.isShowData) {
-                        context.fillStyle = 'transparent';
-                        context.strokeStyle = 'transparent';
-                    }
+                    // if (!d.isShowData) {
+                    //     context.fillStyle = 'transparent';
+                    //     context.strokeStyle = 'transparent';
+                    // }
                 },
             );
         }
