@@ -192,7 +192,7 @@ export default function DragCanvas(props: DragCanvasProps) {
         }
 
         if (scaleData.xScale.invert(offsetX) < valueX) {
-            valueX = scaleData.xScale.invert(offsetX);
+            valueX = nearest.time * 1000;
         }
 
         return { valueX: valueX, valueY: valueY };
