@@ -198,6 +198,8 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
             ) {
                 const nowTime = Math.floor(Date.now() / 1000);
 
+                console.log('nowTime', new Date(nowTime * 1000));
+
                 fetchCandlesByNumDurations(200, nowTime);
             }
         }
@@ -355,6 +357,8 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
             signal,
         )
             .then((incrCandles) => {
+                console.log('nowTime', { incrCandles });
+
                 if (incrCandles && candleData && !isZoomRequestCanceled.value) {
                     if (candleDomains.isResetRequest) {
                         setCandleData(incrCandles);

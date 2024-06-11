@@ -23,6 +23,14 @@ export function filterCandleWithTransaction(data: CandleDataIF[]) {
 
             const previousTvlData = index > 0 ? array[index - 1].tvlData : null;
 
+            console.log(
+                'item',
+                item,
+                new Date(item.time * 1000),
+                item.volumeUSD,
+                item.tvlData.tvl !== previousTvlData?.tvl,
+            );
+
             if (
                 !previousTvlData ||
                 item.volumeUSD !== 0 ||

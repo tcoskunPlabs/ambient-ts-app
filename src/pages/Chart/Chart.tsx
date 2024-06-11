@@ -457,12 +457,12 @@ export default function Chart(props: propsIF) {
      */
     const calculateDiscontinuityRange = async (data: CandleDataChart[]) => {
         // timeGaps each element in the data array represents a time interval and consists of two dates: [candleDate, shiftDate].
-        const localTimeGaps: { range: number[]; isAddedPixel: boolean }[] =
-            structuredClone(timeGaps);
+        const localTimeGaps: { range: number[]; isAddedPixel: boolean }[] = [];
+        // structuredClone(timeGaps);
         let notTransactionDataTime: undefined | number = undefined;
         let transationDataTime: undefined | number = undefined;
         if (scaleData) {
-            data.slice(1).forEach((item) => {
+            data.slice(isShowLatestCandle ? 2 : 1).forEach((item) => {
                 if (notTransactionDataTime === undefined && !item.isShowData) {
                     notTransactionDataTime = item.time * 1000;
                 }
@@ -550,6 +550,16 @@ export default function Chart(props: propsIF) {
             (a, b) => b.time - a.time,
         );
 
+        console.log('unparsedData.candles', unparsedData.candles.length);
+
+        data.map((i) => {
+            console.log(
+                'new Date(i.time*1000),i.isShowData',
+                new Date(i.time * 1000),
+                i.isShowData,
+            );
+        });
+
         const secondCandle = unparsedData.candles[1].time;
 
         const index = data.findIndex(
@@ -559,7 +569,7 @@ export default function Chart(props: propsIF) {
         if (index !== -1) {
             setisIncludeTransactionNewCandle(true);
         } else {
-            setisIncludeTransactionNewCandle(false);
+            // setisIncludeTransactionNewCandle(false);
         }
         console.log('unparsedddd', index, isIncludeTransactionNewCandle);
 
@@ -622,6 +632,16 @@ export default function Chart(props: propsIF) {
         }
 
         calculateDiscontinuityRange(data);
+
+        timeGaps.map((i) => {
+            console.log(
+                ' timeGAPSSSS new Date(i.time*1000),i.isShowDataGAPSSS',
+                i.range,
+                i.isAddedPixel,
+                new Date(i.range[0]),
+                new Date(i.range[1]),
+            );
+        });
         return calculateVisibleCandles(
             scaleData,
             data,
@@ -986,6 +1006,8 @@ export default function Chart(props: propsIF) {
                 const newDiscontinuityProvider = d3fc.discontinuityRange(
                     ...data,
                 );
+
+                console.log('   ', { data });
 
                 setDiscontinuityProvider(newDiscontinuityProvider);
 
