@@ -21,7 +21,7 @@ interface candlePropsIF {
     selectedDate: number | undefined;
     showLatest: boolean | undefined;
     denomInBase: boolean;
-    data: CandleDataIF[];
+    data: CandleDataChart[];
     period: number;
     lastCandleData: CandleDataIF;
     prevlastCandleTime: number;
@@ -29,6 +29,7 @@ interface candlePropsIF {
     isDiscontinuityScaleEnabled: boolean;
     visibleDateForCandle: number;
     chartThemeColors: ChartThemeIF | undefined;
+    isIncludeTransactionNewCandle: boolean;
 }
 
 export default function CandleChart(props: candlePropsIF) {
@@ -46,6 +47,7 @@ export default function CandleChart(props: candlePropsIF) {
         isDiscontinuityScaleEnabled,
         visibleDateForCandle,
         chartThemeColors,
+        isIncludeTransactionNewCandle,
     } = props;
     const d3CanvasCandle = useRef<HTMLCanvasElement | null>(null);
 
@@ -71,11 +73,16 @@ export default function CandleChart(props: candlePropsIF) {
         return defaultCandleBandwith;
     }, [candlestick?.bandwidth()]);
     const { tradeTableState } = useContext(ChartContext);
-
     useEffect(() => {
         IS_LOCAL_ENV && console.debug('re-rending chart');
         if (tradeTableState === 'Expanded') return;
-        if (data && data.length > 0 && scaleData) {
+
+        if (
+            data &&
+            data.length > 0 &&
+            scaleData &&
+            isIncludeTransactionNewCandle
+        ) {
             if (!showLatest) {
                 const domainLeft = scaleData?.xScale.domain()[0];
                 const domainRight = scaleData?.xScale.domain()[1];
@@ -83,7 +90,18 @@ export default function CandleChart(props: candlePropsIF) {
                 const diff =
                     (lastCandleData.time - prevlastCandleTime) / period;
 
+                console.log(
+                    new Date(lastCandleData.time * 1000),
+                    new Date(prevlastCandleTime * 1000),
+                );
+
                 setPrevLastCandleTime(lastCandleData.time);
+
+                console.log(
+                    'new Domainnn0000',
+                    new Date(domainLeft + diff * period * 1000),
+                    new Date(domainRight + diff * period * 1000),
+                );
 
                 scaleData?.xScale.domain([
                     domainLeft + diff * period * 1000,

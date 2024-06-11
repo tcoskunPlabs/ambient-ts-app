@@ -542,10 +542,26 @@ export default function Chart(props: propsIF) {
         return unparsedCandleData;
     };
 
+    const [isIncludeTransactionNewCandle, setisIncludeTransactionNewCandle] =
+        useState(true);
+
     const unparsedCandleData = useMemo(() => {
         const data = filterCandleWithTransaction(unparsedData.candles).sort(
             (a, b) => b.time - a.time,
         );
+
+        const secondCandle = unparsedData.candles[1].time;
+
+        const index = data.findIndex(
+            (i: CandleDataChart) => i.time === secondCandle && i.isShowData,
+        );
+
+        if (index !== -1) {
+            setisIncludeTransactionNewCandle(true);
+        } else {
+            setisIncludeTransactionNewCandle(false);
+        }
+        console.log('unparsedddd', index, isIncludeTransactionNewCandle);
 
         if (
             poolPriceWithoutDenom &&
@@ -933,15 +949,25 @@ export default function Chart(props: propsIF) {
                             const check =
                                 element.range[1] < dom[1] &&
                                 element.range[1] > dom[0];
+                            // console.log('new Domainnn BEFOREEEEEEEEEE Time Gapss', new Date( scaleData.xScale.domain()[0]),new Date(maxDom));
 
                             if (check) {
                                 if (lastDate && lastDate < element.range[1]) {
                                     min = scaleData.xScale.domain()[0];
+                                    console.log('shift to left', pix, element);
+
                                     // shift to left
                                     maxDom = scaleData.xScale.invert(
                                         scaleData.xScale.range()[1] - pix,
                                     );
                                 }
+
+                                console.log(
+                                    'new Domainnn11111 Time Gapss',
+                                    new Date(min),
+                                    new Date(maxDom),
+                                );
+
                                 scaleData.xScale.domain([min, maxDom]);
 
                                 element.isAddedPixel = true;
@@ -5945,6 +5971,9 @@ export default function Chart(props: propsIF) {
                             isDiscontinuityScaleEnabled={isCondensedModeEnabled}
                             visibleDateForCandle={visibleDateForCandle}
                             chartThemeColors={chartThemeColors}
+                            isIncludeTransactionNewCandle={
+                                isIncludeTransactionNewCandle
+                            }
                         />
 
                         <VolumeBarCanvas
