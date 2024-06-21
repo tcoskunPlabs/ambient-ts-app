@@ -345,6 +345,7 @@ export default function Chart(props: propsIF) {
     const d3CanvasMarketLine = useRef<HTMLCanvasElement | null>(null);
     const d3CanvasMain = useRef<HTMLDivElement | null>(null);
     const d3CanvasCrIndicator = useRef<HTMLInputElement | null>(null);
+    const previousDataRef = useRef<CandleDataChart[]>([]);
 
     useEffect(() => {
         if (chartThemeColors && chartThemeColors.darkStrokeColor !== null) {
@@ -555,6 +556,8 @@ export default function Chart(props: propsIF) {
             period,
         ).sort((a, b) => b.time - a.time);
 
+        console.log('dataaa lat15Minutes', JSON.stringify(data));
+
         if (
             poolPriceWithoutDenom &&
             data &&
@@ -614,12 +617,15 @@ export default function Chart(props: propsIF) {
         }
 
         calculateDiscontinuityRange(data);
-        return calculateVisibleCandles(
+
+        const localVisibleCandles = calculateVisibleCandles(
             scaleData,
             data,
             period,
             mobileView ? 300 : 100,
         ) as CandleDataChart[];
+
+        return localVisibleCandles;
     }, [
         diffHashSigChart(unparsedData.candles),
         poolPriceWithoutDenom,
@@ -895,6 +901,19 @@ export default function Chart(props: propsIF) {
             );
         }
     }
+
+    useEffect(() => {
+        if (previousDataRef.current) {
+            console.log('dlfklsdfksdlf', previousDataRef.current);
+            setTimeout(() => {
+                previousDataRef.current = unparsedCandleData;
+            }, 2000);
+        }
+    }, [unparsedData.candles.length]);
+
+    useEffect(() => {
+        console.log('unparsedData.candles', unparsedData.candles);
+    }, [unparsedData.candles]);
 
     useEffect(() => {
         if (chartResetStatus.isResetChart) {

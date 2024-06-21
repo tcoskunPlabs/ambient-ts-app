@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState, useMemo } from 'react';
+import { /* useContext , */ useEffect, useRef, useState, useMemo } from 'react';
 import {
     CandleDataChart,
     chartItemStates,
@@ -6,12 +6,14 @@ import {
     scaleData,
     setCanvasResolution,
 } from '../ChartUtils/chartUtils';
-import { IS_LOCAL_ENV } from '../../../ambient-utils/constants';
+// import { IS_LOCAL_ENV } from '../../../ambient-utils/constants';
 import { diffHashSigScaleData } from '../../../ambient-utils/dataLayer';
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import { CandleDataIF } from '../../../ambient-utils/types';
-import { ChartContext, ChartThemeIF } from '../../../contexts/ChartContext';
+import {
+    /* ChartContext, */ ChartThemeIF,
+} from '../../../contexts/ChartContext';
 import { defaultCandleBandwith } from '../ChartUtils/chartConstants';
 
 interface candlePropsIF {
@@ -36,13 +38,13 @@ export default function CandleChart(props: candlePropsIF) {
         setBandwidth,
         scaleData,
         selectedDate,
-        showLatest,
+        // showLatest,
         denomInBase,
         data,
-        period,
-        lastCandleData,
-        prevlastCandleTime,
-        setPrevLastCandleTime,
+        // period,
+        // lastCandleData,
+        // prevlastCandleTime,
+        // setPrevLastCandleTime,
         isDiscontinuityScaleEnabled,
         visibleDateForCandle,
         chartThemeColors,
@@ -70,30 +72,44 @@ export default function CandleChart(props: candlePropsIF) {
         }
         return defaultCandleBandwith;
     }, [candlestick?.bandwidth()]);
-    const { tradeTableState } = useContext(ChartContext);
+    // const { tradeTableState } = useContext(ChartContext);
 
-    useEffect(() => {
-        IS_LOCAL_ENV && console.debug('re-rending chart');
-        if (tradeTableState === 'Expanded') return;
-        if (data && data.length > 0 && scaleData) {
-            if (!showLatest) {
-                const domainLeft = scaleData?.xScale.domain()[0];
-                const domainRight = scaleData?.xScale.domain()[1];
+    // useEffect(() => {
+    //     IS_LOCAL_ENV && console.debug('re-rending chart');
+    //     if (tradeTableState === 'Expanded') return;
+    //     if (data && data.length > 0 && scaleData) {
+    //         if (!showLatest) {
+    //             const domainLeft = scaleData?.xScale.domain()[0];
+    //             const domainRight = scaleData?.xScale.domain()[1];
+    //             console.log('domainLeft,domainRight',domainLeft,domainRight,lastCandleData.time);
 
-                const count = data.filter(
-                    (i: CandleDataChart) =>
-                        i.time <= lastCandleData.time - period &&
-                        i.time >= prevlastCandleTime,
-                ).length;
-                setPrevLastCandleTime(lastCandleData.time - period);
+    //             const filtered = data.filter(
+    //                 (i: CandleDataChart) =>
+    //                     i.time <= lastCandleData.time - period &&
+    //                     i.time > prevlastCandleTime,
+    //             );
 
-                scaleData?.xScale.domain([
-                    domainLeft + count * period * 1000,
-                    domainRight + count * period * 1000,
-                ]);
-            }
-        }
-    }, [tradeTableState, lastCandleData?.time]);
+    //             console.log({filtered},filtered.map((i)=>i.time*1000));
+
+    //             if (filtered) {
+
+    //             const count = filtered.length;
+    //             console.log({count},period);
+
+    //             setPrevLastCandleTime(lastCandleData.time - period);
+
+    //             console.log('dom0',domainLeft /* + ( count * period * 1000) */, domainRight + (count * period * 1000));
+
+    //             console.log('dom',domainLeft /* +  count * period * 1000 */, domainRight + count * period * 1000);
+
+    //             scaleData?.xScale.domain([
+    //                 domainLeft /* + count * period * 1000 */,
+    //                 domainRight + count * period * 1000,
+    //             ]);
+    //         }
+    //         }
+    //     }
+    // }, [tradeTableState, lastCandleData?.time]);
 
     useEffect(() => {
         renderCanvasArray([d3CanvasCandle]);

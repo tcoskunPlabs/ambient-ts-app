@@ -197,6 +197,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                 !isCandleDataNull
             ) {
                 const nowTime = Math.floor(Date.now() / 1000);
+                console.log({ nowTime });
 
                 fetchCandlesByNumDurations(200, nowTime);
             }

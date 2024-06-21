@@ -14,6 +14,8 @@ export function filterCandleWithTransaction(
 ) {
     const lat15Minutes = getLast15Minutes(period);
 
+    console.log({ lat15Minutes });
+
     const filteredByNonTransaction = data
         .sort((a, b) => a.time - b.time)
         .map((item, index, array) => {
