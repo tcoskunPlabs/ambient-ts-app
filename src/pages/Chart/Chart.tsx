@@ -550,14 +550,17 @@ export default function Chart(props: propsIF) {
         return unparsedCandleData;
     };
 
-    const unparsedCandleData = useMemo(() => {
+    const allData = useMemo(() => {
         const data = filterCandleWithTransaction(
             unparsedData.candles,
             period,
         ).sort((a, b) => b.time - a.time);
 
-        console.log('dataaa lat15Minutes', JSON.stringify(data));
+        return data;
+    }, [diffHashSigChart(unparsedData.candles)]);
 
+    const unparsedCandleData = useMemo(() => {
+        const data = [...allData];
         if (
             poolPriceWithoutDenom &&
             data &&
@@ -627,7 +630,7 @@ export default function Chart(props: propsIF) {
 
         return localVisibleCandles;
     }, [
-        diffHashSigChart(unparsedData.candles),
+        diffHashSigChart(allData),
         poolPriceWithoutDenom,
         isShowLatestCandle,
         isCondensedModeEnabled,
@@ -677,6 +680,9 @@ export default function Chart(props: propsIF) {
     const [prevlastCandleTime, setPrevLastCandleTime] = useState<number>(
         lastCandleData.time,
     );
+    const [localPrevCandleCount, setLocalPrevCandleCount] = useState<{
+        value: number | undefined;
+    }>({ value: undefined });
     const [lastCandleDataCenterX, setLastCandleDataCenterX] = useState(0);
     const [lastCandleDataCenterY, setLastCandleDataCenterY] = useState(0);
 
@@ -912,8 +918,31 @@ export default function Chart(props: propsIF) {
     }, [unparsedData.candles.length]);
 
     useEffect(() => {
-        console.log('unparsedData.candles', unparsedData.candles);
-    }, [unparsedData.candles]);
+        console.log('neALAKAAA', { allData });
+        const filtered = allData.filter((i) => i.isShowData);
+
+        if (localPrevCandleCount.value && isShowLatestCandle) {
+            const domainLeft = scaleData?.xScale.domain()[0];
+            const domainRight = scaleData?.xScale.domain()[1];
+
+            const diff = filtered.length - localPrevCandleCount.value;
+
+            console.log({ diff }, domainRight, new Date(domainRight));
+
+            if (diff > 0) {
+                scaleData?.xScale.domain([
+                    domainLeft + diff * period * 1000,
+                    domainRight + diff * period * 1000,
+                ]);
+            }
+
+            localPrevCandleCount.value = filtered.length;
+        }
+        console.log('allData localPrevCandleCount', localPrevCandleCount);
+
+        setLocalPrevCandleCount({ value: filtered.length });
+        console.log('allData.candles', filtered.length);
+    }, [allData.length]);
 
     useEffect(() => {
         if (chartResetStatus.isResetChart) {
@@ -966,6 +995,8 @@ export default function Chart(props: propsIF) {
                                     maxDom = scaleData.xScale.invert(
                                         scaleData.xScale.range()[1] - pix,
                                     );
+
+                                    console.log('diff', { min, maxDom });
                                 }
                                 scaleData.xScale.domain([min, maxDom]);
 
@@ -2640,6 +2671,8 @@ export default function Chart(props: propsIF) {
                         }
                     }
                     if (maxTime && unparsedData) {
+                        console.log('maxTime', { maxTime });
+
                         const localCandles = unparsedData.candles.filter(
                             (i) =>
                                 maxTime === undefined ||
