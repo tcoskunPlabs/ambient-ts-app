@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import {
@@ -459,6 +460,8 @@ export default function Chart(props: propsIF) {
         setSelectedOutsideTab,
     } = useContext(TradeTableContext);
 
+    const [needsCount, setNeedsCount] = useState(100);
+
     const clickOutsideChartHandler = (event: Event) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const e = event.target as any;
@@ -546,6 +549,18 @@ export default function Chart(props: propsIF) {
                 }
             });
 
+            const providerData = isCondensedModeEnabled
+                ? localTimeGaps.map((i: timeGapsValue) => i.range)
+                : [];
+
+            const newDiscontinuityProvider = d3fc.discontinuityRange(
+                ...providerData,
+            );
+
+            setDiscontinuityProvider(newDiscontinuityProvider);
+
+            scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
+
             setTimeGaps(localTimeGaps);
         }
     };
@@ -579,11 +594,13 @@ export default function Chart(props: propsIF) {
         );
     };
 
+    const allData = filterCandleWithTransaction(
+        unparsedData.candles,
+        period,
+    ).sort((a, b) => b.time - a.time);
+
     const unparsedCandleData = useMemo(() => {
-        const data = filterCandleWithTransaction(
-            unparsedData.candles,
-            period,
-        ).sort((a, b) => b.time - a.time);
+        const data = allData;
 
         if (
             poolPriceWithoutDenom &&
@@ -651,7 +668,7 @@ export default function Chart(props: propsIF) {
             mobileView ? 300 : 100,
         ) as CandleDataChart[];
     }, [
-        diffHashSigChart(unparsedData.candles),
+        diffHashSigChart(allData),
         poolPriceWithoutDenom,
         isShowLatestCandle,
         isCondensedModeEnabled,
@@ -906,14 +923,6 @@ export default function Chart(props: propsIF) {
     useEffect(() => {
         (async () => {
             if (scaleData && timeGaps.length > 0) {
-                const canvas = d3
-                    .select(d3CanvasMain.current)
-                    .select('canvas')
-                    .node() as HTMLCanvasElement;
-
-                const rectCanvas = canvas.getBoundingClientRect();
-                const width = rectCanvas.width;
-                scaleData.xScale.range([0, width]);
                 const lastDateArray = timeGaps
                     .sort((a, b) => b.range[1] - a.range[1])
                     .filter((i) => i.isAddedPixel);
@@ -928,26 +937,45 @@ export default function Chart(props: propsIF) {
                     .filter((i) => !i.isAddedPixel)
                     .forEach((element: timeGapsValue) => {
                         if (isCondensedModeEnabled) {
-                            const pix =
-                                scaleData.xScale(element.range[0]) -
-                                scaleData.xScale(element.range[1]);
+                            const needCandle =
+                                (element.range[1] - element.range[0]) /
+                                    (period * 1000) +
+                                2;
 
                             // shift to right
-                            let min = scaleData.xScale.invert(pix);
+                            let min =
+                                scaleData.xScale.domain()[0] -
+                                needCandle * 1000 * period;
+
                             let maxDom = scaleData.xScale.domain()[1];
 
                             const dom = scaleData?.xScale.domain();
-                            const check =
-                                element.range[1] < dom[1] &&
-                                element.range[1] > dom[0];
+
+                            const needsCandleCountLocal = allData
+                                .filter(
+                                    (i) =>
+                                        i.time * 1000 <
+                                            scaleData.xScale.domain()[1] &&
+                                        i.time * 1000 >
+                                            scaleData.xScale.domain()[0],
+                                )
+                                .filter((i) => i.isShowData).length;
+
+                            console.log({ needsCount });
+
+                            const check = needsCandleCountLocal < needsCount;
+                            // element.range[1] < dom[1] &&
+                            // element.range[1] > dom[0];
 
                             if (check) {
+                                console.log('sensin');
+
                                 if (lastDate && lastDate < element.range[1]) {
                                     min = scaleData.xScale.domain()[0];
                                     // shift to left
-                                    maxDom = scaleData.xScale.invert(
-                                        scaleData.xScale.range()[1] - pix,
-                                    );
+                                    maxDom =
+                                        scaleData.xScale.domain()[1] +
+                                        needCandle * 1000 * period;
                                 }
                                 scaleData.xScale.domain([min, maxDom]);
 
@@ -956,29 +984,15 @@ export default function Chart(props: propsIF) {
                         }
                     });
             }
-        })().then(() => {
-            if (scaleData) {
-                const data = isCondensedModeEnabled
-                    ? timeGaps
-                          .filter((element) => element.isAddedPixel)
-                          .map((i: timeGapsValue) => i.range)
-                    : [];
+        })();
 
-                const newDiscontinuityProvider = d3fc.discontinuityRange(
-                    ...data,
-                );
-
-                setDiscontinuityProvider(newDiscontinuityProvider);
-
-                scaleData.xScale.discontinuityProvider(
-                    newDiscontinuityProvider,
-                );
-
-                setVisibleDateForCandle(scaleData.xScale.domain()[1]);
-                changeScale(false);
-                render();
-            }
-        });
+        // .then(() => {
+        //     if (scaleData) {
+        setVisibleDateForCandle(scaleData.xScale.domain()[1]);
+        //         changeScale(false);
+        //         render();
+        //     }
+        // });
     }, [
         diffHashSig(timeGaps),
         diffHashSigScaleData(scaleData, 'x'),
@@ -1404,6 +1418,21 @@ export default function Chart(props: propsIF) {
                     })
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .on('end', (event: any) => {
+                        console.log('endd');
+
+                        const calculateNeedCandles =
+                            (firstCandleData.time * 1000 -
+                                scaleData.xScale.domain()[0]) /
+                            (period * 1000);
+
+                        if (
+                            firstCandleData.time * 1000 >
+                            scaleData.xScale.domain()[0]
+                        ) {
+                            setNeedsCount(
+                                calculateNeedCandles + visibleCandleData.length,
+                            );
+                        }
                         if (event.sourceEvent.type !== 'wheel') {
                             setIsChartZoom(false);
                             setCursorStyleTrigger(false);
@@ -2552,6 +2581,35 @@ export default function Chart(props: propsIF) {
         isUserConnected,
         isDenomBase,
     ]);
+
+    function setXScaleDefaultCondensedMode() {
+        const localInitialDisplayCandleCount =
+            getInitialDisplayCandleCount(mobileView);
+        const candleCount = unparsedCandleData.length;
+        if (candleCount >= localInitialDisplayCandleCount) {
+            const min =
+                unparsedCandleData[localInitialDisplayCandleCount - 1].time *
+                1000;
+
+            const maxCandleCount =
+                (localInitialDisplayCandleCount * (1 - xAxisBuffer)) /
+                xAxisBuffer;
+
+            const domain = [min, Date.now() + maxCandleCount * 1000 * period];
+            scaleData?.xScale.domain([domain[0], domain[1]]);
+        } else {
+            const needCandle = localInitialDisplayCandleCount - candleCount;
+            const min =
+                firstCandleData.time * 1000 - needCandle * 1000 * period;
+
+            const maxCandleCount =
+                (localInitialDisplayCandleCount * (1 - xAxisBuffer)) /
+                xAxisBuffer;
+
+            const domain = [min, Date.now() + maxCandleCount * 1000 * period];
+            scaleData?.xScale.domain([domain[0], domain[1]]);
+        }
+    }
 
     async function setXScaleDefault() {
         if (scaleData) {
