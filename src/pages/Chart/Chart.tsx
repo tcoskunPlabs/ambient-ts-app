@@ -561,6 +561,13 @@ export default function Chart(props: propsIF) {
 
             scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
 
+            console.log({ providerData });
+
+            console.log(
+                'scaleData.xScale.domain()[0] timeGAPSS',
+                new Date(scaleData.xScale.domain()[0]),
+            );
+
             setTimeGaps(localTimeGaps);
         }
     };
@@ -676,7 +683,11 @@ export default function Chart(props: propsIF) {
     ]);
 
     useEffect(() => {
-        calculateDiscontinuityRange(allData);
+        console.log(
+            'scaleData.xScale.domain()[0]',
+            new Date(scaleData.xScale.domain()[0]),
+        );
+
         const domain = scaleData.xScale.domain();
 
         const findShowCandles = allData.filter(
@@ -685,15 +696,60 @@ export default function Chart(props: propsIF) {
                 data.time * 1000 <= domain[1] &&
                 data.isShowData,
         );
+        const needLenght = findShowCandles.length;
 
-        console.log(
-            'dddd',
-            findShowCandles.find((i) => i.time === 1723715760),
-        );
+        /*   const checkLastCandleDiff = (visibleCandleData[visibleCandleData.length-1].time-findShowCandles[needLenght - 1].time)
+        /period;
+         */
 
         const datasu = allData.filter((i) => i.isShowData);
 
-        if (
+        const findIndex = datasu.findIndex(
+            (i) => i.time === findShowCandles[needLenght - 1].time,
+        );
+
+        const diffCandleCount = Math.floor(
+            (visibleCandleData[visibleCandleData.length - 1].time * 1000 -
+                domain[0]) /
+                (period * 1000),
+        );
+
+        if (findIndex !== -1 && findIndex + diffCandleCount < datasu.length) {
+            const newDomain = [
+                datasu[findIndex + diffCandleCount].time * 1000,
+                domain[1],
+            ];
+
+            calculateDiscontinuityRange(allData);
+
+            const res = timeGaps
+                .map((i) => i.range)
+                .find(
+                    (a) =>
+                        a[0] < newDomain[0] &&
+                        a[1] > scaleData.xScale.domain()[0],
+                );
+
+            console.log({ res }, res && new Date(res[0]));
+
+            scaleData.xScale.domain([
+                res ? res[0] : newDomain[0],
+                scaleData.xScale.domain()[1],
+            ]);
+
+            render();
+            /*  console.log(
+                '{newDomain}',
+                newDomain[0],
+                new Date(newDomain[0]),
+            ); */
+
+            // scaleData.xScale.domain(newDomain);
+        }
+
+        //   scaleData.xScale.domain([scaleData.xScale.domain()[0]-(checkLastCandleDiff*1000*period),scaleData.xScale.domain()[1]])
+
+        /*   if (
             findShowCandles.length < 100 &&
             allData.length > 100 &&
             allData.length < 3000
@@ -706,10 +762,9 @@ export default function Chart(props: propsIF) {
             );
 
             scaleData.xScale.domain(newDomain);
-        } else {
-            const needLenght = findShowCandles.length;
+        } else { */
 
-            console.log(
+        /*   console.log(
                 'findShowCandles[needLenght - 1].time * 1000',
                 new Date(findShowCandles[needLenght - 1].time * 1000),
                 new Date(domain[0]),
@@ -724,14 +779,14 @@ export default function Chart(props: propsIF) {
             );
 
             console.log({ diffCandleCount, findIndex, needLenght });
-
-            if (
+ */
+        /*   if (
                 findIndex !== -1 &&
                 diffCandleCount &&
                 findIndex + diffCandleCount < datasu.length
             ) {
                 const newDomain = [
-                    datasu[findIndex + diffCandleCount].time * 1000,
+                    (datasu[findIndex + diffCandleCount].time * 1000) + (checkLastCandleDiff*1000*period),
                     domain[1],
                 ];
 
@@ -742,8 +797,8 @@ export default function Chart(props: propsIF) {
                 );
 
                 scaleData.xScale.domain(newDomain);
-            }
-        }
+            } */
+        //   }
 
         setParsedData(allData);
     }, [diffHashSig(allData)]);

@@ -396,9 +396,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                             candles: candleData.candles.concat(newCandles),
                         });
 
-                        setTimeout(() => {
-                            setCandleData(newSeries);
-                        }, 5000);
+                        setCandleData(newSeries);
                         // setCandleData(newSeries);
                     }
                 }
