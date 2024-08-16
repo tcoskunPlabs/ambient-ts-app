@@ -174,11 +174,6 @@ export default function CandleChart(props: candlePropsIF) {
                                 ? chartThemeColors.selectedDateFillColor.toString()
                                 : selectedCandleColor
                             : crocBorderColor;
-
-                    if (d.time * 1000 > visibleDateForCandle) {
-                        context.fillStyle = 'transparent';
-                        context.strokeStyle = 'transparent';
-                    }
                 },
             );
         }
