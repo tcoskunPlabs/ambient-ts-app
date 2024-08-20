@@ -30,7 +30,7 @@ interface candlePropsIF {
     prevlastCandleTime: number;
     setPrevLastCandleTime: React.Dispatch<React.SetStateAction<number>>;
     isDiscontinuityScaleEnabled: boolean;
-    visibleDateForCandle: number;
+    // visibleDateForCandle: number;
     chartThemeColors: ChartThemeIF | undefined;
 }
 
@@ -47,7 +47,7 @@ export default function CandleChart(props: candlePropsIF) {
         prevlastCandleTime,
         setPrevLastCandleTime,
         isDiscontinuityScaleEnabled,
-        visibleDateForCandle,
+        // visibleDateForCandle,
         chartThemeColors,
     } = props;
     const d3CanvasCandle = useRef<HTMLCanvasElement | null>(null);
@@ -175,10 +175,10 @@ export default function CandleChart(props: candlePropsIF) {
                                 : selectedCandleColor
                             : crocBorderColor;
 
-                    if (d.time * 1000 > visibleDateForCandle) {
-                        context.fillStyle = 'transparent';
-                        context.strokeStyle = 'transparent';
-                    }
+                    // if (d.time * 1000 > visibleDateForCandle) {
+                    //     context.fillStyle = 'transparent';
+                    //     context.strokeStyle = 'transparent';
+                    // }
                 },
             );
         }
@@ -186,7 +186,7 @@ export default function CandleChart(props: candlePropsIF) {
         candlestick,
         selectedDate,
         isDiscontinuityScaleEnabled,
-        visibleDateForCandle,
+        // visibleDateForCandle,
         chartThemeColors,
     ]);
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
     Dispatch,
     SetStateAction,
@@ -47,6 +48,7 @@ import {
     xAxisBuffer,
 } from '../../Chart/ChartUtils/chartConstants';
 import { filterCandleWithTransaction } from '../../Chart/ChartUtils/discontinuityScaleUtils';
+import ChartScale from '../../Chart/ChartScale';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface propsIF {
@@ -1081,7 +1083,7 @@ function TradeCandleStickChart(props: propsIF) {
                     gridTemplateRows: 'auto auto',
                 }}
             >
-                {(!isOpenChart || isCompletedFetchData) && (
+                {(!isOpenChart) && (
                     <>
                         <div
                             style={{
@@ -1110,7 +1112,37 @@ function TradeCandleStickChart(props: propsIF) {
                         </div>
                     </>
                 )}
+
                 {isOpenChart && (
+                    <ChartScale
+                        candleData={candleData}
+                        scaleData={scaleData}
+                        liquidityData={undefined}
+                        chartItemStates={props.chartItemStates}
+                        changeState={props.changeState}
+                        setCurrentData={props.setCurrentData}
+                        prevPeriod={prevPeriod}
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                        rescale={props.rescale}
+                        setRescale={props.setRescale}
+                        latest={props.latest}
+                        setLatest={props.setLatest}
+                        reset={props.reset}
+                        setReset={props.setReset}
+                        showLatest={props.showLatest}
+                        setShowLatest={props.setShowLatest}
+                        setShowTooltip={props.setShowTooltip}
+                        liquidityScale={liquidityScale}
+                        liquidityDepthScale={liquidityDepthScale}
+                        updateURL={updateURL}
+                        userTransactionData={userTransactionData}
+                        setPrevCandleCount={setPrevCandleCount}
+                        setChartResetStatus={setChartResetStatus}
+                        chartResetStatus={chartResetStatus}
+                    />
+                )}
+                {/* {isOpenChart && (
                     <Chart
                         isTokenABase={isTokenABase}
                         liquidityData={liquidityData}
@@ -1149,7 +1181,7 @@ function TradeCandleStickChart(props: propsIF) {
                         setChartResetStatus={setChartResetStatus}
                         chartResetStatus={chartResetStatus}
                     />
-                )}
+                )} */}
             </div>
         </>
     );
