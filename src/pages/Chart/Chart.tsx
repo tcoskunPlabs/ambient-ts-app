@@ -2473,16 +2473,10 @@ export default function Chart(props: propsIF) {
 
             setPrevLastCandleTime(snappedTime / 1000);
 
-            if (scaleData) {
-                scaleData.xScale.discontinuityProvider(
-                    d3fc.discontinuityRange(...[]),
-                );
-            }
 
             setChartResetStatus({
                 isResetChart: true,
             });
-            timeGaps.forEach((obj) => (obj.isAddedPixel = false));
 
             const canvasDiv = d3.select(d3CanvasMain.current);
 

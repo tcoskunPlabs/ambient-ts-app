@@ -27,6 +27,7 @@ import {
     chartItemStates,
     checkShowLatestCandle,
     liquidityChartData,
+    renderChart,
     scaleData,
     timeGapsValue,
 } from './ChartUtils/chartUtils';
@@ -283,7 +284,7 @@ export default function ChartScale(props: propsIF) {
                 }
             });
 
-            console.log({localTimeGaps},new Date(localTimeGaps[0].range[0]),new Date(localTimeGaps[0].range[1]));
+            console.log({localTimeGaps},new Date(localTimeGaps[0].range[0]),new Date(localTimeGaps[0].range[1]),localTimeGaps.map((i)=>i.range));
             
             const newDiscontinuityProvider = d3fc.discontinuityRange(...localTimeGaps.map((i)=>i.range));
 
@@ -309,7 +310,89 @@ export default function ChartScale(props: propsIF) {
         // ) as CandleDataChart[];
 
         const showData = unparsedCandleData.filter((i) => i.isShowData);
-        calculateDiscontinuityRange(unparsedCandleData);
+
+        const visibleCandleData =   calculateVisibleCandles(
+            scaleData,
+            unparsedCandleData,
+            period,
+            0,
+        ) as CandleDataChart[];
+
+       // calculateDiscontinuityRange(unparsedCandleData.sort((a:CandleDataChart, b:CandleDataChart) => b.time - a.time));
+
+        const domain = scaleData.xScale.domain();
+
+        const findShowCandles = unparsedCandleData.filter(
+            (data: CandleDataChart) =>
+                data.time * 1000 >= domain[0] &&
+                data.time * 1000 <= domain[1] &&
+                data.isShowData,
+        );
+        const needLenght = findShowCandles.length;
+        const datasu = unparsedCandleData.filter((i) => i.isShowData);
+
+        const findIndex = datasu.findIndex(
+            (i) => i.time === findShowCandles[needLenght - 1].time,
+        );
+
+        const findIndexMax = datasu.findIndex(
+            (i) => i.time === findShowCandles[0].time,
+        );
+
+        const diffCandleCountMin = Math.floor(
+            (visibleCandleData[visibleCandleData.length - 1].time * 1000 -
+                domain[0]) /
+                (period * 1000),
+        );
+
+        const diffCandleCountMax = Math.floor(
+            (domain[1] - visibleCandleData[0].time * 1000) /
+                (period * 1000),
+        );
+
+        console.log(
+            { diffCandleCountMax, findIndex },
+            new Date(visibleCandleData[0].time * 1000),
+        );
+
+        if (
+            findIndex !== -1 &&
+            findIndex + diffCandleCountMin < datasu.length &&
+            findShowCandles[0]
+        ) {
+            const newDomain = [
+                datasu[findIndex + diffCandleCountMin].time * 1000,
+                findIndexMax !== -1 && findIndexMax - diffCandleCountMax > 0
+                    ? datasu[findIndexMax - diffCandleCountMax].time * 1000
+                    : scaleData.xScale.domain()[1],
+            ];
+
+            calculateDiscontinuityRange(unparsedCandleData.sort((a:CandleDataChart, b:CandleDataChart) => b.time - a.time));
+
+            const res = timeGaps
+                .map((i) => i.range)
+                .find(
+                    (a) =>
+                        a[0] < newDomain[0] &&
+                        a[1] > scaleData.xScale.domain()[0],
+                );
+
+            console.log({ res }, new Date(newDomain[1]), findShowCandles);
+
+            scaleData.xScale.domain([
+                res ? res[0] : newDomain[0],
+                newDomain[1],
+            ]);
+
+            renderChart();
+        
+    } else {
+        calculateDiscontinuityRange(unparsedCandleData.sort((a:CandleDataChart, b:CandleDataChart) => b.time - a.time));
+
+        const datasu = unparsedCandleData.filter((i) => i.isShowData);
+     //   setXScaleDefaultCondensedMode(datasu);
+    }
+        
 
         setParsedData(showData);
     }, [unparsedCandleData]);
