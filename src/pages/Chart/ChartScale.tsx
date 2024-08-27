@@ -212,8 +212,21 @@ export default function ChartScale(props: propsIF) {
         diffHashSigScaleData(scaleData, 'x'),
     ]);
 
-    const [parsedData, setParsedData] =
-        useState<CandleDataChart[]>(unparsedCandleData);
+    const [parsedData, setParsedData] = useState<CandleDataChart[]>();
+
+    const visibleCandleData = useMemo(() => {
+        if (parsedData) {
+            const _visibleCandleData = calculateVisibleCandles(
+                scaleData,
+                parsedData,
+                period,
+                0,
+            ) as CandleDataChart[];
+            return _visibleCandleData;
+        }
+
+        return [];
+    }, [parsedData]);
 
     /**
      * This function processes a given data array to calculate discontinuities in time intervals and updates them.
@@ -284,120 +297,155 @@ export default function ChartScale(props: propsIF) {
                 }
             });
 
-            console.log({localTimeGaps},new Date(localTimeGaps[0].range[0]),new Date(localTimeGaps[0].range[1]),localTimeGaps.map((i)=>i.range));
-            
-            const newDiscontinuityProvider = d3fc.discontinuityRange(...localTimeGaps.map((i)=>i.range));
+            const newDiscontinuityProvider = d3fc.discontinuityRange(
+                ...localTimeGaps.map((i) => i.range),
+            );
 
             scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
             setTimeGaps(localTimeGaps);
+
+            return localTimeGaps;
         }
     };
 
-
     useEffect(() => {
-      
+        calculateDiscontinuityRange(
+            unparsedCandleData.sort(
+                (a: CandleDataChart, b: CandleDataChart) => b.time - a.time,
+            ),
+        ).then((res) => {
+            const localTimeGaps = res;
 
-        console.log(scaleData.xScale.domain()[0],scaleData.xScale.domain()[1]);
-        
-    }, [scaleData.xScale.domain()])
-    
-    useEffect(() => {
-        // const res = calculateVisibleCandles(
-        //     scaleData,
-        //     unparsedCandleData,
-        //     period,
-        //     0,
-        // ) as CandleDataChart[];
+            const showData = unparsedCandleData.filter((i) => i.isShowData);
 
-        const showData = unparsedCandleData.filter((i) => i.isShowData);
+            if (parsedData && localTimeGaps && localTimeGaps?.length > 0) {
+                const domain = scaleData.xScale.domain();
 
-        const visibleCandleData =   calculateVisibleCandles(
-            scaleData,
-            unparsedCandleData,
-            period,
-            0,
-        ) as CandleDataChart[];
+                const showedFirstCandleTime =
+                    parsedData[parsedData.length - 1].time * 1000;
 
-       // calculateDiscontinuityRange(unparsedCandleData.sort((a:CandleDataChart, b:CandleDataChart) => b.time - a.time));
+                let needCandleCountForMin = Math.floor(
+                    (showedFirstCandleTime - domain[0]) / (1000 * period),
+                );
+                const result = localTimeGaps
+                    .map((i) => i.range)
+                    .findIndex(
+                        (a) =>
+                            a[0] < showedFirstCandleTime &&
+                            a[1] > showedFirstCandleTime,
+                    );
 
-        const domain = scaleData.xScale.domain();
-
-        const findShowCandles = unparsedCandleData.filter(
-            (data: CandleDataChart) =>
-                data.time * 1000 >= domain[0] &&
-                data.time * 1000 <= domain[1] &&
-                data.isShowData,
-        );
-        const needLenght = findShowCandles.length;
-        const datasu = unparsedCandleData.filter((i) => i.isShowData);
-
-        const findIndex = datasu.findIndex(
-            (i) => i.time === findShowCandles[needLenght - 1].time,
-        );
-
-        const findIndexMax = datasu.findIndex(
-            (i) => i.time === findShowCandles[0].time,
-        );
-
-        const diffCandleCountMin = Math.floor(
-            (visibleCandleData[visibleCandleData.length - 1].time * 1000 -
-                domain[0]) /
-                (period * 1000),
-        );
-
-        const diffCandleCountMax = Math.floor(
-            (domain[1] - visibleCandleData[0].time * 1000) /
-                (period * 1000),
-        );
-
-        console.log(
-            { diffCandleCountMax, findIndex },
-            new Date(visibleCandleData[0].time * 1000),
-        );
-
-        if (
-            findIndex !== -1 &&
-            findIndex + diffCandleCountMin < datasu.length &&
-            findShowCandles[0]
-        ) {
-            const newDomain = [
-                datasu[findIndex + diffCandleCountMin].time * 1000,
-                findIndexMax !== -1 && findIndexMax - diffCandleCountMax > 0
-                    ? datasu[findIndexMax - diffCandleCountMax].time * 1000
-                    : scaleData.xScale.domain()[1],
-            ];
-
-            calculateDiscontinuityRange(unparsedCandleData.sort((a:CandleDataChart, b:CandleDataChart) => b.time - a.time));
-
-            const res = timeGaps
-                .map((i) => i.range)
-                .find(
-                    (a) =>
-                        a[0] < newDomain[0] &&
-                        a[1] > scaleData.xScale.domain()[0],
+                console.log(
+                    { result },
+                    new Date(localTimeGaps[result].range[0]),
+                    new Date(localTimeGaps[result].range[1]),
+                    new Date(showedFirstCandleTime),
                 );
 
-            console.log({ res }, new Date(newDomain[1]), findShowCandles);
+                if (result !== -1) {
 
-            scaleData.xScale.domain([
-                res ? res[0] : newDomain[0],
-                newDomain[1],
-            ]);
+                    const diffCandleCount = Math.floor((showedFirstCandleTime - localTimeGaps[result].range[0])/(1000*period));
 
-            renderChart();
-        
-    } else {
-        calculateDiscontinuityRange(unparsedCandleData.sort((a:CandleDataChart, b:CandleDataChart) => b.time - a.time));
+                    console.log({diffCandleCount});
+                    
+                    if (diffCandleCount > 0) {
+                        needCandleCountForMin= needCandleCountForMin + diffCandleCount;
+                    }
+                  
+                }
 
-        const datasu = unparsedCandleData.filter((i) => i.isShowData);
-     //   setXScaleDefaultCondensedMode(datasu);
-    }
-        
+                console.log(
+                    { needCandleCountForMin },
+                    new Date(showedFirstCandleTime),
+                    new Date(domain[0]),
+                );
 
-        setParsedData(showData);
+                if (needCandleCountForMin > 0) {
+                    const findIndexInAllData = showData.findIndex(
+                        (i) => i.time * 1000 === localTimeGaps[result].range[0],
+                    );
+
+                    console.log(new Date(showedFirstCandleTime), {
+                        findIndexInAllData,
+                    });
+
+                    if (findIndexInAllData !== -1) {
+                        const newCandleTime =
+                            showData[findIndexInAllData + needCandleCountForMin]
+                                .time * 1000;
+
+                        console.log(
+                            { newCandleTime, needCandleCountForMin },
+                            new Date(newCandleTime),
+                        );
+
+                        scaleData.xScale.domain([newCandleTime, domain[1]]);
+
+                        renderChart();
+                    }
+                }
+
+                /*   
+            const needLenght = findShowCandles.length;
+            const datasu = unparsedCandleData.filter((i) => i.isShowData);
+
+            const findIndex = datasu.findIndex(
+                (i) => i.time === findShowCandles[needLenght - 1].time,
+            );
+
+            const findIndexMax = datasu.findIndex(
+                (i) => i.time === findShowCandles[0].time,
+            );
+
+            const diffCandleCountMin = parsedData
+                ? Math.floor(
+                      (visibleCandleData[visibleCandleData.length - 1].time *
+                          1000 -
+                          domain[0]) /
+                          (period * 1000),
+                  )
+                : 0;
+
+            const diffCandleCountMax = Math.floor(
+                (domain[1] - visibleCandleData[0].time * 1000) /
+                    (period * 1000),
+            ); */
+
+                /* if (
+                findIndex !== -1 &&
+                findIndex + diffCandleCountMin < datasu.length &&
+                findShowCandles[0] &&
+                parsedData
+            ) {
+                const newDomain = [
+                    datasu[findIndex + diffCandleCountMin].time * 1000,
+                    findIndexMax !== -1 && findIndexMax - diffCandleCountMax > 0
+                        ? datasu[findIndexMax - diffCandleCountMax].time * 1000
+                        : scaleData.xScale.domain()[1],
+                ];
+
+                //     calculateDiscontinuityRange(unparsedCandleData.sort((a:CandleDataChart, b:CandleDataChart) => b.time - a.time));
+
+                const res = timeGaps
+                    .map((i) => i.range)
+                    .find(
+                        (a) =>
+                            a[0] < newDomain[0] &&
+                            a[1] > scaleData.xScale.domain()[0],
+                    );
+
+                console.log({ res }, new Date(newDomain[1]), findShowCandles);
+/* 
+                scaleData.xScale.domain([
+                    res ? res[0] : newDomain[0],
+                    newDomain[1],
+                ]); */
+            }
+            setParsedData(showData);
+        });
     }, [unparsedCandleData]);
 
-    return (
+    return parsedData ? (
         <Chart
             liquidityData={liquidityData}
             changeState={props.changeState}
@@ -430,5 +478,7 @@ export default function ChartScale(props: propsIF) {
             lastCandleData={lastCandleData}
             firstCandleData={firstCandleData}
         />
+    ) : (
+        <></>
     );
 }
