@@ -575,6 +575,26 @@ export default function Chart(props: propsIF) {
         );
     };
 
+
+    const unparsedCandleData = useMemo(() => {
+        const data = calculateVisibleCandles(
+            scaleData,
+            parsedData,
+            period,
+            300,
+        ) as CandleDataChart[];
+
+        const filtered = data.filter(
+            (i) => i.isShowData || !isCondensedModeEnabled,
+        );
+
+        return filtered;
+    }, [
+        diffHashSigScaleData(scaleData),
+        parsedData,
+        isCondensedModeEnabled,
+    ]);
+
     const visibleCandleData = useMemo(() => {
         const data = calculateVisibleCandles(
             scaleData,
@@ -590,7 +610,7 @@ export default function Chart(props: propsIF) {
         return filtered;
     }, [
         diffHashSigScaleData(scaleData),
-        parsedData,
+        unparsedCandleData,
         isCondensedModeEnabled,
     ]);
     // const [visibleDateForCandle, setVisibleDateForCandle] = useState(
