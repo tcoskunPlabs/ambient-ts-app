@@ -85,10 +85,13 @@ export default function CandleChart(props: candlePropsIF) {
                 ).length;
                 setPrevLastCandleTime(lastCandleData.time - period);
 
-                scaleData?.xScale.domain([
+              console.log(
+              
+                // scaleData?.xScale.domain([
                     domainLeft + count * period * 1000,
                     domainRight + count * period * 1000,
-                ]);
+                // ]);
+                );
             }
         }
     }, [tradeTableState, lastCandleData?.time]);

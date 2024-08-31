@@ -588,7 +588,7 @@ export default function Chart(props: propsIF) {
             (i) => i.isShowData || !isCondensedModeEnabled,
         );
 
-        return filtered;
+        return filtered.sort((a, b) => b.time - a.time);
     }, [
         diffHashSigScaleData(scaleData),
         parsedData,
@@ -4131,21 +4131,21 @@ export default function Chart(props: propsIF) {
         let maxYBoundary = undefined;
         if (scaleData) {
             if (
-                parsedData !== undefined &&
-                (!isTriggeredByZoom || parsedData.length > 10) &&
+                unparsedCandleData !== undefined &&
+                (!isTriggeredByZoom || unparsedCandleData.length > 10) &&
                 poolPriceWithoutDenom
             ) {
                 const placeHolderPrice = denomInBase
                     ? 1 / poolPriceWithoutDenom
                     : poolPriceWithoutDenom;
 
-                const filteredMin = d3.min(parsedData, (d) =>
+                const filteredMin = d3.min(unparsedCandleData, (d) =>
                     denomInBase
                         ? d.invMaxPriceExclMEVDecimalCorrected
                         : d.minPriceExclMEVDecimalCorrected,
                 );
 
-                const filteredMax = d3.max(parsedData, (d) =>
+                const filteredMax = d3.max(unparsedCandleData, (d) =>
                     denomInBase
                         ? d.invMinPriceExclMEVDecimalCorrected
                         : d.maxPriceExclMEVDecimalCorrected,
@@ -4182,6 +4182,8 @@ export default function Chart(props: propsIF) {
                         buffer / 2,
                 ];
 
+                
+                
                 setYaxisDomain(domain[0], domain[1]);
             }
         }
@@ -4319,7 +4321,7 @@ export default function Chart(props: propsIF) {
         }
     }, [
         period,
-        diffHashSigChart(visibleCandleData),
+        diffHashSigChart(unparsedCandleData),
         prevPeriod === period,
         candleTimeInSeconds === period,
     ]);

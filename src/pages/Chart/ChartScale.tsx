@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
@@ -26,6 +27,7 @@ import {
     CandleDataChart,
     chartItemStates,
     checkShowLatestCandle,
+    findSnapTime,
     liquidityChartData,
     renderChart,
     scaleData,
@@ -33,6 +35,7 @@ import {
 } from './ChartUtils/chartUtils';
 import Chart from './Chart';
 import { updatesIF } from '../../utils/hooks/useUrlParams';
+import { a } from 'vitest/dist/suite-IbNSsUWN';
 
 interface propsIF {
     candleData: CandlesByPoolAndDurationIF;
@@ -71,6 +74,42 @@ interface propsIF {
     };
 }
 
+function calculateReset(xScale: any, period: number) {
+    const nowDate = Date.now();
+
+    const maxDom = nowDate + 25 * period * 1000;
+    const minDom = nowDate - 100 * period * 1000;
+
+    xScale.domain([minDom, maxDom]);
+}
+
+function calculateResetForCondensedMode(
+    xScale: any,
+    data: CandleDataChart[],
+    period: number,
+) {
+    const nowDate = Date.now();
+    const snapNowDate = findSnapTime(nowDate, period);
+    const maxDom = nowDate + 25 * period * 1000;
+    let minDom = nowDate - 100 * period * 1000;
+
+    if (
+        data[0].time * 1000 <= snapNowDate + period * 1000 &&
+        data[0].time * 1000 > snapNowDate - period * 1000
+    ) {
+        const filteredLenght = data.length;
+
+        if (filteredLenght >= 100) {
+            minDom = data[99].time * 1000;
+        } else {
+            minDom =
+                data[data.length - 1].time * 1000 -
+                (100 - filteredLenght) * period * 1000;
+        }
+    }
+
+    xScale.domain([minDom, maxDom]);
+}
 export default function ChartScale(props: propsIF) {
     const {
         candleData,
@@ -223,12 +262,11 @@ export default function ChartScale(props: propsIF) {
 
         const localData = structuredClone(data).sort(
             (a: CandleDataChart, b: CandleDataChart) => b.time - a.time,
-        )
+        );
         const timesToCheck = localData
             .filter((i) => i.isShowData)
             .map((item) => item.time * 1000);
 
-        
         const filterTimeGapsNotInclude = timeGaps.filter(
             (item) => !timesToCheck.some((time) => time === item.range[1]),
         );
@@ -300,75 +338,137 @@ export default function ChartScale(props: propsIF) {
 
     useEffect(() => {
         const domain = scaleData.xScale.domain();
-        console.log('domain',new Date(domain[0]),new Date(domain[1]));
-        
-        calculateDiscontinuityRange(
-            unparsedCandleData,
-        ).then((res) => {
+
+        const showData =unparsedCandleData.filter((i) => i.isShowData)
+        if (parsedData) {
+            parsedData.sort((a,b)=>b.time-a.time);
+        }
+        calculateDiscontinuityRange(unparsedCandleData).then((res) => {
             const localTimeGaps = res;
-            const showData = unparsedCandleData.filter((i) => i.isShowData)
-            if (parsedData && localTimeGaps && localTimeGaps?.length > 0) {
-                
 
-                const showedFirstCandleTime = parsedData[parsedData.length - 1].time * 1000;
+            if (parsedData) {
+                if (localTimeGaps && localTimeGaps?.length > 0) {
+                    // if (
+                    //     parsedData[parsedData.length - 1].time * 1000 !==
+                    //     unparsedCandleData[unparsedCandleData.length - 1].time *
+                    //         1000
+                    // ) {
 
-                let newShowedFirstCandleTime =showedFirstCandleTime;
-                const result = localTimeGaps
-                    .map((i) => i.range)
-                    .findIndex(
-                        (a) =>
-                            a[0] < showedFirstCandleTime &&
-                            a[1] > showedFirstCandleTime,
-                    );
+                    const showedFirstCandleTime =
+                        parsedData[parsedData.length - 1].time * 1000;
 
-                const needCandleCountForMin = Math.floor(
-                    (showedFirstCandleTime - domain[0]) / (1000 * period),
-                );
-
-                
-                console.log({result});
-                
-                if (result !== -1) {
-                    newShowedFirstCandleTime = localTimeGaps[result].range[0];
-                }
-
-                console.log({needCandleCountForMin},{newShowedFirstCandleTime},showData);
-                
-                if (needCandleCountForMin > 0) {
-                    const findIndexInAllData = showData.findIndex(
-                        (i) => i.time * 1000 === newShowedFirstCandleTime,
-                    );
-
-                    console.log({findIndexInAllData});
-                    
-
-                    if (findIndexInAllData !== -1) {
-
-                        let needCandleCount = findIndexInAllData + needCandleCountForMin;
-                        
-                        let diffCandleCount = 0;
-                        if (needCandleCount > showData.length) {
-
-                            needCandleCount  = showData.length-1;
-                            diffCandleCount = needCandleCount - showData.length-1;
-                        }
-                        const newCandleTime =
-                            showData[needCandleCount]
-                                .time * 1000 - (diffCandleCount*period*1000);
-
-                        console.log(
-                            { newCandleTime, needCandleCountForMin },
-                            new Date(newCandleTime),
+                    let newShowedFirstCandleTime = showedFirstCandleTime;
+                    const result = localTimeGaps
+                        .map((i) => i.range)
+                        .findIndex(
+                            (a) =>
+                                a[0] < showedFirstCandleTime &&
+                                a[1] > showedFirstCandleTime,
                         );
 
-                        scaleData.xScale.domain([newCandleTime, domain[1]]);
+                    const needCandleCountForMin = Math.floor(
+                        (showedFirstCandleTime - domain[0]) / (1000 * period),
+                    );
 
-                        renderChart();
+                    if (result !== -1) {
+                        newShowedFirstCandleTime =
+                            localTimeGaps[result].range[0];
                     }
-                }
 
-          
+                    if (needCandleCountForMin > 0) {
+                        const findIndexInAllData = showData.findIndex(
+                            (i) => i.time * 1000 === newShowedFirstCandleTime,
+                        );
+
+                        if (findIndexInAllData !== -1) {
+                            let needCandleCount =
+                                findIndexInAllData + needCandleCountForMin;
+
+                            let diffCandleCount = 0;
+                            if (needCandleCount > showData.length) {
+                                diffCandleCount =
+                                    needCandleCount - (showData.length - 1);
+                                needCandleCount = showData.length - 1;
+                            }
+                            const newCandleTime =
+                                showData[needCandleCount].time * 1000 -
+                                diffCandleCount * period * 1000;
+
+                            scaleData.xScale.domain([newCandleTime, domain[1]]);
+                        }
+                    }
+
+
+
+                    const lastCandle  = showData.reduce(
+                        function (prev, current) {
+                            return prev.time < current.time ? prev : current;
+                        },
+                    );
+
+                    const showedLastCandleTime = parsedData[0].time * 1000;
+                    let newShowedLastCandleTime = showedLastCandleTime;
+                    const resultForMax = localTimeGaps
+                        .map((i) => i.range)
+                        .findIndex(
+                            (a) =>
+                                a[0] < showedLastCandleTime &&
+                                a[1] > showedLastCandleTime,
+                        );
+
+
+                        const needCandleCountForMax = Math.floor(
+                            (domain[1]-showedLastCandleTime) / (1000 * period),
+                        );
+    
+                        if (resultForMax !== -1) {
+                            newShowedLastCandleTime =
+                                localTimeGaps[resultForMax].range[0];
+                        }
+    
+                        if (needCandleCountForMax > 0) {
+                            const findIndexInAllData = showData.findIndex(
+                                (i) => i.time * 1000 === newShowedLastCandleTime,
+                            );
+    
+                            if (findIndexInAllData !== -1) {
+                                let needCandleCountMax =
+                                    findIndexInAllData - needCandleCountForMax;
+    
+                                let diffCandleCountMax = 0;
+                                if (needCandleCountMax <  0 ) {
+                                    diffCandleCountMax = -needCandleCountMax;
+                                    needCandleCountMax = 0;
+                                }
+                               
+                                console.log({diffCandleCountMax},new Date(showData[0].time*1000));
+                                
+
+                                const newCandleTimeMax =
+                                    showData[needCandleCountMax].time * 1000 +
+                                    diffCandleCountMax * period * 1000;
+    
+                                scaleData.xScale.domain([scaleData.xScale.domain()[0], newCandleTimeMax]);
+                            }
+                        }
+
+
+
+                    // }
+                    //  else {
+
+                    // }
+                }
             }
+
+            // if (parsedData === undefined) {
+            //     calculateResetForCondensedMode(
+            //         scaleData.xScale,
+            //         showData,
+            //         period,
+            //     );
+            // }
+            renderChart();
             setParsedData(showData);
         });
     }, [diffHashSigChart(unparsedCandleData)]);
