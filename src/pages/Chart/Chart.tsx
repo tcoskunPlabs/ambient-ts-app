@@ -130,7 +130,6 @@ interface propsIF {
         isOpen: boolean | undefined,
         candleData: CandleDataIF | undefined,
     ) => void;
-    denomInBase: boolean;
     chartItemStates: chartItemStates;
     setCurrentData: React.Dispatch<
         React.SetStateAction<CandleDataIF | undefined>
@@ -165,12 +164,11 @@ interface propsIF {
         isResetChart: boolean;
     };
     showTooltip: boolean;
-    period:number;
+    period: number;
 }
 
 export default function Chart(props: propsIF) {
     const {
-        denomInBase,
         scaleData,
         selectedDate,
         setSelectedDate,
@@ -303,7 +301,9 @@ export default function Chart(props: propsIF) {
     const [colorChangeTrigger, setColorChangeTrigger] = useState(false);
 
     const side =
-        (isDenomBase && !isTokenABase) || (!isDenomBase && isTokenABase) ? 'buy' : 'sell';
+        (isDenomBase && !isTokenABase) || (!isDenomBase && isTokenABase)
+            ? 'buy'
+            : 'sell';
     const sellOrderStyle = side === 'sell' ? 'order_sell' : 'order_buy';
     // const [activeDrawingType, setActiveDrawingType] = useState('Cross');
 
@@ -630,8 +630,7 @@ export default function Chart(props: propsIF) {
             }
         }
 
-        console.log('parsedData',parsedData);
-        
+        console.log('parsedData', parsedData);
 
         calculateDiscontinuityRange(data);
         return calculateVisibleCandles(
@@ -666,17 +665,13 @@ export default function Chart(props: propsIF) {
         isCondensedModeEnabled,
     ]);
 
-    const lastCandleData = parsedData?.reduce(
-        function (prev, current) {
-            return prev.time > current.time ? prev : current;
-        },
-    );
+    const lastCandleData = parsedData?.reduce(function (prev, current) {
+        return prev.time > current.time ? prev : current;
+    });
 
-    const firstCandleData = parsedData?.reduce(
-        function (prev, current) {
-            return prev.time < current.time ? prev : current;
-        },
-    );
+    const firstCandleData = parsedData?.reduce(function (prev, current) {
+        return prev.time < current.time ? prev : current;
+    });
 
     const [visibleDateForCandle, setVisibleDateForCandle] = useState(
         lastCandleData.time * 1000,
@@ -987,11 +982,11 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         setMarketLineValue();
-    }, [poolPriceWithoutDenom, denomInBase]);
+    }, [poolPriceWithoutDenom, isDenomBase]);
 
     const setMarketLineValue = () => {
         if (poolPriceWithoutDenom !== undefined) {
-            const lastCandlePrice = denomInBase
+            const lastCandlePrice = isDenomBase
                 ? 1 / poolPriceWithoutDenom
                 : poolPriceWithoutDenom;
 
@@ -1057,7 +1052,7 @@ export default function Chart(props: propsIF) {
     useEffect(() => {
         // auto zoom active
         setRescale(true);
-    }, [location.pathname, period, denomInBase]);
+    }, [location.pathname, period, isDenomBase]);
 
     // finds candle closest to the mouse
     const snapForCandle = (point: number, filtered: Array<CandleDataIF>) => {
@@ -1579,7 +1574,7 @@ export default function Chart(props: propsIF) {
                 return newTargets;
             });
         }
-    }, [denomInBase]);
+    }, [isDenomBase]);
 
     const setAdvancedLines = () => {
         if (minPrice !== undefined && maxPrice !== undefined) {
@@ -1614,7 +1609,7 @@ export default function Chart(props: propsIF) {
         }
     }, [
         location.pathname,
-        denomInBase,
+        isDenomBase,
         minPrice,
         maxPrice,
         rescaleRangeBoundariesWithSlider,
@@ -1627,7 +1622,7 @@ export default function Chart(props: propsIF) {
             advancedMode &&
             scaleData &&
             liquidityData &&
-            denomInBase === boundaries
+            isDenomBase === boundaries
         ) {
             const liqAllBidPrices = liquidityData?.liqBidData.map(
                 (liqData: LiquidityDataLocal) => liqData.liqPrices,
@@ -1636,7 +1631,7 @@ export default function Chart(props: propsIF) {
 
             fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
         } else {
-            setBoundaries(denomInBase);
+            setBoundaries(isDenomBase);
         }
     }, [
         advancedMode,
@@ -1700,7 +1695,7 @@ export default function Chart(props: propsIF) {
      * @param high  The high value for the calculation
      */
     const setLimitTickNearNoGoZone = (low: number, high: number) => {
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(parseFloat(low.toString()))
             : pool?.fromDisplayPrice(1 / parseFloat(low.toString()));
 
@@ -1709,21 +1704,21 @@ export default function Chart(props: propsIF) {
             const pinnedTick: number = pinTickLower(limit, chainData.gridSize);
 
             const tickPrice = tickToPrice(
-                pinnedTick + (denomInBase ? 1 : -1) * chainData.gridSize * 2,
+                pinnedTick + (isDenomBase ? 1 : -1) * chainData.gridSize * 2,
             );
 
             const tickDispPrice = pool?.toDisplayPrice(tickPrice);
 
             if (tickDispPrice) {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
 
                     setMinTickForLimit(displayPriceWithDenom);
                 });
             }
         });
 
-        const limitNonDisplayMax = denomInBase
+        const limitNonDisplayMax = isDenomBase
             ? pool?.fromDisplayPrice(parseFloat(high.toString()))
             : pool?.fromDisplayPrice(1 / parseFloat(high.toString()));
 
@@ -1732,14 +1727,14 @@ export default function Chart(props: propsIF) {
             const pinnedTick: number = pinTickUpper(limit, chainData.gridSize);
 
             const tickPrice = tickToPrice(
-                pinnedTick + (denomInBase ? -1 : 1) * chainData.gridSize * 2,
+                pinnedTick + (isDenomBase ? -1 : 1) * chainData.gridSize * 2,
             );
 
             const tickDispPrice = pool?.toDisplayPrice(tickPrice);
 
             if (tickDispPrice) {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
                     setMaxTickForLimit(displayPriceWithDenom);
                 });
             }
@@ -1780,7 +1775,7 @@ export default function Chart(props: propsIF) {
         // Get data for the No-Go Zone (minimum and maximum values)
         const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
 
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(newLimitValue)
             : pool?.fromDisplayPrice(1 / newLimitValue);
 
@@ -1814,7 +1809,7 @@ export default function Chart(props: propsIF) {
 
             if (tickDispPrice) {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
 
                     newLimitValue = displayPriceWithDenom;
 
@@ -2003,7 +1998,7 @@ export default function Chart(props: propsIF) {
 
                                     pinnedDisplayPrices =
                                         getPinnedPriceValuesFromTicks(
-                                            denomInBase,
+                                            isDenomBase,
                                             baseTokenDecimals,
                                             quoteTokenDecimals,
                                             lowTick,
@@ -2036,7 +2031,7 @@ export default function Chart(props: propsIF) {
 
                                     pinnedDisplayPrices =
                                         getPinnedPriceValuesFromTicks(
-                                            denomInBase,
+                                            isDenomBase,
                                             baseTokenDecimals,
                                             quoteTokenDecimals,
                                             lowTick,
@@ -2081,7 +2076,7 @@ export default function Chart(props: propsIF) {
                                     if (advancedValue < low) {
                                         pinnedDisplayPrices =
                                             getPinnedPriceValuesFromDisplayPrices(
-                                                denomInBase,
+                                                isDenomBase,
                                                 baseTokenDecimals,
                                                 quoteTokenDecimals,
                                                 high.toString(),
@@ -2091,7 +2086,7 @@ export default function Chart(props: propsIF) {
                                     } else {
                                         pinnedDisplayPrices =
                                             getPinnedPriceValuesFromDisplayPrices(
-                                                denomInBase,
+                                                isDenomBase,
                                                 baseTokenDecimals,
                                                 quoteTokenDecimals,
                                                 low.toString(),
@@ -2102,7 +2097,7 @@ export default function Chart(props: propsIF) {
                                 } else {
                                     pinnedDisplayPrices =
                                         getPinnedPriceValuesFromDisplayPrices(
-                                            denomInBase,
+                                            isDenomBase,
                                             baseTokenDecimals,
                                             quoteTokenDecimals,
                                             advancedValue.toString(),
@@ -2255,7 +2250,7 @@ export default function Chart(props: propsIF) {
         baseTokenDecimals,
         quoteTokenDecimals,
         currentPoolPriceTick,
-        denomInBase,
+        isDenomBase,
         isTokenABase,
         chainData.gridSize,
         rescale,
@@ -2429,7 +2424,7 @@ export default function Chart(props: propsIF) {
         baseTokenDecimals,
         quoteTokenDecimals,
         currentPoolPriceTick,
-        denomInBase,
+        isDenomBase,
         isTokenABase,
         chainData.gridSize,
         rescale,
@@ -2595,8 +2590,7 @@ export default function Chart(props: propsIF) {
                     let maxTime: number | undefined = undefined;
                     for (let i = 0; i < parsedData.length - 1; i++) {
                         if (
-                            parsedData[i].time -
-                            parsedData[i + 1].time >
+                            parsedData[i].time - parsedData[i + 1].time >
                             period
                         ) {
                             maxTime = parsedData[i].time * 1000;
@@ -2678,7 +2672,7 @@ export default function Chart(props: propsIF) {
             setLatest(false);
             setShowLatest(false);
         }
-    }, [latest, denomInBase, poolPriceDisplay, rescale, location.pathname]);
+    }, [latest, isDenomBase, poolPriceDisplay, rescale, location.pathname]);
 
     const onClickRange = async (event: PointerEvent) => {
         if (scaleData && liquidityData) {
@@ -2814,7 +2808,7 @@ export default function Chart(props: propsIF) {
 
                 if (lineToBeSet === 'Max') {
                     pinnedDisplayPrices = getPinnedPriceValuesFromDisplayPrices(
-                        denomInBase,
+                        isDenomBase,
                         baseTokenDecimals,
                         quoteTokenDecimals,
                         low.toString(),
@@ -2823,7 +2817,7 @@ export default function Chart(props: propsIF) {
                     );
                 } else {
                     pinnedDisplayPrices = getPinnedPriceValuesFromDisplayPrices(
-                        denomInBase,
+                        isDenomBase,
                         baseTokenDecimals,
                         quoteTokenDecimals,
                         value.toString(),
@@ -3017,7 +3011,7 @@ export default function Chart(props: propsIF) {
         scaleData?.yScale,
         60,
         0.5,
-        denomInBase,
+        isDenomBase,
     );
 
     const selectedCircleSeries = createCircle(
@@ -3025,7 +3019,7 @@ export default function Chart(props: propsIF) {
         scaleData?.yScale,
         80,
         0.5,
-        denomInBase,
+        isDenomBase,
         true,
     );
 
@@ -3042,13 +3036,13 @@ export default function Chart(props: propsIF) {
             const rayLine = createAnnotationLineSeries(
                 scaleData?.xScale.copy(),
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             const bandArea = createBandArea(
                 scaleData?.xScale.copy(),
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             d3.select(d3CanvasMain.current)
@@ -3099,7 +3093,7 @@ export default function Chart(props: propsIF) {
                                     if (item.background.active) {
                                         const checkDenom =
                                             item.data[0].denomInBase ===
-                                            denomInBase;
+                                            isDenomBase;
                                         const bandData = {
                                             fromValue: checkDenom
                                                 ? item.data[0].y
@@ -3107,7 +3101,7 @@ export default function Chart(props: propsIF) {
                                             toValue: checkDenom
                                                 ? item.data[1].y
                                                 : 1 / item.data[1].y,
-                                            denomInBase: denomInBase,
+                                            denomInBase: isDenomBase,
                                         } as bandLineData;
 
                                         if (item.background) {
@@ -3170,7 +3164,7 @@ export default function Chart(props: propsIF) {
                                                                     ),
                                                                 ) ===
                                                                     (element.denomInBase ===
-                                                                    denomInBase
+                                                                    isDenomBase
                                                                         ? Number(
                                                                               hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                                                   12,
@@ -3254,12 +3248,12 @@ export default function Chart(props: propsIF) {
 
                                         const firstPointYAxisData =
                                             item.data[0].denomInBase ===
-                                            denomInBase
+                                            isDenomBase
                                                 ? item.data[0].y
                                                 : 1 / item.data[0].y;
                                         const secondPointYAxisData =
                                             item.data[1].denomInBase ===
-                                            denomInBase
+                                            isDenomBase
                                                 ? item.data[1].y
                                                 : 1 / item.data[1].y;
 
@@ -3395,7 +3389,7 @@ export default function Chart(props: propsIF) {
                                             createArrowPointsOfDPRangeLine(
                                                 item.data,
                                                 scaleData,
-                                                denomInBase,
+                                                isDenomBase,
                                                 height > 30 && width > 30
                                                     ? 10
                                                     : 5,
@@ -3515,7 +3509,7 @@ export default function Chart(props: propsIF) {
                                                     element.y.toFixed(12),
                                                 ) ===
                                                     (element.denomInBase ===
-                                                    denomInBase
+                                                    isDenomBase
                                                         ? Number(
                                                               hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                                   12,
@@ -3594,7 +3588,7 @@ export default function Chart(props: propsIF) {
                                                 item.data[0].y.toFixed(12),
                                             ) ===
                                                 (item.data[0].denomInBase ===
-                                                denomInBase
+                                                isDenomBase
                                                     ? Number(
                                                           hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                               12,
@@ -3900,7 +3894,7 @@ export default function Chart(props: propsIF) {
                                                 lineLabel,
                                                 linePlacement,
                                                 scaleData.yScale(
-                                                    denomInBase ===
+                                                    isDenomBase ===
                                                         lineData[0].denomInBase
                                                         ? lineData[0].y
                                                         : 1 / lineData[0].y,
@@ -3958,7 +3952,7 @@ export default function Chart(props: propsIF) {
                                                     element.y.toFixed(12),
                                                 ) ===
                                                     (element.denomInBase ===
-                                                    denomInBase
+                                                    isDenomBase
                                                         ? Number(
                                                               hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                                   12,
@@ -4008,7 +4002,7 @@ export default function Chart(props: propsIF) {
         hoveredDrawnShape,
         selectedDrawnShape,
         isUpdatingShape,
-        denomInBase,
+        isDenomBase,
         period,
         isShapeEdited,
         getDollarPrice,
@@ -4173,18 +4167,18 @@ export default function Chart(props: propsIF) {
                 (!isTriggeredByZoom || unparsedCandleData.length > 10) &&
                 poolPriceWithoutDenom
             ) {
-                const placeHolderPrice = denomInBase
+                const placeHolderPrice = isDenomBase
                     ? 1 / poolPriceWithoutDenom
                     : poolPriceWithoutDenom;
 
                 const filteredMin = d3.min(unparsedCandleData, (d) =>
-                    denomInBase
+                    isDenomBase
                         ? d.invMaxPriceExclMEVDecimalCorrected
                         : d.minPriceExclMEVDecimalCorrected,
                 );
 
                 const filteredMax = d3.max(unparsedCandleData, (d) =>
-                    denomInBase
+                    isDenomBase
                         ? d.invMinPriceExclMEVDecimalCorrected
                         : d.maxPriceExclMEVDecimalCorrected,
                 );
@@ -4201,7 +4195,7 @@ export default function Chart(props: propsIF) {
 
     function changeScaleSwap(isTriggeredByZoom: boolean) {
         if (scaleData && poolPriceWithoutDenom && rescale) {
-            const placeHolderPrice = denomInBase
+            const placeHolderPrice = isDenomBase
                 ? 1 / poolPriceWithoutDenom
                 : poolPriceWithoutDenom;
 
@@ -4656,7 +4650,7 @@ export default function Chart(props: propsIF) {
             );
         }
     }, [
-        denomInBase,
+        isDenomBase,
         selectedDate,
         isSidebarOpen,
         liqMode,
@@ -4726,11 +4720,11 @@ export default function Chart(props: propsIF) {
             const threshold = 10;
 
             const denomStartY =
-                element[0].denomInBase === denomInBase || isDenomPrices
+                element[0].denomInBase === isDenomBase || isDenomPrices
                     ? element[0].y
                     : 1 / element[0].y;
             const denomEndY =
-                element[0].denomInBase === denomInBase || isDenomPrices
+                element[0].denomInBase === isDenomBase || isDenomPrices
                     ? element[1].y
                     : 1 / element[1].y;
 
@@ -4903,7 +4897,7 @@ export default function Chart(props: propsIF) {
                             element.extraData,
                             mouseX,
                             mouseY,
-                            denomInBase,
+                            isDenomBase,
                         )
                     ) {
                         resElement = element;
@@ -4916,7 +4910,7 @@ export default function Chart(props: propsIF) {
 
                     lineData.forEach((line) => {
                         if (
-                            checkLineLocation(line, mouseX, mouseY, denomInBase)
+                            checkLineLocation(line, mouseX, mouseY, isDenomBase)
                         ) {
                             resElement = element;
                         }
@@ -4926,11 +4920,11 @@ export default function Chart(props: propsIF) {
                 if (element.type === 'Rect' || element.type === 'DPRange') {
                     if (element.type === 'DPRange' && scaleData) {
                         const endY =
-                            element.data[1].denomInBase === denomInBase
+                            element.data[1].denomInBase === isDenomBase
                                 ? element.data[1].y
                                 : 1 / element.data[1].y;
                         const startY =
-                            element.data[0].denomInBase === denomInBase
+                            element.data[0].denomInBase === isDenomBase
                                 ? element.data[0].y
                                 : 1 / element.data[0].y;
 
@@ -5001,7 +4995,7 @@ export default function Chart(props: propsIF) {
                             element.data,
                             mouseX,
                             mouseY,
-                            denomInBase,
+                            isDenomBase,
                         )
                     ) {
                         resElement = element;
@@ -5016,7 +5010,7 @@ export default function Chart(props: propsIF) {
                 mouseX,
                 mouseY,
                 scaleData,
-                denomInBase,
+                isDenomBase,
             );
 
             setHoveredDrawnShape({
@@ -5051,7 +5045,7 @@ export default function Chart(props: propsIF) {
                 });
             }
         }
-    }, [userTransactionData, denomInBase]);
+    }, [userTransactionData, isDenomBase]);
 
     const handleCardClick = (tx: TransactionIF): void => {
         setSelectedDate(undefined);
@@ -5082,10 +5076,10 @@ export default function Chart(props: propsIF) {
                     const swapOrderData = [
                         {
                             x: element.txTime * 1000,
-                            y: denomInBase
+                            y: isDenomBase
                                 ? element.swapInvPriceDecimalCorrected
                                 : element.swapPriceDecimalCorrected,
-                            denomInBase: denomInBase,
+                            denomInBase: isDenomBase,
                         },
                     ];
                     if (
@@ -5161,10 +5155,10 @@ export default function Chart(props: propsIF) {
             avaregeHeight =
                 avaregeHeight +
                 Math.abs(
-                    (denomInBase
+                    (isDenomBase
                         ? d.invPriceCloseExclMEVDecimalCorrected
                         : d.priceCloseExclMEVDecimalCorrected) -
-                        (denomInBase
+                        (isDenomBase
                             ? d.invPriceOpenExclMEVDecimalCorrected
                             : d.priceOpenExclMEVDecimalCorrected),
                 );
@@ -5208,23 +5202,23 @@ export default function Chart(props: propsIF) {
                     : false
                 : false;
 
-        let close = denomInBase
+        let close = isDenomBase
             ? nearest?.invMinPriceExclMEVDecimalCorrected
             : nearest?.minPriceExclMEVDecimalCorrected;
 
-        let open = denomInBase
+        let open = isDenomBase
             ? nearest?.invMaxPriceExclMEVDecimalCorrected
             : nearest?.maxPriceExclMEVDecimalCorrected;
 
         if (tempFilterData.length > 1) {
             close = d3.max(tempFilterData, (d: CandleDataIF) =>
-                denomInBase
+                isDenomBase
                     ? d?.invMinPriceExclMEVDecimalCorrected
                     : d?.minPriceExclMEVDecimalCorrected,
             ) as number;
 
             open = d3.min(tempFilterData, (d: CandleDataIF) =>
-                denomInBase
+                isDenomBase
                     ? d?.invMaxPriceExclMEVDecimalCorrected
                     : d?.maxPriceExclMEVDecimalCorrected,
             ) as number;
@@ -5553,7 +5547,7 @@ export default function Chart(props: propsIF) {
     ): void => {
         if (newLimitValue === undefined) return;
 
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(newLimitValue)
             : pool?.fromDisplayPrice(1 / newLimitValue);
 
@@ -5590,7 +5584,7 @@ export default function Chart(props: propsIF) {
                 });
             } else {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
                     newLimitValue = displayPriceWithDenom;
                     setLimit(() => {
                         return newLimitValue;
@@ -5605,7 +5599,7 @@ export default function Chart(props: propsIF) {
             const lineSeries = createLinearLineSeries(
                 scaleData?.xScale,
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             setLineSeries(() => lineSeries);
@@ -5613,7 +5607,7 @@ export default function Chart(props: propsIF) {
             const annotationLineSeries = createAnnotationLineSeries(
                 scaleData?.xScale.copy(),
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             annotationLineSeries.decorate(
@@ -5624,7 +5618,7 @@ export default function Chart(props: propsIF) {
 
             setAnnotationLineSeries(() => annotationLineSeries);
         }
-    }, [scaleData, denomInBase]);
+    }, [scaleData, isDenomBase]);
 
     const rangeCanvasProps = {
         scaleData: scaleData,
@@ -5696,7 +5690,7 @@ export default function Chart(props: propsIF) {
         dragRange,
         dragLimit,
         setCrosshairActive,
-        denomInBase,
+        isDenomBase,
         setYaxisWidth,
         yAxisWidth,
         simpleRangeWidth,
@@ -5713,7 +5707,7 @@ export default function Chart(props: propsIF) {
             if (isHoveredOrderHistory && hoveredOrderHistory) {
                 setHoveredOrderTooltipPlacement(() => {
                     const top = scaleData.yScale(
-                        denomInBase
+                        isDenomBase
                             ? hoveredOrderHistory.swapInvPriceDecimalCorrected
                             : hoveredOrderHistory.swapPriceDecimalCorrected,
                     );
@@ -5774,7 +5768,7 @@ export default function Chart(props: propsIF) {
             if (isSelectedOrderHistory && selectedOrderHistory) {
                 setSelectedOrderTooltipPlacement(() => {
                     const top = scaleData.yScale(
-                        denomInBase
+                        isDenomBase
                             ? selectedOrderHistory.swapInvPriceDecimalCorrected
                             : selectedOrderHistory.swapPriceDecimalCorrected,
                     );
@@ -5797,7 +5791,7 @@ export default function Chart(props: propsIF) {
         diffHashSig(hoveredOrderHistory),
         diffHashSigScaleData(scaleData),
         reset,
-        denomInBase,
+        isDenomBase,
     ]);
 
     useEffect(() => {
@@ -5851,7 +5845,7 @@ export default function Chart(props: propsIF) {
                 <CandleChart
                     chartItemStates={props.chartItemStates}
                     data={unparsedCandleData}
-                    denomInBase={denomInBase}
+                    denomInBase={isDenomBase}
                     lastCandleData={lastCandleData}
                     period={period}
                     scaleData={scaleData}
@@ -5868,7 +5862,7 @@ export default function Chart(props: propsIF) {
                 <VolumeBarCanvas
                     scaleData={scaleData}
                     volumeData={unparsedCandleData}
-                    denomInBase={denomInBase}
+                    denomInBase={isDenomBase}
                     selectedDate={selectedDate}
                     showVolume={showVolume}
                     visibleDateForCandle={visibleDateForCandle}
@@ -5903,7 +5897,7 @@ export default function Chart(props: propsIF) {
                     scaleData && (
                         <OrderHistoryCanvas
                             scaleData={scaleData}
-                            denomInBase={denomInBase}
+                            denomInBase={isDenomBase}
                             showSwap={showSwap}
                             showLiquidity={showLiquidity}
                             showHistorical={showHistorical}
@@ -5944,7 +5938,7 @@ export default function Chart(props: propsIF) {
                         activeDrawingType={activeDrawingType}
                         setActiveDrawingType={setActiveDrawingType}
                         setSelectedDrawnShape={setSelectedDrawnShape}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         addDrawActionStack={addDrawActionStack}
                         period={period}
                         crosshairData={crosshairData}
@@ -5976,7 +5970,7 @@ export default function Chart(props: propsIF) {
                         setCrossHairDataFunc={setCrossHairDataFunc}
                         setSelectedDrawnShape={setSelectedDrawnShape}
                         setIsUpdatingShape={setIsUpdatingShape}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         addDrawActionStack={addDrawActionStack}
                         snapForCandle={snapForCandle}
                         visibleCandleData={visibleCandleData}
@@ -6140,7 +6134,7 @@ export default function Chart(props: propsIF) {
                     <OrderHistoryTooltip
                         hoveredOrderHistory={hoveredOrderHistory}
                         isHoveredOrderHistory={isHoveredOrderHistory}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         hoveredOrderTooltipPlacement={
                             hoveredOrderTooltipPlacement
                         }
@@ -6161,7 +6155,7 @@ export default function Chart(props: propsIF) {
                     <OrderHistoryTooltip
                         hoveredOrderHistory={selectedOrderHistory}
                         isHoveredOrderHistory={isSelectedOrderHistory}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         hoveredOrderTooltipPlacement={
                             selectedOrderTooltipPlacement
                         }

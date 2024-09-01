@@ -1147,7 +1147,6 @@ function TradeCandleStickChart(props: propsIF) {
                     <Chart
                         liquidityData={liquidityData}
                         changeState={props.changeState}
-                        denomInBase={isDenomBase}
                         chartItemStates={props.chartItemStates}
                         setCurrentData={setCurrentData}
                         currentData={currentData}

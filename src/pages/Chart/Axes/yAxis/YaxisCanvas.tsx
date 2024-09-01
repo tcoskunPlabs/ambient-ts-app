@@ -64,7 +64,7 @@ interface yAxisIF {
     dragRange: any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dragLimit: any;
-    denomInBase: boolean;
+    isDenomBase: boolean;
     setYaxisWidth: React.Dispatch<React.SetStateAction<string>>;
     yAxisWidth: string;
     simpleRangeWidth: number;
@@ -106,7 +106,7 @@ function YAxisCanvas(props: yAxisIF) {
         dragRange,
         dragLimit,
         setCrosshairActive,
-        denomInBase,
+        isDenomBase,
         setYaxisWidth,
         yAxisWidth,
         simpleRangeWidth,
@@ -519,7 +519,7 @@ function YAxisCanvas(props: yAxisIF) {
 
                 shapeData.data.forEach((data) => {
                     const shapeDataWithDenom =
-                        data.denomInBase === denomInBase ? data.y : 1 / data.y;
+                        data.denomInBase === isDenomBase ? data.y : 1 / data.y;
 
                     const {
                         tick: shapePoint,
@@ -527,11 +527,11 @@ function YAxisCanvas(props: yAxisIF) {
                     } = prepareTickLabel(shapeDataWithDenom);
 
                     const secondPointInDenom =
-                        shapeData.data[1].denomInBase === denomInBase
+                        shapeData.data[1].denomInBase === isDenomBase
                             ? shapeData.data[1].y
                             : 1 / shapeData.data[1].y;
                     const firstPointInDenom =
-                        shapeData.data[0].denomInBase === denomInBase
+                        shapeData.data[0].denomInBase === isDenomBase
                             ? shapeData.data[0].y
                             : 1 / shapeData.data[0].y;
 
@@ -923,7 +923,7 @@ function YAxisCanvas(props: yAxisIF) {
         d3.select(d3Yaxis.current).on('mouseover', () => {
             setCrosshairActive('none');
         });
-    }, [denomInBase, liqMode, location.pathname, advancedMode]);
+    }, [isDenomBase, liqMode, location.pathname, advancedMode]);
 
     return (
         <d3fc-canvas
