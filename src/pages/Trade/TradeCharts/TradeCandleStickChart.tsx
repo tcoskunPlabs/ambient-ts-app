@@ -14,6 +14,7 @@ import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import {
+    diffHashSigChart,
     diffHashSigLiquidity,
     getPinnedPriceValuesFromTicks,
 } from '../../../ambient-utils/dataLayer';
@@ -31,6 +32,7 @@ import {
     TransactionIF,
 } from '../../../ambient-utils/types';
 import {
+    CandleDataChart,
     chartItemStates,
     getInitialDisplayCandleCount,
     liquidityChartData,
@@ -131,11 +133,8 @@ function TradeCandleStickChart(props: propsIF) {
     const [prevPeriod, setPrevPeriod] = useState<any>();
     const [prevFirstCandle, setPrevFirstCandle] = useState<any>();
 
-    const [isCandleAdded, setIsCandleAdded] = useState<boolean>(false);
-
     const [isFetchingEnoughData, setIsFetchingEnoughData] = useState(true);
 
-    const [isCompletedFetchData, setIsCompletedFetchData] = useState(true);
 
     const [fetchCountForEnoughData, setFetchCountForEnoughData] = useState(1);
     const [liqBoundary, setLiqBoundary] = useState<number | undefined>(
@@ -192,6 +191,7 @@ function TradeCandleStickChart(props: propsIF) {
 
     const { userTransactionsByPool } = useContext(GraphDataContext);
 
+    const [parsedData, setParsedData] = useState<CandleDataChart[]>([]);
     useEffect(() => {
         let isMounted = true;
         if (userTransactionsByPool) {
@@ -206,7 +206,6 @@ function TradeCandleStickChart(props: propsIF) {
     useEffect(() => {
         setSelectedDrawnShape(undefined);
         setIsFetchingEnoughData(true);
-        setIsCompletedFetchData(true);
         setChartResetStatus({
             isResetChart: false,
         });
@@ -216,7 +215,6 @@ function TradeCandleStickChart(props: propsIF) {
     useEffect(() => {
         if (candleDomains.isResetRequest) {
             setIsFetchingEnoughData(true);
-            setIsCompletedFetchData(true);
             setFetchCountForEnoughData(0);
         }
     }, [candleDomains.isResetRequest]);
@@ -1068,6 +1066,22 @@ function TradeCandleStickChart(props: propsIF) {
         isDenomBase,
     ]);
 
+    useEffect(() => {
+        if (candleData && period) 
+        {
+
+            const data = filterCandleWithTransaction(
+                candleData.candles,
+                period,
+            ).sort((a, b) => b.time - a.time);
+
+            setParsedData(data);
+        }
+    
+    
+    }, [diffHashSigChart(candleData?.candles)])
+    
+
     const isOpenChart =
         !isLoading &&
         candleData !== undefined &&
@@ -1100,7 +1114,7 @@ function TradeCandleStickChart(props: propsIF) {
                     gridTemplateRows: 'auto auto',
                 }}
             >
-                {(!isOpenChart || isCompletedFetchData) && (
+                {(!isOpenChart) && (
                     <>
                         <div
                             style={{
@@ -1131,19 +1145,15 @@ function TradeCandleStickChart(props: propsIF) {
                 )}
                 {isOpenChart && (
                     <Chart
-                        isTokenABase={isTokenABase}
                         liquidityData={liquidityData}
                         changeState={props.changeState}
                         denomInBase={isDenomBase}
                         chartItemStates={props.chartItemStates}
                         setCurrentData={setCurrentData}
                         currentData={currentData}
-                        isCandleAdded={isCandleAdded}
-                        setIsCandleAdded={setIsCandleAdded}
                         scaleData={scaleData}
                         prevPeriod={prevPeriod}
                         candleTimeInSeconds={period}
-                        poolPriceNonDisplay={poolPriceNonDisplay}
                         selectedDate={selectedDate}
                         setSelectedDate={setSelectedDate}
                         rescale={props.rescale}
@@ -1157,18 +1167,14 @@ function TradeCandleStickChart(props: propsIF) {
                         setShowTooltip={setShowTooltip}
                         liquidityScale={liquidityScale}
                         liquidityDepthScale={liquidityDepthScale}
-                        candleTime={chartSettings.candleTime.global}
-                        unparsedData={candleData}
+                        parsedData={parsedData}
                         updateURL={updateURL}
                         userTransactionData={userTransactionData}
                         setPrevCandleCount={setPrevCandleCount}
-                        isFetchingEnoughData={isFetchingEnoughData}
-                        setIsFetchingEnoughData={setIsFetchingEnoughData}
-                        isCompletedFetchData={isCompletedFetchData}
-                        setIsCompletedFetchData={setIsCompletedFetchData}
                         setChartResetStatus={setChartResetStatus}
                         chartResetStatus={chartResetStatus}
                         showTooltip={showTooltip}
+                        period={period}
                     />
                 )}
             </div>

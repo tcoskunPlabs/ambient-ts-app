@@ -21,7 +21,6 @@ import {
 } from '@crocswap-libs/sdk';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import useHandleSwipeBack from '../../utils/hooks/useHandleSwipeBack';
-import { candleTimeIF } from '../../App/hooks/useChartSettings';
 import { IS_LOCAL_ENV } from '../../ambient-utils/constants';
 import {
     diffHashSig,
@@ -37,7 +36,6 @@ import { SidebarContext } from '../../contexts/SidebarContext';
 import { RangeContext } from '../../contexts/RangeContext';
 import {
     CandleDataIF,
-    CandlesByPoolAndDurationIF,
     CandleDomainIF,
     CandleScaleIF,
     TransactionIF,
@@ -127,7 +125,6 @@ import useOnClickOutside, { Event } from '../../utils/hooks/useOnClickOutside';
 import ChartTooltip from './ChartTooltip/ChartTooltip';
 
 interface propsIF {
-    isTokenABase: boolean;
     liquidityData: liquidityChartData | undefined;
     changeState: (
         isOpen: boolean | undefined,
@@ -139,10 +136,7 @@ interface propsIF {
         React.SetStateAction<CandleDataIF | undefined>
     >;
     currentData: CandleDataIF | undefined;
-    isCandleAdded: boolean | undefined;
-    setIsCandleAdded: React.Dispatch<boolean>;
     scaleData: scaleData;
-    poolPriceNonDisplay: number | undefined;
     selectedDate: number | undefined;
     setSelectedDate: React.Dispatch<number | undefined>;
     rescale: boolean | undefined;
@@ -156,17 +150,12 @@ interface propsIF {
     setShowTooltip: React.Dispatch<React.SetStateAction<boolean>>;
     liquidityScale: d3.ScaleLinear<number, number> | undefined;
     liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
-    candleTime: candleTimeIF;
-    unparsedData: CandlesByPoolAndDurationIF;
+    parsedData: CandleDataChart[];
     prevPeriod: number;
     candleTimeInSeconds: number | undefined;
     updateURL: (changes: updatesIF) => void;
     userTransactionData: Array<TransactionIF> | undefined;
     setPrevCandleCount: React.Dispatch<React.SetStateAction<number>>;
-    isFetchingEnoughData: boolean;
-    setIsFetchingEnoughData: React.Dispatch<React.SetStateAction<boolean>>;
-    isCompletedFetchData: boolean;
-    setIsCompletedFetchData: React.Dispatch<React.SetStateAction<boolean>>;
     setChartResetStatus: React.Dispatch<
         React.SetStateAction<{
             isResetChart: boolean;
@@ -176,14 +165,13 @@ interface propsIF {
         isResetChart: boolean;
     };
     showTooltip: boolean;
+    period:number;
 }
 
 export default function Chart(props: propsIF) {
     const {
-        isTokenABase,
         denomInBase,
         scaleData,
-        poolPriceNonDisplay,
         selectedDate,
         setSelectedDate,
         rescale,
@@ -197,17 +185,16 @@ export default function Chart(props: propsIF) {
         liquidityData,
         liquidityScale,
         liquidityDepthScale,
-        unparsedData,
+        parsedData,
         prevPeriod,
         candleTimeInSeconds,
         updateURL,
         userTransactionData,
         setPrevCandleCount,
-        isCompletedFetchData,
-        setIsCompletedFetchData,
         setChartResetStatus,
         chartResetStatus,
         showTooltip,
+        period,
     } = props;
 
     const {
@@ -254,6 +241,7 @@ export default function Chart(props: propsIF) {
         isCondensedModeEnabled,
         setIsCondensedModeEnabled,
         setCandleData,
+        candleData,
     } = useContext(CandleContext);
     const { pool, poolPriceDisplay: poolPriceWithoutDenom } =
         useContext(PoolContext);
@@ -291,13 +279,14 @@ export default function Chart(props: propsIF) {
         tokenA,
         tokenB,
         isDenomBase,
-        isTokenABase: isBid,
+        isTokenABase,
         setIsTokenAPrimary,
         limitTick,
         setLimitTick,
         currentPoolPriceTick,
         noGoZoneBoundaries,
         setNoGoZoneBoundaries,
+        poolPriceNonDisplay,
     } = currentPool;
 
     const [isChartZoom, setIsChartZoom] = useState(false);
@@ -310,12 +299,11 @@ export default function Chart(props: propsIF) {
     const [maxTickForLimit, setMaxTickForLimit] = useState<number>(0);
     const [isShowFloatingToolbar, setIsShowFloatingToolbar] = useState(false);
     const [handleDocumentEvent, setHandleDocumentEvent] = useState();
-    const period = unparsedData.duration;
 
     const [colorChangeTrigger, setColorChangeTrigger] = useState(false);
 
     const side =
-        (isDenomBase && !isBid) || (!isDenomBase && isBid) ? 'buy' : 'sell';
+        (isDenomBase && !isTokenABase) || (!isDenomBase && isTokenABase) ? 'buy' : 'sell';
     const sellOrderStyle = side === 'sell' ? 'order_sell' : 'order_buy';
     // const [activeDrawingType, setActiveDrawingType] = useState('Cross');
 
@@ -327,8 +315,6 @@ export default function Chart(props: propsIF) {
     const [chartZoomEvent, setChartZoomEvent] = useState('');
     const [timeGaps, setTimeGaps] = useState<timeGapsValue[]>([]);
 
-    const [discontinuityProvider, setDiscontinuityProvider] =
-        useState(undefined);
     const [lineSellColor, setLineSellColor] = useState('rgba(115, 113, 252)');
     const [lineBuyColor, setLineBuyColor] = useState('rgba(205, 193, 255)');
 
@@ -584,10 +570,7 @@ export default function Chart(props: propsIF) {
     };
 
     const unparsedCandleData = useMemo(() => {
-        const data = filterCandleWithTransaction(
-            unparsedData.candles,
-            period,
-        ).sort((a, b) => b.time - a.time);
+        const data = structuredClone(parsedData);
 
         if (
             poolPriceWithoutDenom &&
@@ -647,6 +630,9 @@ export default function Chart(props: propsIF) {
             }
         }
 
+        console.log('parsedData',parsedData);
+        
+
         calculateDiscontinuityRange(data);
         return calculateVisibleCandles(
             scaleData,
@@ -655,7 +641,7 @@ export default function Chart(props: propsIF) {
             mobileView ? 300 : 100,
         ) as CandleDataChart[];
     }, [
-        diffHashSigChart(unparsedData.candles),
+        diffHashSigChart(parsedData),
         poolPriceWithoutDenom,
         isShowLatestCandle,
         isCondensedModeEnabled,
@@ -680,13 +666,13 @@ export default function Chart(props: propsIF) {
         isCondensedModeEnabled,
     ]);
 
-    const lastCandleData = unparsedData.candles?.reduce(
+    const lastCandleData = parsedData?.reduce(
         function (prev, current) {
             return prev.time > current.time ? prev : current;
         },
     );
 
-    const firstCandleData = unparsedData.candles?.reduce(
+    const firstCandleData = parsedData?.reduce(
         function (prev, current) {
             return prev.time < current.time ? prev : current;
         },
@@ -980,8 +966,6 @@ export default function Chart(props: propsIF) {
                     ...data,
                 );
 
-                setDiscontinuityProvider(newDiscontinuityProvider);
-
                 scaleData.xScale.discontinuityProvider(
                     newDiscontinuityProvider,
                 );
@@ -996,49 +980,6 @@ export default function Chart(props: propsIF) {
         diffHashSigScaleData(scaleData, 'x'),
         isCondensedModeEnabled,
     ]);
-
-    useEffect(() => {
-        if (discontinuityProvider) {
-            if (!chartResetStatus.isResetChart) {
-                const xmin = scaleData?.xScale.domain()[0];
-                const xmax = scaleData?.xScale.domain()[1];
-                const data = visibleCandleData.filter(
-                    (i) => i.time * 1000 <= xmax && i.time * 1000 >= xmin,
-                );
-                if (data.length > 0) {
-                    const width = scaleData?.xScale.range()[1];
-
-                    const minDate = data[data.length - 1].time * 1000;
-                    const maxDate = data[0].time * 1000;
-
-                    const diffPixel =
-                        (isShowLatestCandle
-                            ? width
-                            : scaleData?.xScale(maxDate)) -
-                        scaleData?.xScale(minDate);
-
-                    const percentPixel = diffPixel / width;
-
-                    const isIncludeTimeOfEndCanlde = timeOfEndCandle
-                        ? timeOfEndCandle < scaleData?.xScale.domain()[1] &&
-                          timeOfEndCandle > scaleData?.xScale.domain()[0]
-                        : false;
-
-                    if (
-                        percentPixel < 0.75 &&
-                        isCondensedModeEnabled &&
-                        !isIncludeTimeOfEndCanlde
-                    ) {
-                        resetFunc(true);
-                    } else {
-                        setIsCompletedFetchData(false);
-                    }
-                }
-            } else {
-                setIsCompletedFetchData(false);
-            }
-        }
-    }, [discontinuityProvider === undefined]);
 
     useEffect(() => {
         updateDrawnShapeHistoryonLocalStorage();
@@ -1184,7 +1125,7 @@ export default function Chart(props: propsIF) {
     useEffect(() => {
         if (isCondensedModeEnabled) {
             const isShowSelectedDate = filterCandleWithTransaction(
-                unparsedData.candles,
+                parsedData,
                 period,
             ).find((i) => i.isShowData && i.time * 1000 === selectedDate);
             if (!isShowSelectedDate) {
@@ -2652,23 +2593,23 @@ export default function Chart(props: propsIF) {
 
                 if (!isReset) {
                     let maxTime: number | undefined = undefined;
-                    for (let i = 0; i < unparsedData.candles.length - 1; i++) {
+                    for (let i = 0; i < parsedData.length - 1; i++) {
                         if (
-                            unparsedData.candles[i].time -
-                                unparsedData.candles[i + 1].time >
+                            parsedData[i].time -
+                            parsedData[i + 1].time >
                             period
                         ) {
-                            maxTime = unparsedData.candles[i].time * 1000;
+                            maxTime = parsedData[i].time * 1000;
                         }
                     }
-                    if (maxTime && unparsedData) {
-                        const localCandles = unparsedData.candles.filter(
+                    if (maxTime && candleData) {
+                        const localCandles = parsedData.filter(
                             (i) =>
                                 maxTime === undefined ||
                                 i.time * 1000 >= maxTime,
                         );
                         const localCandleData = {
-                            ...unparsedData,
+                            ...candleData,
                             candles: localCandles,
                         };
 
@@ -3035,7 +2976,7 @@ export default function Chart(props: propsIF) {
 
             return () => resizeObserver.unobserve(canvasDiv.node());
         }
-    }, [handleDocumentEvent, isCompletedFetchData]);
+    }, [handleDocumentEvent]);
 
     useEffect(() => {
         const canvas = d3
@@ -5891,7 +5832,6 @@ export default function Chart(props: propsIF) {
                 gridColumnEnd: 1,
                 gridRowStart: 1,
                 gridRowEnd: 3,
-                visibility: isCompletedFetchData ? 'hidden' : 'visible',
                 paddingLeft: toolbarWidth + 'px',
             }}
         >
