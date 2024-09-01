@@ -147,6 +147,11 @@ export type timeGapsValue = {
     isAddedPixel: boolean;
 };
 
+export interface TransactionDataRange {
+    valueTime : number,
+    targetPositionTime: number;
+
+} 
 export type orderHistory = {
     tsId: string;
     tsStart: Date;
