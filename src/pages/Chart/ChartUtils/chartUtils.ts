@@ -10,6 +10,8 @@ import { LiquidityDataLocal } from '../../Trade/TradeCharts/TradeCharts';
 import { CandleDataIF, LiquidityRangeIF } from '../../../ambient-utils/types';
 import {
     LS_KEY_CHART_ANNOTATIONS,
+    initialDisplayBufferCandleCount,
+    initialDisplayBufferCandleCountForMobile,
     initialDisplayCandleCount,
     initialDisplayCandleCountForMobile,
 } from './chartConstants';
@@ -56,6 +58,11 @@ export type drawnShapeEditAttributes = {
     lineWidth: number;
     dash: number[];
 };
+
+export type candleCountForDisplay ={
+    candle:number,
+    bufferCandle:number,
+}
 
 export type drawDataHistory = {
     data: lineData[];
@@ -513,10 +520,10 @@ export const clipCanvas = (
 
 export const getInitialDisplayCandleCount = (mobileView: boolean) => {
     if (mobileView) {
-        return initialDisplayCandleCountForMobile;
+        return {candle: initialDisplayCandleCountForMobile, bufferCandle : initialDisplayBufferCandleCountForMobile };
     }
 
-    return initialDisplayCandleCount;
+    return {candle: initialDisplayCandleCount, bufferCandle : initialDisplayBufferCandleCount };
 };
 
 export const findSnapTime = (timeSeconds: number, period: number) => {
@@ -647,3 +654,48 @@ export const getLast15Minutes = (period: number) => {
     }
     return times;
 };
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function resetForNoncondensedMode(xScale: any, period: number,candleCount:candleCountForDisplay) {
+    const nowDate = Date.now();
+
+    const maxDom = nowDate + candleCount.bufferCandle * period * 1000;
+    const minDom = nowDate - candleCount.candle * period * 1000;
+
+    xScale.domain([minDom, maxDom]);
+}
+
+export function resetForCondensedMode(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    xScale: any,
+    data: CandleDataChart[],
+    period: number,
+    candleCount:candleCountForDisplay,
+) {
+    const nowDate = Date.now();
+    const snapNowDate = findSnapTime(nowDate, period);
+    const maxDom = nowDate + candleCount.bufferCandle * period * 1000;
+    let minDom = nowDate - candleCount.candle * period * 1000;
+
+    if (
+        data[0].time * 1000 <= snapNowDate + period * 1000 &&
+        data[0].time * 1000 >= snapNowDate - period * 1000
+    ) {
+        const filteredLenght = data.length;
+
+        if (filteredLenght >= candleCount.candle) {
+            minDom = data[candleCount.candle-1].time * 1000;
+        } else {
+            minDom =
+                data[data.length - 1].time * 1000 -
+                (candleCount.candle - filteredLenght) * period * 1000;
+        }
+    } else {
+        resetForNoncondensedMode(xScale,period,candleCount);
+    } 
+    
+    console.log('222 new Date(minDom)',new Date(minDom));
+    
+    xScale.domain([minDom, maxDom]);
+}

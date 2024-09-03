@@ -1,8 +1,7 @@
-import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import {
     CandleDataChart,
     chartItemStates,
-    checkShowLatestCandle,
     liquidityChartData,
     renderChart,
     scaleData,
@@ -40,25 +39,18 @@ interface propsIF {
     setReset: React.Dispatch<React.SetStateAction<boolean>>;
     showLatest: boolean | undefined;
     setShowLatest: React.Dispatch<React.SetStateAction<boolean>>;
+    showTooltip:boolean;
     setShowTooltip: React.Dispatch<React.SetStateAction<boolean>>;
     liquidityScale: d3.ScaleLinear<number, number> | undefined;
     liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
     updateURL: (changes: updatesIF) => void;
     userTransactionData: Array<TransactionIF> | undefined;
     setPrevCandleCount: React.Dispatch<React.SetStateAction<number>>;
-    setChartResetStatus: React.Dispatch<
-        React.SetStateAction<{
-            isResetChart: boolean;
-        }>
-    >;
-    chartResetStatus: {
-        isResetChart: boolean;
-    };
 }
 export default function ChartPreparation(props: propsIF) {
     const [timeGaps, setTimeGaps] = useState<TransactionDataRange[]>([]);
 
-    const [parsedData, setParsedData] = useState<CandleDataChart[]>([]);
+    const [parsedData, setParsedData] = useState<CandleDataChart[]>();
 
     const {
         scaleData,
@@ -69,10 +61,6 @@ export default function ChartPreparation(props: propsIF) {
         selectedDate,
         setSelectedDate,
     } = props;
-
-    const isShowLatestCandle = useMemo(() => {
-        return checkShowLatestCandle(period, scaleData?.xScale);
-    }, [period, diffHashSigScaleData(scaleData, 'x')]);
 
     /**
      * This function processes a given data array to calculate discontinuities in time intervals and updates them.
@@ -98,7 +86,7 @@ export default function ChartPreparation(props: propsIF) {
         let notTransactionDataTime: undefined | number = undefined;
         let transationDataTime: undefined | number = undefined;
         if (scaleData) {
-            localData.slice(isShowLatestCandle ? 2 : 1).forEach((item) => {
+            localData.forEach((item) => {
                 if (notTransactionDataTime === undefined && !item.isShowData) {
                     notTransactionDataTime = item.time * 1000;
                 }
@@ -148,15 +136,17 @@ export default function ChartPreparation(props: propsIF) {
             });
 
             const newDiscontinuityProvider = d3fc.discontinuityRange(
-                ...localTimeGaps.map((i) => i),
+                ...localTimeGaps.map((i) => [i.valueTime,i.targetPositionTime]),
             );
 
             scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
+            
             setTimeGaps(localTimeGaps);
 
             return localTimeGaps;
         }
     };
+
 
     useEffect(() => {
         const domain = scaleData.xScale.domain();
@@ -167,6 +157,7 @@ export default function ChartPreparation(props: propsIF) {
         if (parsedData) {
             parsedData.sort((a, b) => b.time - a.time);
         }
+        
         calculateDiscontinuityRange(candleDataWithTransactionInfo).then(
             (res) => {
                 const localTimeGaps = res;
@@ -277,14 +268,21 @@ export default function ChartPreparation(props: propsIF) {
                         }
                     }
                 }
-
+                
                 renderChart();
                 setParsedData(showData);
             },
         );
-    }, [diffHashSigChart()]);
+    }, [diffHashSigChart(candleDataWithTransactionInfo)]);
 
-    return parsedData ? (
+    useEffect(() => {
+      
+        console.log('222',new Date(scaleData.xScale.domain()[0]));
+        
+    }, [diffHashSigScaleData(scaleData,'x')])
+    
+
+    return parsedData && parsedData.length > 0 ? (
         <Chart
             liquidityData={liquidityData}
             changeState={props.changeState}
@@ -312,9 +310,8 @@ export default function ChartPreparation(props: propsIF) {
             updateURL={props.updateURL}
             userTransactionData={props.userTransactionData}
             setPrevCandleCount={props.setPrevCandleCount}
-            setChartResetStatus={props.setChartResetStatus}
-            chartResetStatus={props.chartResetStatus}
-            showTooltip={false}
+            showTooltip={props.showTooltip}
+            timeGaps={timeGaps}
         />
     ) : (
         <></>

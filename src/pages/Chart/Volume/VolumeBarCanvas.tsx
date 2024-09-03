@@ -12,7 +12,6 @@ interface propsIF {
     denomInBase: boolean;
     volumeData: Array<CandleDataIF>;
     showVolume: boolean;
-    visibleDateForCandle: number;
     chartThemeColors: ChartThemeIF | undefined;
 }
 
@@ -23,7 +22,6 @@ export default function VolumeBarCanvas(props: propsIF) {
         denomInBase,
         volumeData,
         showVolume,
-        visibleDateForCandle,
         chartThemeColors,
     } = props;
 
@@ -95,17 +93,12 @@ export default function VolumeBarCanvas(props: propsIF) {
                                   ? d3DarkStrokeColor.toString()
                                   : 'rgba(205,193,255, 0.5)';
 
-                    if (d.time * 1000 > visibleDateForCandle) {
-                        context.fillStyle = 'transparent';
-                        context.strokeStyle = 'transparent';
-                    }
                 },
             );
         }
     }, [
         barSeries,
         selectedDate,
-        visibleDateForCandle,
         chartThemeColors,
         denomInBase,
     ]);

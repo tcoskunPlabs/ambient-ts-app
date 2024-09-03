@@ -76,7 +76,9 @@ import {
     selectedDrawnData,
     setCanvasResolution,
     standardDeviation,
-    timeGapsValue,
+    TransactionDataRange,
+    resetForCondensedMode,
+    resetForNoncondensedMode,
 } from './ChartUtils/chartUtils';
 import { Zoom } from './ChartUtils/zoom';
 import XAxisCanvas from './Axes/xAxis/XaxisCanvas';
@@ -108,7 +110,6 @@ import {
     LS_KEY_CHART_ANNOTATIONS,
     defaultCandleBandwith,
     mainCanvasElementId,
-    xAxisBuffer,
     xAxisHeightPixel,
 } from './ChartUtils/chartConstants';
 import OrderHistoryCanvas from './OrderHistoryCh/OrderHistoryCanvas';
@@ -119,7 +120,6 @@ import {
     pinTickToTickLower,
     pinTickToTickUpper,
 } from '../../ambient-utils/dataLayer/functions/pinTick';
-import { filterCandleWithTransaction } from './ChartUtils/discontinuityScaleUtils';
 import ChartSettings from './ChartSettings/ChartSettings';
 import useOnClickOutside, { Event } from '../../utils/hooks/useOnClickOutside';
 import ChartTooltip from './ChartTooltip/ChartTooltip';
@@ -155,16 +155,9 @@ interface propsIF {
     updateURL: (changes: updatesIF) => void;
     userTransactionData: Array<TransactionIF> | undefined;
     setPrevCandleCount: React.Dispatch<React.SetStateAction<number>>;
-    setChartResetStatus: React.Dispatch<
-        React.SetStateAction<{
-            isResetChart: boolean;
-        }>
-    >;
-    chartResetStatus: {
-        isResetChart: boolean;
-    };
     showTooltip: boolean;
     period: number;
+    timeGaps: TransactionDataRange[];
 }
 
 export default function Chart(props: propsIF) {
@@ -189,10 +182,9 @@ export default function Chart(props: propsIF) {
         updateURL,
         userTransactionData,
         setPrevCandleCount,
-        setChartResetStatus,
-        chartResetStatus,
         showTooltip,
         period,
+        timeGaps,
     } = props;
 
     const {
@@ -313,7 +305,6 @@ export default function Chart(props: propsIF) {
     const [mouseLeaveEvent, setMouseLeaveEvent] =
         useState<MouseEvent<HTMLDivElement>>();
     const [chartZoomEvent, setChartZoomEvent] = useState('');
-    const [timeGaps, setTimeGaps] = useState<timeGapsValue[]>([]);
 
     const [lineSellColor, setLineSellColor] = useState('rgba(115, 113, 252)');
     const [lineBuyColor, setLineBuyColor] = useState('rgba(205, 193, 255)');
@@ -467,79 +458,6 @@ export default function Chart(props: propsIF) {
         return checkShowLatestCandle(period, scaleData?.xScale);
     }, [period, diffHashSigScaleData(scaleData, 'x')]);
 
-    /**
-     * This function processes a given data array to calculate discontinuities in time intervals and updates them.
-     * @param data
-     */
-    const calculateDiscontinuityRange = async (data: CandleDataChart[]) => {
-        // timeGaps each element in the data array represents a time interval and consists of two dates: [candleDate, shiftDate].
-
-        const timesToCheck = data
-            .filter((i) => i.isShowData)
-            .map((item) => item.time * 1000);
-
-        const filterTimeGapsNotInclude = timeGaps.filter(
-            (item) => !timesToCheck.some((time) => time === item.range[1]),
-        );
-        const localTimeGaps: { range: number[]; isAddedPixel: boolean }[] =
-            structuredClone(filterTimeGapsNotInclude);
-        let notTransactionDataTime: undefined | number = undefined;
-        let transationDataTime: undefined | number = undefined;
-        if (scaleData) {
-            data.slice(isShowLatestCandle ? 2 : 1).forEach((item) => {
-                if (notTransactionDataTime === undefined && !item.isShowData) {
-                    notTransactionDataTime = item.time * 1000;
-                }
-                if (notTransactionDataTime !== undefined && item.isShowData) {
-                    transationDataTime = item.time * 1000;
-                }
-                if (notTransactionDataTime && transationDataTime) {
-                    const newRange = [
-                        transationDataTime,
-                        notTransactionDataTime,
-                    ];
-
-                    const isRangeExists = localTimeGaps.findIndex(
-                        (gap: timeGapsValue) => gap.range[0] === newRange[0],
-                    );
-                    const isRangeExistsNoTransaction = localTimeGaps.findIndex(
-                        (gap: timeGapsValue) => gap.range[1] === newRange[1],
-                    );
-
-                    const isSameRange = localTimeGaps.some(
-                        (gap: timeGapsValue) =>
-                            gap.range[0] === newRange[0] &&
-                            gap.range[1] === newRange[1],
-                    );
-
-                    if (!isSameRange) {
-                        if (isRangeExists !== -1) {
-                            localTimeGaps[isRangeExists].range[1] =
-                                notTransactionDataTime;
-                            localTimeGaps[isRangeExists].isAddedPixel = false;
-                        } else if (isRangeExistsNoTransaction !== -1) {
-                            localTimeGaps[isRangeExistsNoTransaction].range[0] =
-                                transationDataTime;
-                            localTimeGaps[
-                                isRangeExistsNoTransaction
-                            ].isAddedPixel = false;
-                        } else {
-                            localTimeGaps.push({
-                                range: newRange,
-                                isAddedPixel: false,
-                            });
-                        }
-                    }
-
-                    notTransactionDataTime = undefined;
-                    transationDataTime = undefined;
-                }
-            });
-
-            setTimeGaps(localTimeGaps);
-        }
-    };
-
     const calculateVisibleCandles = (
         scaleData: scaleData | undefined,
         unparsedCandleData: CandleDataChart[],
@@ -630,9 +548,6 @@ export default function Chart(props: propsIF) {
             }
         }
 
-        console.log('parsedData', parsedData);
-
-        calculateDiscontinuityRange(data);
         return calculateVisibleCandles(
             scaleData,
             data,
@@ -672,10 +587,6 @@ export default function Chart(props: propsIF) {
     const firstCandleData = parsedData?.reduce(function (prev, current) {
         return prev.time < current.time ? prev : current;
     });
-
-    const [visibleDateForCandle, setVisibleDateForCandle] = useState(
-        lastCandleData.time * 1000,
-    );
 
     const [bandwidth, setBandwidth] = useState(5);
 
@@ -885,96 +796,12 @@ export default function Chart(props: propsIF) {
     }
 
     useEffect(() => {
-        if (chartResetStatus.isResetChart) {
-            setXScaleDefault();
-        }
-    }, []);
-
-    useEffect(() => {
         if (shouldResetBuffer) {
-            setXScaleDefault();
+            console.log(shouldResetBuffer);
+
+            // resetXScale();
         }
     }, [liqMode, shouldResetBuffer]);
-
-    useEffect(() => {
-        (async () => {
-            if (scaleData && timeGaps.length > 0) {
-                const canvas = d3
-                    .select(d3CanvasMain.current)
-                    .select('canvas')
-                    .node() as HTMLCanvasElement;
-
-                const rectCanvas = canvas.getBoundingClientRect();
-                const width = rectCanvas.width;
-                scaleData.xScale.range([0, width]);
-                const lastDateArray = timeGaps
-                    .sort((a, b) => b.range[1] - a.range[1])
-                    .filter((i) => i.isAddedPixel);
-                let lastDate: undefined | number = undefined;
-                if (lastDateArray.length > 0) {
-                    lastDate = lastDateArray[0].range[1];
-                }
-
-                // To maintain the bandwidth of the candles, the domain is updated by the amount of shift.
-                // If new data comes from the left, the scale is shifted to the right for a smaller scale, and vice versa.
-                timeGaps
-                    .filter((i) => !i.isAddedPixel)
-                    .forEach((element: timeGapsValue) => {
-                        if (isCondensedModeEnabled) {
-                            const pix =
-                                scaleData.xScale(element.range[0]) -
-                                scaleData.xScale(element.range[1]);
-
-                            // shift to right
-                            let min = scaleData.xScale.invert(pix);
-                            let maxDom = scaleData.xScale.domain()[1];
-
-                            const dom = scaleData?.xScale.domain();
-                            const check =
-                                element.range[1] < dom[1] &&
-                                element.range[1] > dom[0];
-
-                            if (check) {
-                                if (lastDate && lastDate < element.range[1]) {
-                                    min = scaleData.xScale.domain()[0];
-                                    // shift to left
-                                    maxDom = scaleData.xScale.invert(
-                                        scaleData.xScale.range()[1] - pix,
-                                    );
-                                }
-                                scaleData.xScale.domain([min, maxDom]);
-
-                                element.isAddedPixel = true;
-                            }
-                        }
-                    });
-            }
-        })().then(() => {
-            if (scaleData) {
-                const data = isCondensedModeEnabled
-                    ? timeGaps
-                          .filter((element) => element.isAddedPixel)
-                          .map((i: timeGapsValue) => i.range)
-                    : [];
-
-                const newDiscontinuityProvider = d3fc.discontinuityRange(
-                    ...data,
-                );
-
-                scaleData.xScale.discontinuityProvider(
-                    newDiscontinuityProvider,
-                );
-
-                setVisibleDateForCandle(scaleData.xScale.domain()[1]);
-                changeScale(false);
-                render();
-            }
-        });
-    }, [
-        diffHashSig(timeGaps),
-        diffHashSigScaleData(scaleData, 'x'),
-        isCondensedModeEnabled,
-    ]);
 
     useEffect(() => {
         updateDrawnShapeHistoryonLocalStorage();
@@ -1119,10 +946,9 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         if (isCondensedModeEnabled) {
-            const isShowSelectedDate = filterCandleWithTransaction(
-                parsedData,
-                period,
-            ).find((i) => i.isShowData && i.time * 1000 === selectedDate);
+            const isShowSelectedDate = parsedData.find(
+                (i) => i.isShowData && i.time * 1000 === selectedDate,
+            );
             if (!isShowSelectedDate) {
                 setSelectedDate(undefined);
                 props.setCurrentData(undefined);
@@ -2502,63 +2328,25 @@ export default function Chart(props: propsIF) {
         isDenomBase,
     ]);
 
-    async function setXScaleDefault() {
-        if (scaleData) {
-            const localInitialDisplayCandleCount =
-                getInitialDisplayCandleCount(mobileView);
-            const nowDate = Date.now();
-
-            const snapDiff = nowDate % (period * 1000);
-            const snappedTime = nowDate + (period * 1000 - snapDiff);
-
-            const liqBuffer = liqMode === 'none' ? 0.95 : xAxisBuffer;
-
-            const centerX = snappedTime;
-            const diff =
-                (localInitialDisplayCandleCount * period * 1000) / liqBuffer;
-
-            setPrevLastCandleTime(snappedTime / 1000);
-
-            if (scaleData) {
-                scaleData.xScale.discontinuityProvider(
-                    d3fc.discontinuityRange(...[]),
-                );
-            }
-
-            setChartResetStatus({
-                isResetChart: true,
-            });
-            timeGaps.forEach((obj) => (obj.isAddedPixel = false));
-
-            const canvasDiv = d3.select(d3CanvasMain.current);
-
-            const canvas = canvasDiv
-                .select('canvas')
-                .node() as HTMLCanvasElement;
-            const currentRange = [0, canvas.getBoundingClientRect().width];
-            const currentDomain = [
-                centerX - diff * liqBuffer,
-                centerX + diff * (1 - liqBuffer),
-            ];
-
-            const targetValue = Date.now();
-            const targetPixel = currentRange[1] * (1 - liqBuffer);
-
-            const newDomainMin =
-                targetValue -
-                ((targetPixel - currentRange[1]) /
-                    (currentRange[0] - currentRange[1])) *
-                    (currentDomain[1] - currentDomain[0]);
-            const newDomainMax =
-                targetValue +
-                ((currentRange[0] - targetPixel) /
-                    (currentRange[0] - currentRange[1])) *
-                    (currentDomain[1] - currentDomain[0]);
-            const domain = [newDomainMin, newDomainMax];
-
-            scaleData?.xScale.domain([domain[0], domain[1]]);
+    const resetXScale = () => {
+        const localInitialDisplayCandleCount =
+            getInitialDisplayCandleCount(mobileView);
+        if (isCondensedModeEnabled) {
+            const data = parsedData.filter((i) => i.isShowData);
+            resetForCondensedMode(
+                scaleData.xScale,
+                data,
+                period,
+                localInitialDisplayCandleCount,
+            );
+        } else {
+            resetForNoncondensedMode(
+                scaleData.xScale,
+                period,
+                localInitialDisplayCandleCount,
+            );
         }
-    }
+    };
 
     function fetchCandleForResetOrLatest(isReset = false) {
         const nowDate = Date.now();
@@ -2617,8 +2405,8 @@ export default function Chart(props: propsIF) {
     async function resetFunc(isReset = false) {
         if (scaleData) {
             setBandwidth(defaultCandleBandwith);
-            setXScaleDefault();
             fetchCandleForResetOrLatest(isReset);
+            resetXScale();
             setIsChangeScaleChart(false);
             changeScale(false);
         }
@@ -2644,7 +2432,7 @@ export default function Chart(props: propsIF) {
             if (rescale) {
                 resetFunc();
             } else {
-                setXScaleDefault();
+                resetXScale();
                 fetchCandleForResetOrLatest();
 
                 const targetValue = poolPriceDisplay;
@@ -5855,7 +5643,6 @@ export default function Chart(props: propsIF) {
                     prevlastCandleTime={prevlastCandleTime}
                     setPrevLastCandleTime={setPrevLastCandleTime}
                     isDiscontinuityScaleEnabled={isCondensedModeEnabled}
-                    visibleDateForCandle={visibleDateForCandle}
                     chartThemeColors={chartThemeColors}
                 />
 
@@ -5865,7 +5652,6 @@ export default function Chart(props: propsIF) {
                     denomInBase={isDenomBase}
                     selectedDate={selectedDate}
                     showVolume={showVolume}
-                    visibleDateForCandle={visibleDateForCandle}
                     chartThemeColors={chartThemeColors}
                 />
 

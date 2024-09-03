@@ -12,7 +12,7 @@ import {
     scaleData,
     selectedDrawnData,
     setCanvasResolution,
-    timeGapsValue,
+    TransactionDataRange,
 } from '../../ChartUtils/chartUtils';
 import { CandleContext } from '../../../../contexts/CandleContext';
 import { correctStyleForData, xAxisTick } from './calculateXaxisTicks';
@@ -47,7 +47,7 @@ interface xAxisIF {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     d3Xaxis: MutableRefObject<any>;
     isUpdatingShape: boolean;
-    timeGaps: timeGapsValue[];
+    timeGaps: TransactionDataRange[];
     isDiscontinuityScaleEnabled: boolean;
 }
 
@@ -219,8 +219,8 @@ function XAxisCanvas(props: xAxisIF) {
                     data = data.map((itemA: any) => {
                         const dateTimestamp = new Date(itemA.date).getTime();
                         for (const gap of timeGaps) {
-                            const startRange = gap.range[0];
-                            const endRange = gap.range[1];
+                            const startRange = gap.valueTime;
+                            const endRange = gap.targetPositionTime;
                             if (
                                 dateTimestamp >= startRange &&
                                 dateTimestamp <= endRange &&
