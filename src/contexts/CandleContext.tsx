@@ -21,7 +21,7 @@ import { ChartContext } from './ChartContext';
 import { CrocEnvContext } from './CrocEnvContext';
 import { TradeTokenContext } from './TradeTokenContext';
 import {
-    CACHE_UPDATE_FREQ_IN_MS,
+    // CACHE_UPDATE_FREQ_IN_MS,
     LS_KEY_CHART_SETTINGS,
 } from '../ambient-utils/constants';
 import { getLocalStorageItem } from '../ambient-utils/dataLayer';
@@ -57,7 +57,7 @@ export const CandleContext = createContext<CandleContextIF>(
 export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     const {
         server: { isEnabled: isServerEnabled, isUserOnline: isUserOnline },
-        isUserIdle,
+        // isUserIdle,
     } = useContext(AppStateContext);
     const {
         chartSettings,
@@ -205,31 +205,31 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
         isPoolInitialized,
     ]);
 
-    useEffect(() => {
-        if (isChartEnabled && isUserOnline && candleScale.isShowLatestCandle) {
-            if (
-                candleData &&
-                candleData.candles &&
-                candleTimeLocal &&
-                !isCandleDataNull
-            ) {
-                const nowTime = Math.floor(Date.now() / 1000);
+    // useEffect(() => {
+    //     if (isChartEnabled && isUserOnline && candleScale.isShowLatestCandle) {
+    //         if (
+    //             candleData &&
+    //             candleData.candles &&
+    //             candleTimeLocal &&
+    //             !isCandleDataNull
+    //         ) {
+    //             const nowTime = Math.floor(Date.now() / 1000);
 
-                fetchCandlesByNumDurations(200, nowTime);
-            }
-        }
-    }, [
-        isChartEnabled,
-        isUserOnline,
+    //             fetchCandlesByNumDurations(200, nowTime);
+    //         }
+    //     }
+    // }, [
+    //     isChartEnabled,
+    //     isUserOnline,
 
-        isUserIdle
-            ? Math.floor(Date.now() / CACHE_UPDATE_FREQ_IN_MS)
-            : Math.floor(Date.now() / (2 * CACHE_UPDATE_FREQ_IN_MS)),
-        baseTokenAddress + quoteTokenAddress,
-        candleScale?.isFetchForTimeframe,
-        // candleScale.nCandles,
-        candleScale.isShowLatestCandle,
-    ]);
+    //     isUserIdle
+    //         ? Math.floor(Date.now() / CACHE_UPDATE_FREQ_IN_MS)
+    //         : Math.floor(Date.now() / (2 * CACHE_UPDATE_FREQ_IN_MS)),
+    //     baseTokenAddress + quoteTokenAddress,
+    //     candleScale?.isFetchForTimeframe,
+    //     // candleScale.nCandles,
+    //     candleScale.isShowLatestCandle,
+    // ]);
 
     useEffect(() => {
         if (isCandleDataNull) {
