@@ -110,9 +110,10 @@ function FeeRateChart(props: FreeRateData) {
                 .node() as any;
 
             const d3YaxisContext = d3YaxisCanvas.getContext('2d');
-
+            
             d3.select(d3Yaxis.current).on('draw', function () {
                 if (yAxis) {
+                    d3YaxisContext.clearRect(0, 0, d3YaxisCanvas.width, d3YaxisCanvas.height)
                     setCanvasResolution(d3YaxisCanvas);
                     d3YaxisContext.stroke();
                     d3YaxisContext.textAlign = 'left';
@@ -248,11 +249,12 @@ function FeeRateChart(props: FreeRateData) {
                 .select(d3CanvasArea.current)
                 .select('canvas')
                 .node() as any;
-            const ctx = canvas.getContext('2d');
-
+            const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+            
             if (lineSeries) {
                 d3.select(d3CanvasArea.current)
-                    .on('draw', () => {
+                .on('draw', () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
                         setCanvasResolution(canvas);
                         lineSeries(_feeData);
                     })
@@ -272,11 +274,13 @@ function FeeRateChart(props: FreeRateData) {
             .select(d3CanvasCrosshair.current)
             .select('canvas')
             .node() as any;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         if (crosshairVerticalCanvas) {
+            
             d3.select(d3CanvasCrosshair.current)
-                .on('draw', () => {
+            .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
                     setCanvasResolution(canvas);
                     ctx.setLineDash([4, 2]);
                     if (crosshairActive !== 'none') {

@@ -416,10 +416,13 @@ export default function TransactionDetailsLiquidityGraph(
             .select(d3CanvasLiq.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+            
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+        
         if (liquidityScale) {
             d3.select(d3CanvasLiq.current)
-                .on('draw', () => {
+            .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
 
                     if (liqAskSeries) {

@@ -206,8 +206,10 @@ export default function RangeLinesChart(props: propsIF) {
             const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
             if (horizontalLine && horizontalBand) {
+                
                 d3.select(d3CanvasRangeLine.current)
-                    .on('draw', () => {
+                .on('draw', () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
                         if (
                             location.pathname.includes('pool') ||
                             location.pathname.includes('reposition')

@@ -163,11 +163,12 @@ export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
             .select(d3OrderCanvas.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         if (userTransactionData && scaleData) {
             d3.select(d3OrderCanvas.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
 
                     // if (isHoveredOrderHistory && hoveredOrderHistory) {

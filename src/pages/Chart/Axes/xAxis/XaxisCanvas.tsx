@@ -421,8 +421,9 @@ function XAxisCanvas(props: xAxisIF) {
                 .select('canvas')
                 .node() as HTMLCanvasElement;
             const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-
+            
             d3.select(d3Xaxis.current).on('draw', function () {
+                context.clearRect(0, 0, canvas.width, canvas.height)
                 if (xAxis && scaleData) {
                     setCanvasResolution(canvas);
                     drawXaxis(context, scaleData?.xScale, 3);

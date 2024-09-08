@@ -63,7 +63,7 @@ interface ContextMenuIF {
     setShouldDisableChartSettings: React.Dispatch<
         React.SetStateAction<boolean>
     >;
-    render: () => void;
+    render: (name:string) => void;
 }
 
 interface ColorObjIF {
@@ -181,7 +181,7 @@ export default function ChartSettings(props: ContextMenuIF) {
                 }
             });
 
-            render();
+            render('handleCandleColorPicker');
         }
     };
 

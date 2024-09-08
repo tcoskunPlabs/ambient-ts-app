@@ -611,7 +611,7 @@ function DrawCanvas(props: DrawCanvasProps) {
             .select(d3DrawCanvas.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         if (
             lineSeries &&
@@ -620,6 +620,7 @@ function DrawCanvas(props: DrawCanvasProps) {
         ) {
             d3.select(d3DrawCanvas.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     lineSeries(lineData);
                     circleSeries(lineData);
@@ -733,7 +734,7 @@ function DrawCanvas(props: DrawCanvasProps) {
             .select(d3DrawCanvas.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         const canvasRect = canvas.getBoundingClientRect();
 
@@ -744,6 +745,7 @@ function DrawCanvas(props: DrawCanvasProps) {
         ) {
             d3.select(d3DrawCanvas.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
 
                     const bandData = {
@@ -980,7 +982,7 @@ function DrawCanvas(props: DrawCanvasProps) {
             .select(d3DrawCanvas.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         const canvasRect = canvas.getBoundingClientRect();
 
@@ -994,6 +996,7 @@ function DrawCanvas(props: DrawCanvasProps) {
         ) {
             d3.select(d3DrawCanvas.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     const data = structuredClone(lineData);
 
@@ -1194,11 +1197,12 @@ function DrawCanvas(props: DrawCanvasProps) {
             .select(d3DrawCanvas.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         if (scaleData && lineData.length > 1 && activeDrawingType === 'Ray') {
             d3.select(d3DrawCanvas.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
 
                     circleSeries([
