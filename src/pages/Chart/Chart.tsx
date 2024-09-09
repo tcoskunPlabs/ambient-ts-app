@@ -4605,30 +4605,30 @@ export default function Chart(props: propsIF) {
         };
     }, []);
 
-    useEffect(() => {
-        const canvas = d3
-            .select(d3CanvasMarketLine.current)
-            .select('canvas')
-            .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // useEffect(() => {
+    //     const canvas = d3
+    //         .select(d3CanvasMarketLine.current)
+    //         .select('canvas')
+    //         .node() as HTMLCanvasElement;
+    //     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (marketLine) {
-            d3.select(d3CanvasMarketLine.current)
-                .on('draw', () => {
-                    setCanvasResolution(canvas);
-                    ctx.setLineDash([5, 3]);
-                    marketLine([market]);
-                })
-                .on('measure', (event: CustomEvent) => {
-                    scaleData?.xScale.range([0, event.detail.width]);
-                    scaleData?.yScale.range([event.detail.height, 0]);
-                    ctx.setLineDash([5, 3]);
-                    marketLine.context(ctx);
-                });
-        }
-        renderCanvasArray([d3CanvasMarketLine]);
-    }, [market, marketLine]);
+    //     if (marketLine) {
+    //         d3.select(d3CanvasMarketLine.current)
+    //             .on('draw', () => {
+    //                 setCanvasResolution(canvas);
+    //                 ctx.setLineDash([5, 3]);
+    //                 marketLine([market]);
+    //             })
+    //             .on('measure', (event: CustomEvent) => {
+    //                 scaleData?.xScale.range([0, event.detail.width]);
+    //                 scaleData?.yScale.range([event.detail.height, 0]);
+    //                 ctx.setLineDash([5, 3]);
+    //                 marketLine.context(ctx);
+    //             });
+    //     }
+    //     renderCanvasArray([d3CanvasMarketLine]);
+    // }, [market, marketLine]);
 
     useEffect(() => {
         const noGoZoneBoundaries = noGoZone(
@@ -6391,7 +6391,7 @@ export default function Chart(props: propsIF) {
                     isDiscontinuityScaleEnabled={isCondensedModeEnabled}
                     visibleDateForCandle={visibleDateForCandle}
                     chartThemeColors={chartThemeColors}
-                /> */}
+                /> 
 
                 <VolumeBarCanvas
                     scaleData={scaleData}
@@ -6401,7 +6401,7 @@ export default function Chart(props: propsIF) {
                     showVolume={showVolume}
                     visibleDateForCandle={visibleDateForCandle}
                     chartThemeColors={chartThemeColors}
-                />
+                /> */}
 
                 {liquidityData && (
                     <LiquidityChart
@@ -6449,10 +6449,10 @@ export default function Chart(props: propsIF) {
                     ref={d3CanvasCrosshair}
                     className='cr-canvas'
                 ></d3fc-canvas>
-                <d3fc-canvas
+                {/* <d3fc-canvas
                     ref={d3CanvasMarketLine}
                     className='market-line-canvas'
-                ></d3fc-canvas>
+                ></d3fc-canvas> */}
 
                 <RangeLinesChart {...rangeCanvasProps} />
 
@@ -6591,7 +6591,7 @@ export default function Chart(props: propsIF) {
                 <div className='xAxis'>
                     <hr />
 
-                    <XAxisCanvas
+                    {/* <XAxisCanvas
                         changeScale={changeScale}
                         crosshairActive={crosshairActive}
                         crosshairData={crosshairData}
@@ -6614,7 +6614,7 @@ export default function Chart(props: propsIF) {
                         isUpdatingShape={isUpdatingShape}
                         timeGaps={timeGaps}
                         isDiscontinuityScaleEnabled={isCondensedModeEnabled}
-                    />
+                    /> */}
                 </div>
             </d3fc-group>
             {isShowFloatingToolbar && (
