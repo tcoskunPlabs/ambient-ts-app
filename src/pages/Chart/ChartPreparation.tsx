@@ -7,10 +7,7 @@ import {
     scaleData,
     TransactionDataRange,
 } from './ChartUtils/chartUtils';
-import {
-    diffHashSigChart,
-    diffHashSigScaleData,
-} from '../../ambient-utils/dataLayer';
+import { diffHashSigChart } from '../../ambient-utils/dataLayer';
 import * as d3fc from 'd3fc';
 import Chart from './Chart';
 import { CandleDataIF, TransactionIF } from '../../ambient-utils/types';
@@ -39,7 +36,7 @@ interface propsIF {
     setReset: React.Dispatch<React.SetStateAction<boolean>>;
     showLatest: boolean | undefined;
     setShowLatest: React.Dispatch<React.SetStateAction<boolean>>;
-    showTooltip:boolean;
+    showTooltip: boolean;
     setShowTooltip: React.Dispatch<React.SetStateAction<boolean>>;
     liquidityScale: d3.ScaleLinear<number, number> | undefined;
     liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
@@ -136,17 +133,19 @@ export default function ChartPreparation(props: propsIF) {
             });
 
             const newDiscontinuityProvider = d3fc.discontinuityRange(
-                ...localTimeGaps.map((i) => [i.valueTime,i.targetPositionTime]),
+                ...localTimeGaps.map((i) => [
+                    i.valueTime,
+                    i.targetPositionTime,
+                ]),
             );
 
             scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
-            
+
             setTimeGaps(localTimeGaps);
 
             return localTimeGaps;
         }
     };
-
 
     useEffect(() => {
         const domain = scaleData.xScale.domain();
@@ -157,7 +156,7 @@ export default function ChartPreparation(props: propsIF) {
         if (parsedData) {
             parsedData.sort((a, b) => b.time - a.time);
         }
-        
+
         calculateDiscontinuityRange(candleDataWithTransactionInfo).then(
             (res) => {
                 const localTimeGaps = res;
@@ -268,19 +267,12 @@ export default function ChartPreparation(props: propsIF) {
                         }
                     }
                 }
-                
+
                 renderChart();
                 setParsedData(showData);
             },
         );
     }, [diffHashSigChart(candleDataWithTransactionInfo)]);
-
-    useEffect(() => {
-      
-        console.log('222',new Date(scaleData.xScale.domain()[0]));
-        
-    }, [diffHashSigScaleData(scaleData,'x')])
-    
 
     return parsedData && parsedData.length > 0 ? (
         <Chart

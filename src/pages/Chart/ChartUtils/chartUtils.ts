@@ -694,8 +694,6 @@ export function resetForCondensedMode(
     } else {
         resetForNoncondensedMode(xScale,period,candleCount);
     } 
-    
-    console.log('222 new Date(minDom)',new Date(minDom));
-    
+        
     xScale.domain([minDom, maxDom]);
 }

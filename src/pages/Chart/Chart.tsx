@@ -1106,6 +1106,7 @@ export default function Chart(props: propsIF) {
                                         scaleData,
                                         firstCandleDate,
                                         lastCandleDate,
+                                        timeGaps,
                                     );
                                 }
 
@@ -1303,6 +1304,7 @@ export default function Chart(props: propsIF) {
         isChartZoom,
         liqMaxActiveLiq,
         zoomBase,
+        timeGaps,
     ]);
 
     useEffect(() => {
