@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from 'react';
-import { findSnapTime, scaleData } from './chartUtils';
+import { findSnapTime, scaleData, TransactionDataRange } from './chartUtils';
 import * as d3 from 'd3';
 import { CandleDomainIF } from '../../../ambient-utils/types';
 
@@ -178,6 +178,7 @@ export class Zoom {
         firstCandleDate: number,
         lastCandleDate: number,
         checkTouchPadZeroNegative: boolean,
+        timeGaps: TransactionDataRange[] | undefined = undefined,
     ) {
         const newMinDomain = scaleData?.xScale.invert(
             scaleData?.xScale.range()[0] - deltaX,
@@ -194,7 +195,22 @@ export class Zoom {
             }
         }
 
-        scaleData?.xScale.domain([newMinDomain, newMaxDomain]);
+
+        if (
+            timeGaps &&
+            timeGaps.length > 0 &&
+            newMinDomain > timeGaps[0].valueTime &&
+            newMinDomain < timeGaps[0].targetPositionTime
+        ) {
+            scaleData?.xScale.domain([
+                scaleData?.xScale.invert(
+                    scaleData.xScale(timeGaps[0].valueTime) - deltaX,
+                ),
+                newMaxDomain,
+            ]);
+        } else {
+            scaleData?.xScale.domain([newMinDomain, newMaxDomain]);
+        }
     }
 
     public getNewCandleDataRight(scaleData: scaleData, lastCandleTime: number) {
@@ -315,6 +331,7 @@ export class Zoom {
         scaleData: scaleData,
         firstCandleDate: number,
         lastCandleDate: number,
+        timeGaps: TransactionDataRange[],
     ) {
         const dx = event.movementX;
 
@@ -324,6 +341,7 @@ export class Zoom {
             firstCandleDate,
             lastCandleDate,
             false,
+            timeGaps,
         );
     }
 
