@@ -229,6 +229,12 @@ export default function RangeLinesChart(props: propsIF) {
                     });
             }
         }
+
+
+        return () => {
+            d3.select(d3CanvasRangeLine.current).on('draw', null);
+            d3.select(d3CanvasRangeLine.current).on('measure', null);
+        };
     }, [ranges, horizontalLine, horizontalBand, triangle, location.pathname]);
 
     useEffect(() => {

@@ -431,6 +431,10 @@ function XAxisCanvas(props: xAxisIF) {
 
             renderCanvasArray([d3Xaxis]);
         }
+
+        return () => {
+            d3.select(d3Xaxis.current).on('draw', null);
+        };
     }, [
         timeOfEndCandle,
         diffHashSig(crosshairData),
@@ -465,6 +469,10 @@ function XAxisCanvas(props: xAxisIF) {
                 setCrosshairActive('none');
             }
         });
+
+        return () => {
+            d3.select(d3Xaxis.current).on('mousemove', null);
+        };
     }, [timeOfEndCandle]);
 
     // mouseleave
@@ -472,6 +480,10 @@ function XAxisCanvas(props: xAxisIF) {
         d3.select(d3Xaxis.current).on('mouseleave', () => {
             mouseLeaveCanvas();
         });
+
+        return () => {
+            d3.select(d3Xaxis.current).on('mouseleave', null);
+        };
     }, []);
 
     useEffect(() => {
@@ -543,6 +555,10 @@ function XAxisCanvas(props: xAxisIF) {
 
             renderCanvasArray([d3Xaxis]);
         }
+
+        return () => {
+            d3.select(d3Xaxis.current).on('.zoom', null);
+        };
     }, [xAxisZoom]);
 
     return (

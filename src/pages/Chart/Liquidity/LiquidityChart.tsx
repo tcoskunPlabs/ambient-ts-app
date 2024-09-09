@@ -583,6 +583,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
             renderChart();
         }
+
+        return () => {
+            d3.select(d3CanvasLiq.current).on('draw', null);
+            d3.select(d3CanvasLiq.current).on('measure', null);
+        };
     }, [
         liqDataAsk,
         liqDataBid,
@@ -661,6 +666,12 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     highlightedAreaBidSeries?.context(ctx);
                 });
         }
+
+
+        return () => {
+            d3.select(d3CanvasLiqHover.current).on('draw', null);
+            d3.select(d3CanvasLiqHover.current).on('measure', null);
+        };
     }, [
         highlightedAskAreaCurveSeries,
         highlightedBidAreaCurveSeries,

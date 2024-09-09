@@ -127,6 +127,11 @@ export default function LimitLineChart(props: propsIF) {
                     });
             }
         }
+
+        return () => {
+            d3.select(d3CanvasLimitLine.current).on('draw', null);
+            d3.select(d3CanvasLimitLine.current).on('measure', null);
+        };
     }, [limit, limitLine, location.pathname]);
 
     /**

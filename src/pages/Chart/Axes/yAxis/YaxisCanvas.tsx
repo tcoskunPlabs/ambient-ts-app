@@ -850,6 +850,12 @@ function YAxisCanvas(props: yAxisIF) {
             }
             renderCanvasArray([d3Yaxis]);
         }
+
+        return () => {
+            d3.select(d3Yaxis.current).on('.zoom', null);
+            d3.select(d3Yaxis.current).on('.drag', null);
+        };
+
     }, [
         location.pathname,
         yAxisZoom,
@@ -872,6 +878,8 @@ function YAxisCanvas(props: yAxisIF) {
             ) as CanvasRenderingContext2D;
 
             d3.select(d3Yaxis.current).on('draw', function () {
+                d3YaxisContext.clearRect(0, 0, d3YaxisCanvas.width, d3YaxisCanvas.height);
+
                 if (yAxis && scaleData) {
                     setCanvasResolution(d3YaxisCanvas);
                     drawYaxis(
@@ -885,6 +893,10 @@ function YAxisCanvas(props: yAxisIF) {
             renderCanvasArray([d3Yaxis]);
             renderSubchartCrCanvas();
         }
+
+        return () => {
+            d3.select(d3Yaxis.current).on('draw', null);
+        };
     }, [
         market,
         diffHashSig(crosshairData),
@@ -923,6 +935,11 @@ function YAxisCanvas(props: yAxisIF) {
         d3.select(d3Yaxis.current).on('mouseover', () => {
             setCrosshairActive('none');
         });
+
+        return () => {
+            d3.select(d3Yaxis.current).on('mousemove', null);
+            d3.select(d3Yaxis.current).on('mouseover', null);
+        };
     }, [denomInBase, liqMode, location.pathname, advancedMode]);
 
     return (

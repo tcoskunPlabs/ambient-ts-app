@@ -244,8 +244,8 @@ export default function Chart(props: propsIF) {
         setContextmenu,
         contextMenuPlacement,
         setContextMenuPlacement,
-        shouldResetBuffer, 
-        setShouldResetBuffer
+        shouldResetBuffer,
+        setShouldResetBuffer,
     } = useContext(ChartContext);
 
     const chainId = chainData.chainId;
@@ -1519,6 +1519,9 @@ export default function Chart(props: propsIF) {
                 setMainZoom(() => zoom);
             }
         }
+        return () => {
+            d3.select(d3CanvasMain.current).on('wheel', null);
+        };
     }, [
         firstCandleData,
         lastCandleData,
@@ -2522,6 +2525,12 @@ export default function Chart(props: propsIF) {
             }
             renderCanvasArray([d3CanvasMain]);
         }
+
+        return () => {
+            d3.select(d3CanvasMain.current).on('wheel.zoom', null);
+            d3.select(d3CanvasMain.current).on('.zoom', null);
+            d3.select(d3CanvasMain.current).on('.drag', null);
+        };
     }, [location.pathname, mainZoom, dragLimit, dragRange, isLineDrag]);
 
     // create market line and liquidity tooltip
@@ -3064,6 +3073,11 @@ export default function Chart(props: propsIF) {
                     }
                 });
         }
+
+        return () => {
+            d3.select(d3CanvasCrosshair.current).on('draw', null);
+            d3.select(d3CanvasMain.current).on('measure', null);
+        };
     }, [
         crosshairData,
         crosshairHorizontal,
@@ -4060,6 +4074,11 @@ export default function Chart(props: propsIF) {
 
             render();
         }
+
+        return () => {
+            d3.select(d3CanvasMain.current).on('draw', null);
+            d3.select(d3CanvasMain.current).on('measure', null);
+        };
     }, [
         diffHashSig(drawnShapeHistory),
         lineSeries,
@@ -4159,7 +4178,14 @@ export default function Chart(props: propsIF) {
                     marketLine.context(ctx);
                 });
         }
+
         renderCanvasArray([d3CanvasMarketLine]);
+
+        return () => {
+            d3.select(d3CanvasMarketLine.current).on('draw', null);
+
+            d3.select(d3CanvasMarketLine.current).on('measure', null);
+        };
     }, [market, marketLine]);
 
     useEffect(() => {
@@ -4494,6 +4520,11 @@ export default function Chart(props: propsIF) {
                 { passive: true },
             );
         }
+
+        return () => {
+            d3.select(d3CanvasMain.current).on('mousemove', null);
+            d3.select(d3CanvasMain.current).on('touchmove', null);
+        };
     }, [
         diffHashSigChart(visibleCandleData),
         lastCandleData,
@@ -4558,6 +4589,12 @@ export default function Chart(props: propsIF) {
                 }
             },
         );
+
+
+        return () => {
+            d3.select(d3CanvasMain.current).on('touchend', null);
+            d3.select(d3CanvasMain.current).on('mouseleave', null);
+        };
     }, [isChartZoom]);
 
     // mouseenter
@@ -4571,6 +4608,10 @@ export default function Chart(props: propsIF) {
                 mouseEnterCanvas();
             }
         });
+
+        return () => {
+            d3.select(d3CanvasMain.current).on('mouseenter', null);
+        };
     }, [isChartZoom]);
 
     /**
@@ -4714,6 +4755,15 @@ export default function Chart(props: propsIF) {
                 },
             );
         }
+
+
+        return () => {
+            d3.select(d3CanvasMain.current).on('mouseleave', null);
+            d3.select(d3CanvasMain.current).on('contextmenu', null);
+            d3.select(d3CanvasMain.current).on('click', null);
+
+        };
+
     }, [
         denomInBase,
         selectedDate,

@@ -450,9 +450,17 @@ export default function OrderHistoryCanvas(props: OrderHistoryCanvasProps) {
                     //     bandAreaHighlighted.context(ctx);
                     // }
                 });
+
+
+                
         }
 
         renderCanvasArray([d3OrderCanvas]);
+
+        return () => {
+            d3.select(d3OrderCanvas.current).on('draw', null);
+            d3.select(d3OrderCanvas.current).on('measure', null);
+        };
     }, [
         diffHashSig(userTransactionData),
         lineSeries,
