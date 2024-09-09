@@ -59,10 +59,10 @@ export type drawnShapeEditAttributes = {
     dash: number[];
 };
 
-export type candleCountForDisplay ={
-    candle:number,
-    bufferCandle:number,
-}
+export type candleCountForDisplay = {
+    candle: number;
+    bufferCandle: number;
+};
 
 export type drawDataHistory = {
     data: lineData[];
@@ -155,10 +155,9 @@ export type timeGapsValue = {
 };
 
 export interface TransactionDataRange {
-    valueTime : number,
+    valueTime: number;
     targetPositionTime: number;
-
-} 
+}
 export type orderHistory = {
     tsId: string;
     tsStart: Date;
@@ -518,12 +517,19 @@ export const clipCanvas = (
     ctx.clip();
 };
 
-export const getInitialDisplayCandleCount = (mobileView: boolean) => {
+export const getInitialDisplayCandleCount = (
+    mobileView: boolean,
+    liqMode: string,
+) => {
+    const liqBuffer = liqMode === 'none' ? 5 : initialDisplayBufferCandleCount;
     if (mobileView) {
-        return {candle: initialDisplayCandleCountForMobile, bufferCandle : initialDisplayBufferCandleCountForMobile };
+        return {
+            candle: initialDisplayCandleCountForMobile,
+            bufferCandle: initialDisplayBufferCandleCountForMobile,
+        };
     }
 
-    return {candle: initialDisplayCandleCount, bufferCandle : initialDisplayBufferCandleCount };
+    return { candle: initialDisplayCandleCount, bufferCandle: liqBuffer };
 };
 
 export const findSnapTime = (timeSeconds: number, period: number) => {
@@ -655,9 +661,12 @@ export const getLast15Minutes = (period: number) => {
     return times;
 };
 
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function resetForNoncondensedMode(xScale: any, period: number,candleCount:candleCountForDisplay) {
+export function resetForNoncondensedMode(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    xScale: any,
+    period: number,
+    candleCount: candleCountForDisplay,
+) {
     const nowDate = Date.now();
 
     const maxDom = nowDate + candleCount.bufferCandle * period * 1000;
@@ -671,7 +680,7 @@ export function resetForCondensedMode(
     xScale: any,
     data: CandleDataChart[],
     period: number,
-    candleCount:candleCountForDisplay,
+    candleCount: candleCountForDisplay,
 ) {
     const nowDate = Date.now();
     const snapNowDate = findSnapTime(nowDate, period);
@@ -685,15 +694,15 @@ export function resetForCondensedMode(
         const filteredLenght = data.length;
 
         if (filteredLenght >= candleCount.candle) {
-            minDom = data[candleCount.candle-1].time * 1000;
+            minDom = data[candleCount.candle - 1].time * 1000;
         } else {
             minDom =
                 data[data.length - 1].time * 1000 -
                 (candleCount.candle - filteredLenght) * period * 1000;
         }
     } else {
-        resetForNoncondensedMode(xScale,period,candleCount);
-    } 
-        
+        resetForNoncondensedMode(xScale, period, candleCount);
+    }
+
     xScale.domain([minDom, maxDom]);
 }

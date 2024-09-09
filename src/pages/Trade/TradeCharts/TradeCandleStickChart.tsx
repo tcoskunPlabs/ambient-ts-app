@@ -42,9 +42,7 @@ import useMediaQuery from '../../../utils/hooks/useMediaQuery';
 import { updatesIF } from '../../../utils/hooks/useUrlParams';
 import { GraphDataContext } from '../../../contexts/GraphDataContext';
 import { TradeDataContext } from '../../../contexts/TradeDataContext';
-import {
-    maxRequestCountForCondensed,
-} from '../../Chart/ChartUtils/chartConstants';
+import { maxRequestCountForCondensed } from '../../Chart/ChartUtils/chartConstants';
 import { filterCandleWithTransaction } from '../../Chart/ChartUtils/discontinuityScaleUtils';
 import ChartPreparation from '../../Chart/ChartPreparation';
 
@@ -133,7 +131,6 @@ function TradeCandleStickChart(props: propsIF) {
 
     const [isFetchingEnoughData, setIsFetchingEnoughData] = useState(true);
 
-
     const [fetchCountForEnoughData, setFetchCountForEnoughData] = useState(1);
     const [liqBoundary, setLiqBoundary] = useState<number | undefined>(
         undefined,
@@ -141,7 +138,7 @@ function TradeCandleStickChart(props: propsIF) {
     const [prevCandleCount, setPrevCandleCount] = useState<number>(0);
 
     const [showTooltip, setShowTooltip] = useState(false);
-    
+
     const {
         tokenA,
         tokenB,
@@ -183,20 +180,16 @@ function TradeCandleStickChart(props: propsIF) {
         useState<Array<TransactionIF>>();
 
     const { userTransactionsByPool } = useContext(GraphDataContext);
-    
 
     const candleDataWithTransactionInfo = useMemo(() => {
-        
         if (period && candleData?.candles) {
-
-            return filterCandleWithTransaction(
-                candleData.candles,
-                period,
-            ).sort((a, b) => b.time - a.time);
+            return filterCandleWithTransaction(candleData.candles, period).sort(
+                (a, b) => b.time - a.time,
+            );
         }
 
-        return  undefined;
-    }, [candleData && candleData.candles,period])
+        return undefined;
+    }, [candleData && candleData.candles, period]);
 
     useEffect(() => {
         let isMounted = true;
@@ -629,7 +622,12 @@ function TradeCandleStickChart(props: propsIF) {
         if (candleDataWithTransactionInfo) {
             setScaleForChart(candleDataWithTransactionInfo);
         }
-    }, [candleDataWithTransactionInfo === undefined, mobileView, isDenomBase, period]);
+    }, [
+        candleDataWithTransactionInfo === undefined,
+        mobileView,
+        isDenomBase,
+        period,
+    ]);
 
     useEffect(() => {
         if (candleScale.isFetchFirst200Candle === true) {
@@ -891,23 +889,33 @@ function TradeCandleStickChart(props: propsIF) {
     ]);
 
     const resetXScale = (xScale: any) => {
-        if (!period || candleDataWithTransactionInfo===undefined) return;
+        if (!period || candleDataWithTransactionInfo === undefined) return;
 
-        const localInitialDisplayCandleCount =
-                getInitialDisplayCandleCount(mobileView);
-       if (isCondensedModeEnabled) {
+        const localInitialDisplayCandleCount = getInitialDisplayCandleCount(
+            mobileView,
+            props.chartItemStates.liqMode,
+        );
+        if (isCondensedModeEnabled) {
+            const data = candleDataWithTransactionInfo.filter(
+                (i) => i.isShowData,
+            );
+            resetForCondensedMode(
+                xScale,
+                data,
+                period,
+                localInitialDisplayCandleCount,
+            );
+        } else {
+            resetForNoncondensedMode(
+                xScale,
+                period,
+                localInitialDisplayCandleCount,
+            );
+        }
 
-        const data = candleDataWithTransactionInfo.filter((i)=>i.isShowData);
-            resetForCondensedMode(xScale,data,period,localInitialDisplayCandleCount)
-            
-       } else {
-            resetForNoncondensedMode(xScale,period,localInitialDisplayCandleCount)
-       }
-
-       renderChart();
+        renderChart();
     };
 
-    
     const resetChart = () => {
         if (scaleData && candleDataWithTransactionInfo) {
             resetXScale(scaleData.xScale);
@@ -967,7 +975,8 @@ function TradeCandleStickChart(props: propsIF) {
                 candleDataWithTransactionInfo &&
                 candleDataWithTransactionInfo.length > 0 &&
                 period &&
-                candleData && candleData.duration === period &&
+                candleData &&
+                candleData.duration === period &&
                 candleDataWithTransactionInfo[0].period === period &&
                 isFetchingEnoughData
             ) {
@@ -987,7 +996,9 @@ function TradeCandleStickChart(props: propsIF) {
                     scaleData !== undefined
                         ? scaleData?.xScale.domain()[1]
                         : lastCandleDate * 1000;
-                const candles = candleDataWithTransactionInfo.filter((i) => i.isShowData && i.time * 1000 < maxDom);
+                const candles = candleDataWithTransactionInfo.filter(
+                    (i) => i.isShowData && i.time * 1000 < maxDom,
+                );
                 const minTime = firstCandleDate * 1000;
 
                 const checkDomainData = candles.filter(
@@ -999,7 +1010,7 @@ function TradeCandleStickChart(props: propsIF) {
                     setFetchCountForEnoughData(1);
                     return;
                 }
-                
+
                 if (
                     candles.length < 100 &&
                     !timeOfEndCandle &&
@@ -1099,7 +1110,7 @@ function TradeCandleStickChart(props: propsIF) {
                     gridTemplateRows: 'auto auto',
                 }}
             >
-                {(!isOpenChart) && (
+                {!isOpenChart && (
                     <>
                         <div
                             style={{
@@ -1129,7 +1140,7 @@ function TradeCandleStickChart(props: propsIF) {
                     </>
                 )}
                 {isOpenChart && (
-                    <ChartPreparation 
+                    <ChartPreparation
                         liquidityData={liquidityData}
                         changeState={props.changeState}
                         chartItemStates={props.chartItemStates}
@@ -1150,7 +1161,9 @@ function TradeCandleStickChart(props: propsIF) {
                         setShowTooltip={setShowTooltip}
                         liquidityScale={liquidityScale}
                         liquidityDepthScale={liquidityDepthScale}
-                        candleDataWithTransactionInfo={candleDataWithTransactionInfo}
+                        candleDataWithTransactionInfo={
+                            candleDataWithTransactionInfo
+                        }
                         updateURL={updateURL}
                         userTransactionData={userTransactionData}
                         setPrevCandleCount={setPrevCandleCount}

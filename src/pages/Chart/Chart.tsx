@@ -221,6 +221,8 @@ export default function Chart(props: propsIF) {
         setContextmenu,
         contextMenuPlacement,
         setContextMenuPlacement,
+        shouldResetBuffer,
+        setShouldResetBuffer,
     } = useContext(ChartContext);
 
     const chainId = chainData.chainId;
@@ -656,8 +658,6 @@ export default function Chart(props: propsIF) {
 
     const [yAxisWidth, setYaxisWidth] = useState('4rem');
 
-    const [shouldResetBuffer, setShouldResetBuffer] = useState(true);
-
     const [
         isOnCandleOrVolumeMouseLocation,
         setIsOnCandleOrVolumeMouseLocation,
@@ -797,9 +797,7 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         if (shouldResetBuffer) {
-            console.log(shouldResetBuffer);
-
-            // resetXScale();
+            resetXScale();
         }
     }, [liqMode, shouldResetBuffer]);
 
@@ -2331,8 +2329,10 @@ export default function Chart(props: propsIF) {
     ]);
 
     const resetXScale = () => {
-        const localInitialDisplayCandleCount =
-            getInitialDisplayCandleCount(mobileView);
+        const localInitialDisplayCandleCount = getInitialDisplayCandleCount(
+            mobileView,
+            liqMode,
+        );
         if (isCondensedModeEnabled) {
             const data = parsedData.filter((i) => i.isShowData);
             resetForCondensedMode(

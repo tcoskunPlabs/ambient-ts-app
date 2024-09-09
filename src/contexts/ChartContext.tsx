@@ -105,6 +105,8 @@ export interface ChartContextIF {
         SetStateAction<LocalChartSettingsIF | undefined>
     >;
     setContextmenu: React.Dispatch<SetStateAction<boolean>>;
+    setShouldResetBuffer: React.Dispatch<SetStateAction<boolean>>;
+    shouldResetBuffer: boolean;
     contextmenu: boolean;
     contextMenuPlacement:
         | {
@@ -218,6 +220,8 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
     const [chartContainerOptions, setChartContainerOptions] = useState();
 
     const [isChartHeightMinimum, setIsChartHeightMinimum] = useState(false);
+
+    const [shouldResetBuffer, setShouldResetBuffer] = useState(true);
 
     const [contextmenu, setContextmenu] = useState(false);
 
@@ -396,6 +400,8 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         setContextmenu,
         contextMenuPlacement,
         setContextMenuPlacement,
+        shouldResetBuffer,
+        setShouldResetBuffer,
     };
 
     useEffect(() => {
