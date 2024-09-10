@@ -207,6 +207,12 @@ function TvlChart(props: TvlData) {
                 const d3YaxisContext = d3YaxisCanvas.getContext('2d');
 
                 d3.select(d3Yaxis.current).on('draw', function () {
+                    d3YaxisContext.clearRect(
+                        0,
+                        0,
+                        d3YaxisCanvas.width,
+                        d3YaxisCanvas.height,
+                    );
                     if (yAxis) {
                         setCanvasResolution(d3YaxisCanvas);
                         d3YaxisContext.stroke();
@@ -412,11 +418,12 @@ function TvlChart(props: TvlData) {
             .select(d3CanvasArea.current)
             .select('canvas')
             .node() as any;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         if (areaSeries && lineSeries) {
             d3.select(d3CanvasArea.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     areaSeries(tvlData);
                     lineSeries(tvlData);
@@ -450,11 +457,12 @@ function TvlChart(props: TvlData) {
             .select(d3CanvasCrosshair.current)
             .select('canvas')
             .node() as any;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         if (crosshairVerticalCanvas) {
             d3.select(d3CanvasCrosshair.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     ctx.setLineDash([4, 2]);
                     if (crosshairActive !== 'none') {

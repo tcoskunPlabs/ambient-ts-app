@@ -196,10 +196,11 @@ export default function CandleChart(props: candlePropsIF) {
             .select('canvas')
             .node() as HTMLCanvasElement;
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-
+        
         if (candlestick) {
             d3.select(d3CanvasCandle.current)
-                .on('draw', () => {
+            .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
                     setCanvasResolution(canvas);
                     if (data !== undefined) {
                         candlestick(data);

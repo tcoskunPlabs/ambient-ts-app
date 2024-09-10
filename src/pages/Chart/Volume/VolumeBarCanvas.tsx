@@ -127,11 +127,12 @@ export default function VolumeBarCanvas(props: propsIF) {
             .select(d3CanvasBar.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         if (barSeries) {
             d3.select(d3CanvasBar.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     barSeries(volumeData);
                 })

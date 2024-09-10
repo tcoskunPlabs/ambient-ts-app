@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import {
@@ -42,6 +43,7 @@ import {
     CandleScaleIF,
     TransactionIF,
 } from '../../ambient-utils/types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import CandleChart from './Candle/CandleChart';
 import LiquidityChart from './Liquidity/LiquidityChart';
 import VolumeBarCanvas from './Volume/VolumeBarCanvas';
@@ -796,7 +798,9 @@ export default function Chart(props: propsIF) {
         }
     }, [debouncedGetNewCandleDataRight]);
 
-    const render = useCallback(() => {
+    const render = useCallback((name: string) => {
+        console.log({ name });
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const nd = d3.select('#d3fc_group').node() as any;
         if (nd) nd.requestRedraw();
@@ -988,7 +992,7 @@ export default function Chart(props: propsIF) {
 
                 setVisibleDateForCandle(scaleData.xScale.domain()[1]);
                 changeScale(false);
-                render();
+                render('timeGapss');
             }
         });
     }, [
@@ -1064,7 +1068,7 @@ export default function Chart(props: propsIF) {
         if (cursorStyleTrigger && chartZoomEvent !== 'wheel') {
             d3.select(d3CanvasMain.current).style('cursor', 'grabbing');
 
-            render();
+            render('cursorStyleTrigger');
         } else {
             const cursorType = d3.select(d3CanvasMain.current).style('cursor');
 
@@ -1233,7 +1237,7 @@ export default function Chart(props: propsIF) {
                             firstCandleDate,
                             lastCandleDate,
                         );
-                        render();
+                        render('wheel event');
 
                         if (rescale) {
                             changeScale(true);
@@ -1347,7 +1351,7 @@ export default function Chart(props: propsIF) {
                                     );
                                 }
 
-                                render();
+                                render('zoom on');
                                 setCursorStyleTrigger(true);
 
                                 if (rescale) {
@@ -1394,7 +1398,7 @@ export default function Chart(props: propsIF) {
                                 clickedForLine = true;
                                 setPrevLastCandleTime(lastCandleData.time);
 
-                                render();
+                                render('zoom on 2');
                             }
                         }
 
@@ -1548,9 +1552,469 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         if (!isChartZoom) {
-            render();
+            render('!isChartZoom line 1550 Chart');
         }
     }, [diffHashSigScaleData(scaleData)]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom firstCandleData',
+            firstCandleData,
+            /*  lastCandleData,
+        rescale,
+        location,
+        diffHashSigScaleData(scaleData),
+        showLatest,
+        liquidityData,
+        simpleRangeWidth,
+        ranges,
+        limit,
+        isLineDrag,
+        minTickForLimit,
+        maxTickForLimit,
+        canUserDragRange,
+        canUserDragLimit,
+        unparsedCandleData,
+        period,
+        advancedMode,
+        isChartZoom,
+        liqMaxActiveLiq,
+        zoomBase */
+        );
+    }, [
+        firstCandleData,
+        /*  lastCandleData,
+        rescale,
+        location,
+        diffHashSigScaleData(scaleData),
+        showLatest,
+        liquidityData,
+        simpleRangeWidth,
+        ranges,
+        limit,
+        isLineDrag,
+        minTickForLimit,
+        maxTickForLimit,
+        canUserDragRange,
+        canUserDragLimit,
+        unparsedCandleData,
+        period,
+        advancedMode,
+        isChartZoom,
+        liqMaxActiveLiq,
+        zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom lastCandleData',
+            lastCandleData,
+
+            /* rescale,
+            location,
+            diffHashSigScaleData(scaleData),
+            showLatest,
+            liquidityData,
+            simpleRangeWidth,
+            ranges,
+            limit,
+            isLineDrag,
+            minTickForLimit,
+            maxTickForLimit,
+            canUserDragRange,
+            canUserDragLimit,
+            unparsedCandleData,
+            period,
+            advancedMode,
+            isChartZoom,
+            liqMaxActiveLiq,
+            zoomBase */
+        );
+    }, [
+        lastCandleData,
+        /* 
+            rescale,
+            location,
+            diffHashSigScaleData(scaleData),
+            showLatest,
+            liquidityData,
+            simpleRangeWidth,
+            ranges,
+            limit,
+            isLineDrag,
+            minTickForLimit,
+            maxTickForLimit,
+            canUserDragRange,
+            canUserDragLimit,
+            unparsedCandleData,
+            period,
+            advancedMode,
+            isChartZoom,
+            liqMaxActiveLiq,
+            zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom rescale',
+            rescale,
+
+            /* 
+                location,
+                diffHashSigScaleData(scaleData),
+                showLatest,
+                liquidityData,
+                simpleRangeWidth,
+                ranges,
+                limit,
+                isLineDrag,
+                minTickForLimit,
+                maxTickForLimit,
+                canUserDragRange,
+                canUserDragLimit,
+                unparsedCandleData,
+                period,
+                advancedMode,
+                isChartZoom,
+                liqMaxActiveLiq,
+                zoomBase */
+        );
+    }, [
+        rescale,
+        /* 
+                location,
+                diffHashSigScaleData(scaleData),
+                showLatest,
+                liquidityData,
+                simpleRangeWidth,
+                ranges,
+                limit,
+                isLineDrag,
+                minTickForLimit,
+                maxTickForLimit,
+                canUserDragRange,
+                canUserDragLimit,
+                unparsedCandleData,
+                period,
+                advancedMode,
+                isChartZoom,
+                liqMaxActiveLiq,
+                zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom location',
+            location,
+
+            /* 
+                    diffHashSigScaleData(scaleData),
+                    showLatest,
+                    liquidityData,
+                    simpleRangeWidth,
+                    ranges,
+                    limit,
+                    isLineDrag,
+                    minTickForLimit,
+                    maxTickForLimit,
+                    canUserDragRange,
+                    canUserDragLimit,
+                    unparsedCandleData,
+                    period,
+                    advancedMode,
+                    isChartZoom,
+                    liqMaxActiveLiq,
+                    zoomBase */
+        );
+    }, [
+        location,
+        /* 
+                    diffHashSigScaleData(scaleData),
+                    showLatest,
+                    liquidityData,
+                    simpleRangeWidth,
+                    ranges,
+                    limit,
+                    isLineDrag,
+                    minTickForLimit,
+                    maxTickForLimit,
+                    canUserDragRange,
+                    canUserDragLimit,
+                    unparsedCandleData,
+                    period,
+                    advancedMode,
+                    isChartZoom,
+                    liqMaxActiveLiq,
+                    zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom diffHashSigScaleData(scaleData)',
+            diffHashSigScaleData(scaleData),
+
+            /* 
+                        showLatest,
+                        liquidityData,
+                        simpleRangeWidth,
+                        ranges,
+                        limit,
+                        isLineDrag,
+                        minTickForLimit,
+                        maxTickForLimit,
+                        canUserDragRange,
+                        canUserDragLimit,
+                        unparsedCandleData,
+                        period,
+                        advancedMode,
+                        isChartZoom,
+                        liqMaxActiveLiq,
+                        zoomBase */
+        );
+    }, [
+        diffHashSigScaleData(scaleData),
+        /* 
+                        
+                        showLatest,
+                        liquidityData,
+                        simpleRangeWidth,
+                        ranges,
+                        limit,
+                        isLineDrag,
+                        minTickForLimit,
+                        maxTickForLimit,
+                        canUserDragRange,
+                        canUserDragLimit,
+                        unparsedCandleData,
+                        period,
+                        advancedMode,
+                        isChartZoom,
+                        liqMaxActiveLiq,
+                        zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom showLatest',
+            showLatest,
+
+            /* 
+                            ,
+                            liquidityData,
+                            simpleRangeWidth,
+                            ranges,
+                            limit,
+                            isLineDrag,
+                            minTickForLimit,
+                            maxTickForLimit,
+                            canUserDragRange,
+                            canUserDragLimit,
+                            unparsedCandleData,
+                            period,
+                            advancedMode,
+                            isChartZoom,
+                            liqMaxActiveLiq,
+                            zoomBase */
+        );
+    }, [
+        showLatest,
+        /* 
+                            
+                            liquidityData,
+                            simpleRangeWidth,
+                            ranges,
+                            limit,
+                            isLineDrag,
+                            minTickForLimit,
+                            maxTickForLimit,
+                            canUserDragRange,
+                            canUserDragLimit,
+                            unparsedCandleData,
+                            period,
+                            advancedMode,
+                            isChartZoom,
+                            liqMaxActiveLiq,
+                            zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom liquidityData',
+            liquidityData,
+
+            /* 
+                                simpleRangeWidth,
+                                ranges,
+                                limit,
+                                isLineDrag,
+                                minTickForLimit,
+                                maxTickForLimit,
+                                canUserDragRange,
+                                canUserDragLimit,
+                                unparsedCandleData,
+                                period,
+                                advancedMode,
+                                isChartZoom,
+                                liqMaxActiveLiq,
+                                zoomBase */
+        );
+    }, [
+        liquidityData,
+        /* 
+                                simpleRangeWidth,
+                                ranges,
+                                limit,
+                                isLineDrag,
+                                minTickForLimit,
+                                maxTickForLimit,
+                                canUserDragRange,
+                                canUserDragLimit,
+                                unparsedCandleData,
+                                period,
+                                advancedMode,
+                                isChartZoom,
+                                liqMaxActiveLiq,
+                                zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom simpleRangeWidth',
+            simpleRangeWidth,
+
+            /* 
+                                ranges,
+                                limit,
+                                isLineDrag,
+                                minTickForLimit,
+                                maxTickForLimit,
+                                canUserDragRange,
+                                canUserDragLimit,
+                                unparsedCandleData,
+                                period,
+                                advancedMode,
+                                isChartZoom,
+                                liqMaxActiveLiq,
+                                zoomBase */
+        );
+    }, [
+        simpleRangeWidth,
+        /* 
+                                simpleRangeWidth,
+                                ranges,
+                                limit,
+                                isLineDrag,
+                                minTickForLimit,
+                                maxTickForLimit,
+                                canUserDragRange,
+                                canUserDragLimit,
+                                unparsedCandleData,
+                                period,
+                                advancedMode,
+                                isChartZoom,
+                                liqMaxActiveLiq,
+                                zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom ranges',
+            ranges,
+
+            /* 
+                                    ,
+                                    limit,
+                                    isLineDrag,
+                                    minTickForLimit,
+                                    maxTickForLimit,
+                                    canUserDragRange,
+                                    canUserDragLimit,
+                                    unparsedCandleData,
+                                    period,
+                                    advancedMode,
+                                    isChartZoom,
+                                    liqMaxActiveLiq,
+                                    zoomBase */
+        );
+    }, [
+        ranges,
+        /* 
+                                    limit,
+                                    isLineDrag,
+                                    minTickForLimit,
+                                    maxTickForLimit,
+                                    canUserDragRange,
+                                    canUserDragLimit,
+                                    unparsedCandleData,
+                                    period,
+                                    advancedMode,
+                                    isChartZoom,
+                                    liqMaxActiveLiq,
+                                    zoomBase */
+    ]);
+
+    useEffect(() => {
+        console.log(
+            'setMainZoom limit',
+            limit,
+
+            /* 
+                                        ,
+                                        isLineDrag,
+                                        minTickForLimit,
+                                        maxTickForLimit,
+                                        canUserDragRange,
+                                        canUserDragLimit,
+                                        unparsedCandleData,
+                                        period,
+                                        advancedMode,
+                                        isChartZoom,
+                                        liqMaxActiveLiq,
+                                        zoomBase */
+        );
+    }, [limit]);
+
+    useEffect(() => {
+        console.log('isMainZoom isLineDrag', isLineDrag);
+    }, [isLineDrag]);
+    useEffect(() => {
+        console.log('isMainZoom minTickForLimit', minTickForLimit);
+    }, [minTickForLimit]);
+
+    useEffect(() => {
+        console.log('isMainZoom maxTickForLimit', maxTickForLimit);
+    }, [maxTickForLimit]);
+
+    useEffect(() => {
+        console.log('isMainZoom canUserDragRange', canUserDragRange);
+    }, [canUserDragRange]);
+
+    useEffect(() => {
+        console.log('isMainZoom canUserDragRange', canUserDragLimit);
+    }, [canUserDragLimit]);
+
+    useEffect(() => {
+        console.log('isMainZoom unparsedCandleData', unparsedCandleData);
+    }, [unparsedCandleData]);
+
+    useEffect(() => {
+        console.log('isMainZoom period', period);
+    }, [period]);
+
+    useEffect(() => {
+        console.log('isMainZoom advancedMode', advancedMode);
+    }, [advancedMode]);
+
+    useEffect(() => {
+        console.log('isMainZoom isChartZoom', isChartZoom);
+    }, [isChartZoom]);
+
+    useEffect(() => {
+        console.log('isMainZoom liqMaxActiveLiq', liqMaxActiveLiq);
+    }, [liqMaxActiveLiq]);
+    useEffect(() => {
+        console.log('isMainZoom zoomBase', zoomBase);
+    }, [zoomBase]);
 
     useEffect(() => {
         IS_LOCAL_ENV && console.debug('timeframe changed');
@@ -2746,7 +3210,7 @@ export default function Chart(props: propsIF) {
                 const domain = [newDomainMin, newDomainMax];
 
                 setYaxisDomain(domain[0], domain[1]);
-                render();
+                render('when click latest');
             }
 
             setLatest(false);
@@ -3026,7 +3490,7 @@ export default function Chart(props: propsIF) {
                 const height = result[0].contentRect.height;
 
                 setChartHeights(height);
-                render();
+                render('reizeobserver');
             });
 
             resizeObserver.observe(canvasDiv.node());
@@ -3062,6 +3526,7 @@ export default function Chart(props: propsIF) {
         if (crosshairHorizontal && crosshairVerticalCanvas) {
             d3.select(d3CanvasCrosshair.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     ctx.setLineDash([4, 2]);
                     crosshairVerticalCanvas(crosshairData);
@@ -3113,7 +3578,7 @@ export default function Chart(props: propsIF) {
             .select(d3CanvasMain.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
         const canvasSize = canvas.getBoundingClientRect();
 
@@ -3129,6 +3594,8 @@ export default function Chart(props: propsIF) {
                 scaleData?.yScale,
                 denomInBase,
             );
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             d3.select(d3CanvasMain.current)
                 .on('draw', () => {
@@ -4078,7 +4545,7 @@ export default function Chart(props: propsIF) {
                     selectedCircleSeries.context(ctx);
                 });
 
-            render();
+            render('d3CanvasMain.current DRAW');
         }
 
         return () => {
@@ -4153,7 +4620,7 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         const visibilitychange = function () {
-            render();
+            render('visibilitychange');
         };
 
         document.addEventListener('visibilitychange', visibilitychange);
@@ -4169,6 +4636,7 @@ export default function Chart(props: propsIF) {
             .select('canvas')
             .node() as HTMLCanvasElement;
         const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (marketLine) {
             d3.select(d3CanvasMarketLine.current)
@@ -4315,7 +4783,7 @@ export default function Chart(props: propsIF) {
             }
         }
 
-        render();
+        render('changeScaleSwap');
     }
 
     function changeScaleLimit(isTriggeredByZoom: boolean) {
@@ -4351,7 +4819,7 @@ export default function Chart(props: propsIF) {
             }
         }
 
-        render();
+        render('changeScaleLimit');
     }
 
     function changeScaleRangeOrReposition(isTriggeredByZoom: boolean) {
@@ -4421,7 +4889,7 @@ export default function Chart(props: propsIF) {
             }
         }
 
-        render();
+        render('changeScaleRangeOrReposition');
     }
 
     function changeScale(isTriggeredByZoom: boolean) {
@@ -4562,7 +5030,7 @@ export default function Chart(props: propsIF) {
             ) {
                 setIsShowFloatingToolbar(false);
             }
-            render();
+            render('handleDocumentClick');
         };
 
         document.addEventListener('click', handleDocumentClick);
@@ -5466,7 +5934,7 @@ export default function Chart(props: propsIF) {
             } else {
                 setSelectedDate(undefined);
             }
-            render();
+            render('selectedDateEvent');
         }
     };
 
@@ -5623,7 +6091,7 @@ export default function Chart(props: propsIF) {
         } else {
             props.changeState(false, undefined);
         }
-        render();
+        render('// Candle transactions');
     }, [selectedDate, visibleCandleData]);
 
     const onBlurRange = (
@@ -5963,7 +6431,7 @@ export default function Chart(props: propsIF) {
                     gridTemplateRows: '1fr auto auto auto',
                 }}
             >
-                <CandleChart
+                {/* <CandleChart
                     chartItemStates={props.chartItemStates}
                     data={unparsedCandleData}
                     denomInBase={denomInBase}
@@ -5978,7 +6446,7 @@ export default function Chart(props: propsIF) {
                     isDiscontinuityScaleEnabled={isCondensedModeEnabled}
                     visibleDateForCandle={visibleDateForCandle}
                     chartThemeColors={chartThemeColors}
-                />
+                /> */}
 
                 <VolumeBarCanvas
                     scaleData={scaleData}

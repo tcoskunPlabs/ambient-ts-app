@@ -108,7 +108,8 @@ export default function LimitLineChart(props: propsIF) {
 
             if (limitLine) {
                 d3.select(d3CanvasLimitLine.current)
-                    .on('draw', () => {
+                .on('draw', () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
                         if (location.pathname.includes('/limit')) {
                             // Set canvas resolution and line dash style
                             setCanvasResolution(canvas);

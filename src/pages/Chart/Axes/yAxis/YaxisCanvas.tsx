@@ -876,11 +876,12 @@ function YAxisCanvas(props: yAxisIF) {
             const d3YaxisContext = d3YaxisCanvas.getContext(
                 '2d',
             ) as CanvasRenderingContext2D;
-
+            
             d3.select(d3Yaxis.current).on('draw', function () {
                 d3YaxisContext.clearRect(0, 0, d3YaxisCanvas.width, d3YaxisCanvas.height);
 
                 if (yAxis && scaleData) {
+                    d3YaxisContext.clearRect(0, 0, d3YaxisCanvas.width, d3YaxisCanvas.height)
                     setCanvasResolution(d3YaxisCanvas);
                     drawYaxis(
                         d3YaxisContext,

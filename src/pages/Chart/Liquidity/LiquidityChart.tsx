@@ -337,17 +337,9 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         const thresholdDepth = liquidityData?.liqTransitionPointforDepth;
 
         if (liqBidSeries && chartThemeColors && liqAskSeries) {
-            decorateForLiquidityArea(
-                liqBidSeries,
-                chartThemeColors,
-                true,
-            );
+            decorateForLiquidityArea(liqBidSeries, chartThemeColors, true);
 
-            decorateForLiquidityArea(
-                liqAskSeries,
-                chartThemeColors,
-                false,
-            );
+            decorateForLiquidityArea(liqAskSeries, chartThemeColors, false);
 
             decorateForLiquidityLine(
                 lineLiqSeries,
@@ -360,7 +352,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             decorateForLiquidityArea(
                 liqDepthAskSeries,
                 chartThemeColors,
-                false
+                false,
             );
             decorateForLiquidityLine(
                 lineLiqDepthAskSeries,
@@ -370,11 +362,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         }
 
         if (liqDepthBidSeries && chartThemeColors) {
-            decorateForLiquidityArea(
-                liqDepthBidSeries,
-                chartThemeColors,
-                true
-            );
+            decorateForLiquidityArea(liqDepthBidSeries, chartThemeColors, true);
             decorateForLiquidityLine(
                 lineLiqDepthBidSeries,
                 thresholdDepth,
@@ -535,7 +523,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             .select(d3CanvasLiq.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
         if (
             liqBidSeries &&
             liqAskSeries &&
@@ -547,6 +535,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         ) {
             d3.select(d3CanvasLiq.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     if (liqMode === 'curve') {
                         liqAskSeries(liqDataAsk);
@@ -617,10 +606,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             .select(d3CanvasLiqHover.current)
             .select('canvas')
             .node() as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
         if (chartMousemoveEvent) {
             d3.select(d3CanvasLiqHover.current)
                 .on('draw', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     setCanvasResolution(canvas);
                     if (liquidityMouseMoveActive !== 'none' && scaleData) {
                         const rectCanvas = canvas.getBoundingClientRect();

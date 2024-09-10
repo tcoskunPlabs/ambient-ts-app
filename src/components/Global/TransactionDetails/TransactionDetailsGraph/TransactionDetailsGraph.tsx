@@ -934,8 +934,8 @@ export default function TransactionDetailsGraph(
                 const d3XaxisContext = d3XaxisCanvas.getContext(
                     '2d',
                 ) as CanvasRenderingContext2D;
-
                 d3.select(d3Xaxis.current).on('draw', function () {
+                    d3XaxisContext.clearRect(0, 0, d3XaxisCanvas.width, d3XaxisCanvas.height)
                     if (xAxis) {
                         setCanvasResolution(d3XaxisCanvas);
                         drawXaxis(d3XaxisContext, scaleData?.xScale, 3);
@@ -1018,7 +1018,8 @@ export default function TransactionDetailsGraph(
                 const d3YaxisContext = d3YaxisCanvas.getContext(
                     '2d',
                 ) as CanvasRenderingContext2D;
-
+                d3YaxisContext.clearRect(0, 0, d3YaxisCanvas.width, d3YaxisCanvas.height)
+                
                 d3.select(d3Yaxis.current).on('draw', function () {
                     if (yAxis) {
                         setCanvasResolution(d3YaxisCanvas);
