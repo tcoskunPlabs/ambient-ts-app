@@ -2295,9 +2295,14 @@ export default function Chart(props: propsIF) {
                     setCrosshairActive('none');
                 });
 
-            setDragRange(() => {
-                return dragRange;
-            });
+            if (
+                location.pathname.includes('pool') ||
+                location.pathname.includes('reposition')
+            ) {
+                setDragRange(() => {
+                    return dragRange;
+                });
+            }
         }
     }, [
         poolPriceDisplay,
@@ -2474,13 +2479,14 @@ export default function Chart(props: propsIF) {
                 setIsLineDrag(false);
             });
 
-        setDragLimit(() => {
-            return dragLimit;
-        });
+        if (location.pathname.includes('/limit')) {
+            setDragLimit(() => {
+                return dragLimit;
+            });
+        }
     }, [
         poolPriceDisplay,
         location,
-        advancedMode,
         limit,
         minPrice,
         maxPrice,
@@ -4589,7 +4595,6 @@ export default function Chart(props: propsIF) {
                 }
             },
         );
-
 
         return () => {
             d3.select(d3CanvasMain.current).on('touchend', null);
