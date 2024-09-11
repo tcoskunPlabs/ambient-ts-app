@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import {
@@ -6431,7 +6430,7 @@ export default function Chart(props: propsIF) {
                     gridTemplateRows: '1fr auto auto auto',
                 }}
             >
-                {/* <CandleChart
+                <CandleChart
                     chartItemStates={props.chartItemStates}
                     data={unparsedCandleData}
                     denomInBase={denomInBase}
@@ -6446,7 +6445,7 @@ export default function Chart(props: propsIF) {
                     isDiscontinuityScaleEnabled={isCondensedModeEnabled}
                     visibleDateForCandle={visibleDateForCandle}
                     chartThemeColors={chartThemeColors}
-                /> */}
+                />
 
                 <VolumeBarCanvas
                     scaleData={scaleData}
