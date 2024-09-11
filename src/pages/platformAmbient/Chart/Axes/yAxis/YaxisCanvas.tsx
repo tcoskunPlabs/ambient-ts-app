@@ -36,6 +36,7 @@ import { PoolContext } from '../../../../../contexts/PoolContext';
 import useDollarPrice from '../../ChartUtils/getDollarPrice';
 import { BrandContext } from '../../../../../contexts/BrandContext';
 import { LiquidityDataLocal } from '../../../Trade/TradeCharts/TradeCharts';
+import { AppStateContext } from '../../../../../contexts/AppStateContext';
 
 interface yAxisIF {
     scaleData: scaleData | undefined;
@@ -116,6 +117,8 @@ function YAxisCanvas(props: yAxisIF) {
         selectedDrawnShape,
         isUpdatingShape,
     } = props;
+
+    const { isUserIdle } = useContext(AppStateContext);
 
     const d3Yaxis = useRef<HTMLInputElement | null>(null);
 
@@ -835,7 +838,7 @@ function YAxisCanvas(props: yAxisIF) {
     ]);
 
     useEffect(() => {
-        if (yAxis && yAxisZoom && d3Yaxis.current) {
+        if (yAxis && yAxisZoom && d3Yaxis.current && !isUserIdle) {
             d3.select<Element, unknown>(d3Yaxis.current)
                 .call(yAxisZoom)
                 .on('dblclick.zoom', null);
@@ -862,6 +865,7 @@ function YAxisCanvas(props: yAxisIF) {
         dragRange,
         d3.select('#range-line-canvas')?.node(),
         d3.select('#limit-line-canvas')?.node(),
+        isUserIdle,
     ]);
 
     // Axis's
@@ -919,16 +923,21 @@ function YAxisCanvas(props: yAxisIF) {
     }
 
     useEffect(() => {
-        d3.select(d3Yaxis.current).on(
-            'mousemove',
-            (event: MouseEvent<HTMLDivElement>) => {
-                d3.select(event.currentTarget).style('cursor', 'row-resize');
-            },
-        );
-        d3.select(d3Yaxis.current).on('mouseover', () => {
-            setCrosshairActive('none');
-        });
-    }, [denomInBase, liqMode, location.pathname, advancedMode]);
+        if (!isUserIdle) {
+            d3.select(d3Yaxis.current).on(
+                'mousemove',
+                (event: MouseEvent<HTMLDivElement>) => {
+                    d3.select(event.currentTarget).style(
+                        'cursor',
+                        'row-resize',
+                    );
+                },
+            );
+            d3.select(d3Yaxis.current).on('mouseover', () => {
+                setCrosshairActive('none');
+            });
+        }
+    }, [denomInBase, liqMode, location.pathname, advancedMode,isUserIdle]);
 
     return (
         <d3fc-canvas

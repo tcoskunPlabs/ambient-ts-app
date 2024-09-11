@@ -12,6 +12,7 @@ import { ChartContext } from '../../../../../contexts/ChartContext';
 import { diffHashSigScaleData } from '../../../../../ambient-utils/dataLayer';
 import { CandleDataIF } from '../../../../../ambient-utils/types';
 import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
+import { AppStateContext } from '../../../../../contexts/AppStateContext';
 
 interface DragCanvasProps {
     scaleData: scaleData;
@@ -85,9 +86,10 @@ export default function DragCanvas(props: DragCanvasProps) {
     } = props;
 
     const mobileView = useMediaQuery('(max-width: 600px)');
+    const { isUserIdle } = useContext(AppStateContext);
 
     useEffect(() => {
-        if (scaleData !== undefined && !isChartZoom) {
+        if (scaleData !== undefined && !isChartZoom && !isUserIdle) {
             let scrollTimeout: NodeJS.Timeout | null = null; // Declare scrollTimeout
             const lastCandleDate = lastCandleData?.time * 1000;
             const firstCandleDate = firstCandleData?.time * 1000;
@@ -117,7 +119,7 @@ export default function DragCanvas(props: DragCanvasProps) {
                 { passive: true },
             );
         }
-    }, [diffHashSigScaleData(scaleData, 'x'), isChartZoom]);
+    }, [diffHashSigScaleData(scaleData, 'x'), isChartZoom, isUserIdle]);
 
     function getXandYvalueOfDrawnShape(
         offsetX: number,
@@ -403,37 +405,39 @@ export default function DragCanvas(props: DragCanvasProps) {
 
     // mousemove
     useEffect(() => {
-        d3.select(d3DragCanvas.current).on(
-            'mousemove',
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            function (event: MouseEvent<HTMLDivElement>) {
-                mousemove(event);
-            },
-        );
+        if (!isUserIdle) {
+            d3.select(d3DragCanvas.current).on(
+                'mousemove',
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                function (event: MouseEvent<HTMLDivElement>) {
+                    mousemove(event);
+                },
+            );
 
-        d3.select(d3DragCanvas.current).on(
-            'contextmenu',
-            (event: PointerEvent) => {
-                if (!event.shiftKey) {
-                    event.preventDefault();
+            d3.select(d3DragCanvas.current).on(
+                'contextmenu',
+                (event: PointerEvent) => {
+                    if (!event.shiftKey) {
+                        event.preventDefault();
 
-                    const screenHeight = window.innerHeight;
+                        const screenHeight = window.innerHeight;
 
-                    const diff = screenHeight - event.clientY;
+                        const diff = screenHeight - event.clientY;
 
-                    setContextMenuPlacement({
-                        top: event.clientY,
-                        left: event.clientX,
-                        isReversed: diff < 350,
-                    });
+                        setContextMenuPlacement({
+                            top: event.clientY,
+                            left: event.clientX,
+                            isReversed: diff < 350,
+                        });
 
-                    setContextmenu(true);
-                } else {
-                    setContextmenu(false);
-                }
-            },
-        );
-    }, []);
+                        setContextmenu(true);
+                    } else {
+                        setContextmenu(false);
+                    }
+                },
+            );
+        }
+    }, [isUserIdle]);
 
     useEffect(() => {
         if (mobileView) {
@@ -695,12 +699,12 @@ export default function DragCanvas(props: DragCanvasProps) {
                 isDragging = false;
             });
 
-        if (d3DragCanvas.current) {
+        if (d3DragCanvas.current && !isUserIdle) {
             d3.select<d3.DraggedElementBaseType, unknown>(
                 d3DragCanvas.current,
             ).call(dragDrawnShape);
         }
-    }, [hoveredDrawnShape, drawnShapeHistory, visibleCandleData]);
+    }, [hoveredDrawnShape, drawnShapeHistory, visibleCandleData,isUserIdle]);
 
     return <d3fc-canvas ref={d3DragCanvas} />;
 }

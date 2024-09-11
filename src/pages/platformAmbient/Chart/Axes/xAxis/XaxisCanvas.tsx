@@ -21,6 +21,7 @@ import { CandleDataIF } from '../../../../../ambient-utils/types';
 import useMediaQuery from '../../../../../utils/hooks/useMediaQuery';
 import { xAxisHeightPixel } from '../../ChartUtils/chartConstants';
 import { BrandContext } from '../../../../../contexts/BrandContext';
+import { AppStateContext } from '../../../../../contexts/AppStateContext';
 interface xAxisIF {
     scaleData: scaleData | undefined;
     period: number;
@@ -90,6 +91,8 @@ function XAxisCanvas(props: xAxisIF) {
     const location = useLocation();
 
     const mobileView = useMediaQuery('(max-width: 600px)');
+
+    const { isUserIdle } = useContext(AppStateContext);
 
     const { platformName } = useContext(BrandContext);
 
@@ -451,35 +454,40 @@ function XAxisCanvas(props: xAxisIF) {
     ]);
 
     useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        d3.select(d3Xaxis.current).on('mousemove', (event: MouseEvent) => {
-            d3.select(d3Xaxis.current).style('cursor', 'col-resize');
-            if (scaleData) {
-                const mouseLocation = event.offsetX;
+        if (!isUserIdle) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            d3.select(d3Xaxis.current).on('mousemove', (event: MouseEvent) => {
+                d3.select(d3Xaxis.current).style('cursor', 'col-resize');
+                if (scaleData) {
+                    const mouseLocation = event.offsetX;
 
-                const isEgg =
-                    timeOfEndCandle &&
-                    mouseLocation > scaleData?.xScale(timeOfEndCandle) - 15 &&
-                    mouseLocation < scaleData?.xScale(timeOfEndCandle) + 15;
+                    const isEgg =
+                        timeOfEndCandle &&
+                        mouseLocation >
+                            scaleData?.xScale(timeOfEndCandle) - 15 &&
+                        mouseLocation < scaleData?.xScale(timeOfEndCandle) + 15;
 
-                if (isEgg) {
-                    d3.select(d3Xaxis.current).style('cursor', 'default');
-                    setXaxisActiveTooltip('egg');
-                } else {
-                    setXaxisActiveTooltip('');
+                    if (isEgg) {
+                        d3.select(d3Xaxis.current).style('cursor', 'default');
+                        setXaxisActiveTooltip('egg');
+                    } else {
+                        setXaxisActiveTooltip('');
+                    }
+
+                    setCrosshairActive('none');
                 }
-
-                setCrosshairActive('none');
-            }
-        });
-    }, [timeOfEndCandle]);
+            });
+        }
+    }, [timeOfEndCandle, isUserIdle]);
 
     // mouseleave
     useEffect(() => {
-        d3.select(d3Xaxis.current).on('mouseleave', () => {
-            mouseLeaveCanvas();
-        });
-    }, []);
+        if (!isUserIdle) {
+            d3.select(d3Xaxis.current).on('mouseleave', () => {
+                mouseLeaveCanvas();
+            });
+        }
+    }, [isUserIdle]);
 
     useEffect(() => {
         if (!isChartZoom) {
@@ -543,14 +551,14 @@ function XAxisCanvas(props: xAxisIF) {
     ]);
 
     useEffect(() => {
-        if (xAxis && xAxisZoom && d3Xaxis.current) {
+        if (xAxis && xAxisZoom && d3Xaxis.current && !isUserIdle) {
             d3.select<Element, unknown>(d3Xaxis.current)
                 .call(xAxisZoom)
                 .on('dblclick.zoom', null);
 
             renderCanvasArray([d3Xaxis]);
         }
-    }, [xAxisZoom]);
+    }, [xAxisZoom,isUserIdle]);
 
     return (
         <d3fc-canvas

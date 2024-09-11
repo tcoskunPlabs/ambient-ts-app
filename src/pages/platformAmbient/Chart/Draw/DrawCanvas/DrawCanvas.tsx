@@ -41,6 +41,7 @@ import { CandleDataIF } from '../../../../../ambient-utils/types';
 import { formatDollarAmountAxis } from '../../../../../utils/numbers';
 import useDollarPrice from '../../ChartUtils/getDollarPrice';
 import { CandleContext } from '../../../../../contexts/CandleContext';
+import { AppStateContext } from '../../../../../contexts/AppStateContext';
 
 interface DrawCanvasProps {
     scaleData: scaleData;
@@ -116,6 +117,7 @@ function DrawCanvas(props: DrawCanvasProps) {
     } = useContext(CrocEnvContext);
 
     const { isCondensedModeEnabled } = useContext(CandleContext);
+    const { isUserIdle } = useContext(AppStateContext);
 
     const circleSeries = createCircle(
         scaleData?.xScale,
@@ -174,7 +176,7 @@ function DrawCanvas(props: DrawCanvasProps) {
     }, [scaleData, denomInBase, diffHashSig(drawSettings), activeDrawingType]);
 
     useEffect(() => {
-        if (scaleData !== undefined && !isChartZoom) {
+        if (scaleData !== undefined && !isChartZoom && !isUserIdle) {
             let wheellTimeout: NodeJS.Timeout | null = null; // Declare wheellTimeout
             const lastCandleDate = lastCandleData?.time * 1000;
             const firstCandleDate = firstCandleData?.time * 1000;
@@ -204,7 +206,7 @@ function DrawCanvas(props: DrawCanvasProps) {
                 { passive: true },
             );
         }
-    }, [diffHashSigScaleData(scaleData, 'x'), isChartZoom]);
+    }, [diffHashSigScaleData(scaleData, 'x'), isChartZoom, isUserIdle]);
 
     function getXandYvalueOfDrawnShape(offsetX: number, offsetY: number) {
         let valueY = scaleData?.yScale.invert(offsetY);
@@ -322,49 +324,51 @@ function DrawCanvas(props: DrawCanvasProps) {
             }
         };
 
-        d3.select(d3DrawCanvas.current).on(
-            'touchstart',
-            (event: TouchEvent) => {
-                const clientX = event.targetTouches[0].clientX;
-                const clientY = event.targetTouches[0].clientY;
-                startDrawing(clientX, clientY);
-            },
-            { passive: true },
-        );
-
-        d3.select(d3DrawCanvas.current).on(
-            'touchmove',
-            (event: TouchEvent) => {
-                const clientX = event.targetTouches[0].clientX;
-                const clientY = event.targetTouches[0].clientY;
-                draw(clientX, clientY);
-            },
-            { passive: true },
-        );
-
-        d3.select(d3DrawCanvas.current).on(
-            'mousemove',
-            (event: PointerEvent) => {
-                draw(event.clientX, event.clientY);
-            },
-            { passive: true },
-        );
-
-        d3.select(d3DrawCanvas.current).on(
-            'mousedown',
-            (event: PointerEvent) => {
-                document.addEventListener('keydown', cancelDrawEvent);
-
-                startDrawing(event.clientX, event.clientY);
-            },
-            { passive: true },
-        );
-
         const pointerUpHandler = (event: PointerEvent) => {
             endDrawing(event.clientX, event.clientY);
         };
 
-        canvas.addEventListener('pointerup', pointerUpHandler);
+        if (!isUserIdle) {
+            d3.select(d3DrawCanvas.current).on(
+                'touchstart',
+                (event: TouchEvent) => {
+                    const clientX = event.targetTouches[0].clientX;
+                    const clientY = event.targetTouches[0].clientY;
+                    startDrawing(clientX, clientY);
+                },
+                { passive: true },
+            );
+
+            d3.select(d3DrawCanvas.current).on(
+                'touchmove',
+                (event: TouchEvent) => {
+                    const clientX = event.targetTouches[0].clientX;
+                    const clientY = event.targetTouches[0].clientY;
+                    draw(clientX, clientY);
+                },
+                { passive: true },
+            );
+
+            d3.select(d3DrawCanvas.current).on(
+                'mousemove',
+                (event: PointerEvent) => {
+                    draw(event.clientX, event.clientY);
+                },
+                { passive: true },
+            );
+
+            d3.select(d3DrawCanvas.current).on(
+                'mousedown',
+                (event: PointerEvent) => {
+                    document.addEventListener('keydown', cancelDrawEvent);
+
+                    startDrawing(event.clientX, event.clientY);
+                },
+                { passive: true },
+            );
+
+            canvas.addEventListener('pointerup', pointerUpHandler);
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         function startDrawing(mouseX: number, mouseY: number) {
@@ -603,7 +607,7 @@ function DrawCanvas(props: DrawCanvasProps) {
         return () => {
             canvas.removeEventListener('pointerup', pointerUpHandler);
         };
-    }, [activeDrawingType, JSON.stringify(drawSettings)]);
+    }, [activeDrawingType, JSON.stringify(drawSettings), isUserIdle]);
 
     // Draw
     useEffect(() => {

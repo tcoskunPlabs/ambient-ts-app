@@ -127,6 +127,7 @@ import { BrandContext } from '../../../contexts/BrandContext';
 import CandleLineChart from './LineChart/LineChart';
 import ChartTooltip from '../../Chart/ChartTooltip/ChartTooltip';
 import { LiquidityDataLocal } from '../Trade/TradeCharts/TradeCharts';
+import { AppStateContext } from '../../../contexts/AppStateContext';
 
 interface propsIF {
     isTokenABase: boolean;
@@ -364,6 +365,8 @@ export default function Chart(props: propsIF) {
     const d3CanvasMarketLine = useRef<HTMLCanvasElement | null>(null);
     const d3CanvasMain = useRef<HTMLDivElement | null>(null);
 
+    const { isUserIdle } = useContext(AppStateContext);
+    
     useEffect(() => {
         if (
             chartThemeColors &&
@@ -1212,7 +1215,7 @@ export default function Chart(props: propsIF) {
         if (
             scaleData !== undefined &&
             unparsedCandleData !== undefined &&
-            !isChartZoom
+            !isChartZoom && !isUserIdle
         ) {
             let clickedForLine = false;
             let zoomTimeout: number | undefined = undefined;
@@ -1530,6 +1533,7 @@ export default function Chart(props: propsIF) {
             }
         }
     }, [
+        isUserIdle,
         firstCandleData,
         lastCandleData,
         rescale,
@@ -2511,7 +2515,7 @@ export default function Chart(props: propsIF) {
     ]);
 
     useEffect(() => {
-        if (mainZoom && d3CanvasMain.current) {
+        if (mainZoom && d3CanvasMain.current && !isUserIdle) {
             d3.select<Element, unknown>(d3CanvasMain.current)
                 .call(mainZoom)
                 .on('wheel.zoom', null);
@@ -2537,7 +2541,7 @@ export default function Chart(props: propsIF) {
             }
             renderCanvasArray([d3CanvasMain]);
         }
-    }, [location.pathname, mainZoom, dragLimit, dragRange, isLineDrag]);
+    }, [location.pathname, mainZoom, dragLimit, dragRange, isLineDrag,isUserIdle]);
 
     // create market line and liquidity tooltip
     useEffect(() => {
@@ -4515,7 +4519,7 @@ export default function Chart(props: propsIF) {
 
     // mousemove
     useEffect(() => {
-        if (!isChartZoom) {
+        if (!isChartZoom && !isUserIdle) {
             d3.select(d3CanvasMain.current).on(
                 'mousemove',
                 function (event: MouseEvent<HTMLDivElement>) {
@@ -4545,6 +4549,7 @@ export default function Chart(props: propsIF) {
         currentPool,
         showSwap,
         isCondensedModeEnabled,
+        isUserIdle,
     ]);
 
     useEffect(() => {
@@ -4575,28 +4580,31 @@ export default function Chart(props: propsIF) {
 
     // mouseleave
     useEffect(() => {
-        d3.select(d3CanvasMain.current).on(
-            'mouseleave',
-            (event: MouseEvent<HTMLDivElement>) => {
-                if (!isChartZoom) {
-                    mouseLeaveCanvas();
-                    setChartMousemoveEvent(undefined);
-                    setMouseLeaveEvent(event);
-                }
-            },
-        );
+        if (!isUserIdle) {
 
-        d3.select(d3CanvasMain.current).on(
-            'touchend',
-            (event: MouseEvent<HTMLDivElement>) => {
-                if (!isChartZoom) {
-                    mouseLeaveCanvas();
-                    setChartMousemoveEvent(undefined);
-                    setMouseLeaveEvent(event);
+            d3.select(d3CanvasMain.current).on(
+                'mouseleave',
+                (event: MouseEvent<HTMLDivElement>) => {
+                    if (!isChartZoom) {
+                        mouseLeaveCanvas();
+                        setChartMousemoveEvent(undefined);
+                        setMouseLeaveEvent(event);
+                    }
+                },
+                );
+                
+                d3.select(d3CanvasMain.current).on(
+                    'touchend',
+                    (event: MouseEvent<HTMLDivElement>) => {
+                        if (!isChartZoom) {
+                            mouseLeaveCanvas();
+                            setChartMousemoveEvent(undefined);
+                            setMouseLeaveEvent(event);
+                        }
+                    },
+                    );
                 }
-            },
-        );
-    }, [isChartZoom]);
+    }, [isChartZoom,isUserIdle]);
 
     // mouseenter
     useEffect(() => {
@@ -4604,19 +4612,22 @@ export default function Chart(props: propsIF) {
             props.setShowTooltip(true);
         };
 
-        d3.select(d3CanvasMain.current).on('mouseenter', () => {
-            if (!isChartZoom) {
-                mouseEnterCanvas();
-            }
-        });
-    }, [isChartZoom]);
+        if (!isUserIdle) {
+
+            d3.select(d3CanvasMain.current).on('mouseenter', () => {
+                if (!isChartZoom) {
+                    mouseEnterCanvas();
+                }
+            });
+        }
+    }, [isChartZoom,isUserIdle]);
 
     /**
      * This useEffect block handles various interactions with the chart canvas based on user actions and context.
      * It includes logic for handling clicks on the canvas, mouseleave events, and chart rendering.
      */
     useEffect(() => {
-        if (scaleData !== undefined) {
+        if (scaleData !== undefined && !isUserIdle) {
             // Define the 'onClickCanvas' event handler for canvas clicks
             const onClickCanvas = (event: PointerEvent) => {
                 // If the candle or volume click
@@ -4775,6 +4786,7 @@ export default function Chart(props: propsIF) {
         isSelectedOrderHistory,
         selectedOrderHistory,
         showSwap,
+        isUserIdle
     ]);
 
     function checkLineLocation(
