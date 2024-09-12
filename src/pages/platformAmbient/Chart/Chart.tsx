@@ -1215,7 +1215,8 @@ export default function Chart(props: propsIF) {
         if (
             scaleData !== undefined &&
             unparsedCandleData !== undefined &&
-            !isChartZoom && !isUserIdle
+            !isChartZoom &&
+            !isUserIdle
         ) {
             let clickedForLine = false;
             let zoomTimeout: number | undefined = undefined;
@@ -1531,6 +1532,10 @@ export default function Chart(props: propsIF) {
 
                 setMainZoom(() => zoom);
             }
+        }
+
+        if (isUserIdle) {
+            d3.select(d3CanvasMain.current).on('wheel', null);
         }
     }, [
         isUserIdle,
@@ -2541,7 +2546,20 @@ export default function Chart(props: propsIF) {
             }
             renderCanvasArray([d3CanvasMain]);
         }
-    }, [location.pathname, mainZoom, dragLimit, dragRange, isLineDrag,isUserIdle]);
+
+        if (isUserIdle) {
+            d3.select(d3CanvasMain.current).on('wheel.zoom', null);
+            d3.select(d3CanvasMain.current).on('.zoom', null);
+            d3.select(d3CanvasMain.current).on('.drag', null);
+        }
+    }, [
+        location.pathname,
+        mainZoom,
+        dragLimit,
+        dragRange,
+        isLineDrag,
+        isUserIdle,
+    ]);
 
     // create market line and liquidity tooltip
     useEffect(() => {
@@ -4591,20 +4609,23 @@ export default function Chart(props: propsIF) {
                         setMouseLeaveEvent(event);
                     }
                 },
-                );
-                
-                d3.select(d3CanvasMain.current).on(
-                    'touchend',
-                    (event: MouseEvent<HTMLDivElement>) => {
-                        if (!isChartZoom) {
-                            mouseLeaveCanvas();
-                            setChartMousemoveEvent(undefined);
-                            setMouseLeaveEvent(event);
-                        }
-                    },
-                    );
-                }
-    }, [isChartZoom,isUserIdle]);
+            );
+
+            d3.select(d3CanvasMain.current).on(
+                'touchend',
+                (event: MouseEvent<HTMLDivElement>) => {
+                    if (!isChartZoom) {
+                        mouseLeaveCanvas();
+                        setChartMousemoveEvent(undefined);
+                        setMouseLeaveEvent(event);
+                    }
+                },
+            );
+        } else {
+            d3.select(d3CanvasMain.current).on('touchend', null);
+            d3.select(d3CanvasMain.current).on('mouseleave', null);
+        }
+    }, [isChartZoom, isUserIdle]);
 
     // mouseenter
     useEffect(() => {
@@ -4613,14 +4634,15 @@ export default function Chart(props: propsIF) {
         };
 
         if (!isUserIdle) {
-
             d3.select(d3CanvasMain.current).on('mouseenter', () => {
                 if (!isChartZoom) {
                     mouseEnterCanvas();
                 }
             });
+        } else {
+            d3.select(d3CanvasMain.current).on('mouseenter', null);
         }
-    }, [isChartZoom,isUserIdle]);
+    }, [isChartZoom, isUserIdle]);
 
     /**
      * This useEffect block handles various interactions with the chart canvas based on user actions and context.
@@ -4763,6 +4785,12 @@ export default function Chart(props: propsIF) {
                 },
             );
         }
+
+        if (isUserIdle) {
+            d3.select(d3CanvasMain.current).on('mouseleave', null);
+            d3.select(d3CanvasMain.current).on('contextmenu', null);
+            d3.select(d3CanvasMain.current).on('click', null);
+        }
     }, [
         denomInBase,
         selectedDate,
@@ -4786,7 +4814,7 @@ export default function Chart(props: propsIF) {
         isSelectedOrderHistory,
         selectedOrderHistory,
         showSwap,
-        isUserIdle
+        isUserIdle,
     ]);
 
     function checkLineLocation(

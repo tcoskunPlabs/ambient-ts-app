@@ -206,6 +206,9 @@ function DrawCanvas(props: DrawCanvasProps) {
                 { passive: true },
             );
         }
+        if (isUserIdle) {
+            d3.select(d3DrawCanvas.current).on('wheel', null);
+        }
     }, [diffHashSigScaleData(scaleData, 'x'), isChartZoom, isUserIdle]);
 
     function getXandYvalueOfDrawnShape(offsetX: number, offsetY: number) {
@@ -368,6 +371,11 @@ function DrawCanvas(props: DrawCanvasProps) {
             );
 
             canvas.addEventListener('pointerup', pointerUpHandler);
+        } else {
+            d3.select(d3DrawCanvas.current).on('touchstart', null);
+            d3.select(d3DrawCanvas.current).on('touchmove', null);
+            d3.select(d3DrawCanvas.current).on('mousemove', null);
+            d3.select(d3DrawCanvas.current).on('mousedown', null);
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -118,6 +118,8 @@ export default function DragCanvas(props: DragCanvasProps) {
                 },
                 { passive: true },
             );
+        } else {
+            d3.select(d3DragCanvas.current).on('wheel', null);
         }
     }, [diffHashSigScaleData(scaleData, 'x'), isChartZoom, isUserIdle]);
 
@@ -436,6 +438,9 @@ export default function DragCanvas(props: DragCanvasProps) {
                     }
                 },
             );
+        } else {
+            d3.select(d3DragCanvas.current).on('mousemove', null);
+            d3.select(d3DragCanvas.current).on('contextmenu', null);
         }
     }, [isUserIdle]);
 
@@ -703,8 +708,10 @@ export default function DragCanvas(props: DragCanvasProps) {
             d3.select<d3.DraggedElementBaseType, unknown>(
                 d3DragCanvas.current,
             ).call(dragDrawnShape);
+        } else {
+            d3.select(d3DragCanvas.current).on('.drag', null);
         }
-    }, [hoveredDrawnShape, drawnShapeHistory, visibleCandleData,isUserIdle]);
+    }, [hoveredDrawnShape, drawnShapeHistory, visibleCandleData, isUserIdle]);
 
     return <d3fc-canvas ref={d3DragCanvas} />;
 }

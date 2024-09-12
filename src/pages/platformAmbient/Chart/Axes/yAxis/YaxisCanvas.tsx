@@ -858,6 +858,11 @@ function YAxisCanvas(props: yAxisIF) {
             }
             renderCanvasArray([d3Yaxis]);
         }
+
+        if (isUserIdle) {
+            d3.select(d3Yaxis.current).on('.zoom', null);
+            d3.select(d3Yaxis.current).on('.drag', null);
+        }
     }, [
         location.pathname,
         yAxisZoom,
@@ -937,7 +942,7 @@ function YAxisCanvas(props: yAxisIF) {
                 setCrosshairActive('none');
             });
         }
-    }, [denomInBase, liqMode, location.pathname, advancedMode,isUserIdle]);
+    }, [denomInBase, liqMode, location.pathname, advancedMode, isUserIdle]);
 
     return (
         <d3fc-canvas
