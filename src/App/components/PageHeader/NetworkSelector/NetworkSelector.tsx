@@ -29,8 +29,13 @@ import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import { BrandContext } from '../../../../contexts/BrandContext';
 import { lookupChainId } from '../../../../ambient-utils/dataLayer';
 import { useSwitchNetwork, useWeb3ModalAccount } from '@web3modal/ethers/react';
+import useMediaQuery from '../../../../utils/hooks/useMediaQuery';
 
-export default function NetworkSelector() {
+interface propsIF {
+    customBR?: string;
+}
+
+export default function NetworkSelector(props: propsIF) {
     const {
         chooseNetwork,
         chainData: { chainId },
@@ -38,6 +43,8 @@ export default function NetworkSelector() {
     } = useContext(CrocEnvContext);
     const { networks, platformName, includeCanto } = useContext(BrandContext);
     const { switchNetwork } = useSwitchNetwork();
+    const smallScreen = useMediaQuery('(max-width: 600px)');
+
 
     const linkGenIndex: linkGenMethodsIF = useLinkGen('index');
     const [searchParams, setSearchParams] = useSearchParams();
@@ -315,7 +322,12 @@ export default function NetworkSelector() {
     );
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div
+            style={{
+                position: 'relative',
+                borderRadius: props.customBR ? props.customBR : '4px',
+            }}
+        >
             <DropdownMenuContainer
                 justifyContent='center'
                 alignItems='center'
@@ -323,6 +335,7 @@ export default function NetworkSelector() {
             >
                 <DropdownMenu2
                     marginTop={'50px'}
+                    marginRight={smallScreen ? '70px' : ''}
                     titleWidth={'80px'}
                     title={lookupChain(chainId).displayName}
                     expandable={networks.length > 1}
