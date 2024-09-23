@@ -7,7 +7,6 @@ import {
     useMemo,
     useState,
 } from 'react';
-import Chart from '../../Chart/Chart';
 import './TradeCandleStickChart.css';
 
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
@@ -34,20 +33,20 @@ import {
     chartItemStates,
     getInitialDisplayCandleCount,
     liquidityChartData,
+    renderChart,
+    resetForCondensedMode,
+    resetForNoncondensedMode,
     scaleData,
 } from '../../Chart/ChartUtils/chartUtils';
 import useMediaQuery from '../../../../utils/hooks/useMediaQuery';
 import { updatesIF } from '../../../../utils/hooks/useUrlParams';
 import { GraphDataContext } from '../../../../contexts/GraphDataContext';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
-import {
-    maxRequestCountForCondensed,
-    xAxisBuffer,
-} from '../../Chart/ChartUtils/chartConstants';
+import { maxRequestCountForCondensed } from '../../Chart/ChartUtils/chartConstants';
 import { filterCandleWithTransaction } from '../../../Chart/ChartUtils/discontinuityScaleUtils';
-import { BrandContext } from '../../../../contexts/BrandContext';
 import { AppStateContext } from '../../../../contexts/AppStateContext';
 import ChartTooltip from '../../../Chart/ChartTooltip/ChartTooltip';
+import ChartPreparation from '../../../Chart/ChartPreparation';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface propsIF {
@@ -95,10 +94,6 @@ function TradeCandleStickChart(props: propsIF) {
 
     const { isUserIdle10min } = useContext(AppStateContext);
 
-    const { liqMode } = props.chartItemStates;
-
-    const { platformName } = useContext(BrandContext);
-
     const period = useMemo(
         () => chartSettings.candleTime.global.time,
         [chartSettings.candleTime.global.time, location.pathname],
@@ -128,8 +123,6 @@ function TradeCandleStickChart(props: propsIF) {
         return undefined;
     }, [period, location.pathname]);
 
-    const unparsedCandleData = candleData?.candles;
-
     const [scaleData, setScaleData] = useState<scaleData | undefined>();
     const [liquidityScale, setLiquidityScale] = useState<
         d3.ScaleLinear<number, number> | undefined
@@ -140,11 +133,7 @@ function TradeCandleStickChart(props: propsIF) {
     const [prevPeriod, setPrevPeriod] = useState<any>();
     const [prevFirstCandle, setPrevFirstCandle] = useState<any>();
 
-    const [isCandleAdded, setIsCandleAdded] = useState<boolean>(false);
-
     const [isFetchingEnoughData, setIsFetchingEnoughData] = useState(true);
-
-    const [isCompletedFetchData, setIsCompletedFetchData] = useState(true);
 
     const [fetchCountForEnoughData, setFetchCountForEnoughData] = useState(1);
     const [liqBoundary, setLiqBoundary] = useState<number | undefined>(
@@ -154,11 +143,6 @@ function TradeCandleStickChart(props: propsIF) {
 
     const [showTooltip, setShowTooltip] = useState(false);
 
-    const [chartResetStatus, setChartResetStatus] = useState<{
-        isResetChart: boolean;
-    }>({
-        isResetChart: false,
-    });
     const {
         tokenA,
         tokenB,
@@ -201,6 +185,16 @@ function TradeCandleStickChart(props: propsIF) {
 
     const { userTransactionsByPool } = useContext(GraphDataContext);
 
+    const candleDataWithTransactionInfo = useMemo(() => {
+        if (period && candleData?.candles) {
+            return filterCandleWithTransaction(candleData.candles, period).sort(
+                (a, b) => b.time - a.time,
+            );
+        }
+
+        return undefined;
+    }, [candleData && candleData.candles, period]);
+
     useEffect(() => {
         let isMounted = true;
         if (userTransactionsByPool) {
@@ -215,24 +209,19 @@ function TradeCandleStickChart(props: propsIF) {
     useEffect(() => {
         setSelectedDrawnShape(undefined);
         setIsFetchingEnoughData(true);
-        setIsCompletedFetchData(true);
-        setChartResetStatus({
-            isResetChart: false,
-        });
         setFetchCountForEnoughData(0);
     }, [period, baseTokenAddress + quoteTokenAddress]);
 
     useEffect(() => {
         if (candleDomains.isResetRequest) {
             setIsFetchingEnoughData(true);
-            setIsCompletedFetchData(true);
             setFetchCountForEnoughData(0);
         }
     }, [candleDomains.isResetRequest]);
 
     useEffect(() => {
         if (selectedDate) {
-            const selectedDateData = unparsedCandleData?.find(
+            const selectedDateData = candleDataWithTransactionInfo?.find(
                 (i) => i.time * 1000 === selectedDate,
             );
             setCurrentData(selectedDateData);
@@ -634,22 +623,21 @@ function TradeCandleStickChart(props: propsIF) {
     }, [liqBoundary, baseTokenAddress + quoteTokenAddress, sumActiveLiq]);
 
     useEffect(() => {
-        if (unparsedCandleData) {
-            setScaleForChart(unparsedCandleData);
+        if (candleDataWithTransactionInfo) {
+            setScaleForChart(candleDataWithTransactionInfo);
         }
     }, [
-        unparsedCandleData === undefined,
+        candleDataWithTransactionInfo === undefined,
         mobileView,
         isDenomBase,
         period,
-        liqMode,
     ]);
 
     useEffect(() => {
         if (candleScale.isFetchFirst200Candle === true) {
             scaleData && setScaleData(undefined);
         } else {
-            setScaleForChart(unparsedCandleData);
+            setScaleForChart(candleDataWithTransactionInfo);
         }
     }, [candleScale.isFetchFirst200Candle]);
 
@@ -695,13 +683,13 @@ function TradeCandleStickChart(props: propsIF) {
     };
 
     // Scale
-    const setScaleForChart = (unparsedCandleData: any) => {
+    const setScaleForChart = (candleDataWithTransactionInfo: any) => {
         if (
-            unparsedCandleData !== undefined &&
-            unparsedCandleData.length > 0 &&
+            candleDataWithTransactionInfo !== undefined &&
+            candleDataWithTransactionInfo.length > 0 &&
             period
         ) {
-            const temp = [...unparsedCandleData];
+            const temp = [...candleDataWithTransactionInfo];
             const boundaryCandles = temp.splice(0, mobileView ? 30 : 99);
 
             const priceRange = d3fc
@@ -767,13 +755,13 @@ function TradeCandleStickChart(props: propsIF) {
 
     useEffect(() => {
         if (
-            unparsedCandleData &&
-            unparsedCandleData.length > 0 &&
+            candleDataWithTransactionInfo &&
+            candleDataWithTransactionInfo.length > 0 &&
             period &&
             (prevPeriod === undefined || period !== prevPeriod)
         ) {
             const firstCandleTimeState = d3.max(
-                unparsedCandleData,
+                candleDataWithTransactionInfo,
                 (d) => d.time,
             );
             if (
@@ -899,36 +887,40 @@ function TradeCandleStickChart(props: propsIF) {
         }
     }, [
         period,
-        unparsedCandleData !== undefined
-            ? unparsedCandleData[0]?.time
+        candleDataWithTransactionInfo !== undefined
+            ? candleDataWithTransactionInfo[0]?.time
             : undefined,
     ]);
 
     const resetXScale = (xScale: any) => {
-        if (!period) return;
-        const localInitialDisplayCandleCount =
-            getInitialDisplayCandleCount(mobileView);
-        const nowDate = Date.now();
+        if (!period || candleDataWithTransactionInfo === undefined) return;
 
-        const snapDiff = nowDate % (period * 1000);
-        const snappedTime = nowDate + (period * 1000 - snapDiff);
+        const localInitialDisplayCandleCount = getInitialDisplayCandleCount(
+            mobileView,
+            props.chartItemStates.liqMode,
+        );
+        if (isCondensedModeEnabled) {
+            const data = candleDataWithTransactionInfo.filter(
+                (i) => i.isShowData,
+            );
+            resetForCondensedMode(
+                xScale,
+                data,
+                period,
+                localInitialDisplayCandleCount,
+            );
+        } else {
+            resetForNoncondensedMode(
+                xScale,
+                period,
+                localInitialDisplayCandleCount,
+            );
+        }
 
-        const liqBuffer =
-            liqMode === 'none' || ['futa'].includes(platformName)
-                ? 0.95
-                : xAxisBuffer;
-
-        const centerX = snappedTime;
-        const diff =
-            (localInitialDisplayCandleCount * period * 1000) / liqBuffer;
-
-        xScale.domain([
-            centerX - diff * liqBuffer,
-            centerX + diff * (1 - liqBuffer),
-        ]);
+        renderChart();
     };
     const resetChart = () => {
-        if (scaleData && unparsedCandleData) {
+        if (scaleData && candleDataWithTransactionInfo) {
             resetXScale(scaleData.xScale);
 
             setCandleScale((prev: CandleScaleIF) => {
@@ -945,11 +937,11 @@ function TradeCandleStickChart(props: propsIF) {
 
     useEffect(() => {
         if (
-            (unparsedCandleData !== undefined &&
-                unparsedCandleData.length === 0) ||
+            (candleDataWithTransactionInfo !== undefined &&
+                candleDataWithTransactionInfo.length === 0) ||
             (scaleData === undefined &&
-                unparsedCandleData &&
-                unparsedCandleData.length < 7)
+                candleDataWithTransactionInfo &&
+                candleDataWithTransactionInfo.length < 7)
         ) {
             setCandleScale((prev: CandleScaleIF) => {
                 return {
@@ -966,12 +958,12 @@ function TradeCandleStickChart(props: propsIF) {
     const isLoading = useMemo(
         () =>
             scaleData === undefined ||
-            unparsedCandleData?.length === 0 ||
+            candleDataWithTransactionInfo?.length === 0 ||
             poolPriceDisplay === 0 ||
             poolPriceNonDisplay === 0,
         [
-            unparsedCandleData === undefined,
-            unparsedCandleData?.length,
+            candleDataWithTransactionInfo === undefined,
+            candleDataWithTransactionInfo?.length,
             poolPriceDisplay,
             poolPriceNonDisplay,
             scaleData === undefined,
@@ -983,20 +975,21 @@ function TradeCandleStickChart(props: propsIF) {
     useEffect(() => {
         if (isCondensedModeEnabled) {
             if (
-                unparsedCandleData &&
-                unparsedCandleData.length > 0 &&
+                candleDataWithTransactionInfo &&
+                candleDataWithTransactionInfo.length > 0 &&
                 period &&
+                candleData &&
                 candleData.duration === period &&
-                unparsedCandleData[0].period === period &&
+                candleDataWithTransactionInfo[0].period === period &&
                 isFetchingEnoughData
             ) {
-                const lastCandleDate = unparsedCandleData?.reduce(
+                const lastCandleDate = candleDataWithTransactionInfo?.reduce(
                     function (prev, current) {
                         return prev.time > current.time ? prev : current;
                     },
                 ).time;
 
-                const firstCandleDate = unparsedCandleData?.reduce(
+                const firstCandleDate = candleDataWithTransactionInfo?.reduce(
                     function (prev, current) {
                         return prev.time < current.time ? prev : current;
                     },
@@ -1006,10 +999,9 @@ function TradeCandleStickChart(props: propsIF) {
                     scaleData !== undefined
                         ? scaleData?.xScale.domain()[1]
                         : lastCandleDate * 1000;
-                const candles = filterCandleWithTransaction(
-                    unparsedCandleData,
-                    period,
-                ).filter((i) => i.isShowData && i.time * 1000 < maxDom);
+                const candles = candleDataWithTransactionInfo.filter(
+                    (i) => i.isShowData && i.time * 1000 < maxDom,
+                );
                 const minTime = firstCandleDate * 1000;
 
                 const checkDomainData = candles.filter(
@@ -1082,7 +1074,7 @@ function TradeCandleStickChart(props: propsIF) {
             setIsFetchingEnoughData(false);
         }
     }, [
-        unparsedCandleData,
+        candleDataWithTransactionInfo,
         period === undefined,
         isCondensedModeEnabled,
         isDenomBase,
@@ -1090,10 +1082,11 @@ function TradeCandleStickChart(props: propsIF) {
 
     const isOpenChart =
         !isLoading &&
-        candleData !== undefined &&
+        candleDataWithTransactionInfo !== undefined &&
         isPoolInitialized !== undefined &&
         prevPeriod === period &&
         scaleData &&
+        period &&
         period === candleData?.duration &&
         !isFetchingCandle &&
         !isFetchingEnoughData;
@@ -1109,7 +1102,6 @@ function TradeCandleStickChart(props: propsIF) {
             </div>
         </div>
     );
-
     const skeletonChart = (
         <div
             id='skeleton'
@@ -1128,7 +1120,7 @@ function TradeCandleStickChart(props: propsIF) {
                     gridTemplateRows: 'auto auto',
                 }}
             >
-                {(!isOpenChart || isCompletedFetchData) && (
+                {!isOpenChart && (
                     <>
                         <div
                             style={{
@@ -1157,26 +1149,20 @@ function TradeCandleStickChart(props: propsIF) {
                         </div>
                     </>
                 )}
-                {isOpenChart && !isUserIdle10min && (
+                {isOpenChart && (
                     <>
                         <ChartTooltip
                             currentData={currentData}
                             showTooltip={showTooltip}
                         />
-                        <Chart
-                            isTokenABase={isTokenABase}
+                        <ChartPreparation
                             liquidityData={liquidityData}
                             changeState={props.changeState}
-                            denomInBase={isDenomBase}
                             chartItemStates={props.chartItemStates}
                             setCurrentData={setCurrentData}
                             currentData={currentData}
-                            isCandleAdded={isCandleAdded}
-                            setIsCandleAdded={setIsCandleAdded}
                             scaleData={scaleData}
                             prevPeriod={prevPeriod}
-                            candleTimeInSeconds={period}
-                            poolPriceNonDisplay={poolPriceNonDisplay}
                             selectedDate={selectedDate}
                             setSelectedDate={setSelectedDate}
                             rescale={props.rescale}
@@ -1190,24 +1176,18 @@ function TradeCandleStickChart(props: propsIF) {
                             setShowTooltip={setShowTooltip}
                             liquidityScale={liquidityScale}
                             liquidityDepthScale={liquidityDepthScale}
-                            candleTime={chartSettings.candleTime.global}
-                            unparsedData={candleData}
+                            candleDataWithTransactionInfo={
+                                candleDataWithTransactionInfo
+                            }
                             updateURL={updateURL}
                             userTransactionData={userTransactionData}
                             setPrevCandleCount={setPrevCandleCount}
-                            isFetchingEnoughData={isFetchingEnoughData}
-                            setIsFetchingEnoughData={setIsFetchingEnoughData}
-                            isCompletedFetchData={isCompletedFetchData}
-                            setIsCompletedFetchData={setIsCompletedFetchData}
-                            setChartResetStatus={setChartResetStatus}
-                            chartResetStatus={chartResetStatus}
+                            showTooltip={showTooltip}
+                            period={period}
                         />
                     </>
                 )}
-
-                {!(!isOpenChart || isCompletedFetchData) &&
-                    isUserIdle10min &&
-                    skeletonChart}
+                {!!isOpenChart && isUserIdle10min && skeletonChart}
             </div>
         </>
     );

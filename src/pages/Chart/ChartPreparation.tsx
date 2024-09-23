@@ -6,12 +6,12 @@ import {
     renderChart,
     scaleData,
     TransactionDataRange,
-} from './ChartUtils/chartUtils';
+} from '../platformAmbient/Chart/ChartUtils/chartUtils';
 import { diffHashSigChart } from '../../ambient-utils/dataLayer';
 import * as d3fc from 'd3fc';
-import Chart from './Chart';
 import { CandleDataIF, TransactionIF } from '../../ambient-utils/types';
 import { updatesIF } from '../../utils/hooks/useUrlParams';
+import Chart from '../platformAmbient/Chart/Chart';
 
 interface propsIF {
     candleDataWithTransactionInfo: CandleDataChart[];

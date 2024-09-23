@@ -21,7 +21,6 @@ import {
 } from '@crocswap-libs/sdk';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
 import useHandleSwipeBack from '../../../utils/hooks/useHandleSwipeBack';
-import { candleTimeIF } from '../../../App/hooks/useChartSettings';
 import { IS_LOCAL_ENV } from '../../../ambient-utils/constants';
 import {
     diffHashSig,
@@ -37,7 +36,6 @@ import { SidebarContext } from '../../../contexts/SidebarContext';
 import { RangeContext } from '../../../contexts/RangeContext';
 import {
     CandleDataIF,
-    CandlesByPoolAndDurationIF,
     CandleDomainIF,
     CandleScaleIF,
     TransactionIF,
@@ -77,7 +75,9 @@ import {
     selectedDrawnData,
     setCanvasResolution,
     standardDeviation,
-    timeGapsValue,
+    TransactionDataRange,
+    resetForCondensedMode,
+    resetForNoncondensedMode,
 } from './ChartUtils/chartUtils';
 import { Zoom } from './ChartUtils/zoom';
 import XAxisCanvas from './Axes/xAxis/XaxisCanvas';
@@ -109,7 +109,6 @@ import {
     LS_KEY_CHART_ANNOTATIONS,
     defaultCandleBandwith,
     mainCanvasElementId,
-    xAxisBuffer,
     xAxisHeightPixel,
 } from './ChartUtils/chartConstants';
 import OrderHistoryCanvas from './OrderHistoryCh/OrderHistoryCanvas';
@@ -120,30 +119,24 @@ import {
     pinTickToTickLower,
     pinTickToTickUpper,
 } from '../../../ambient-utils/dataLayer/functions/pinTick';
-import { filterCandleWithTransaction } from '../../Chart/ChartUtils/discontinuityScaleUtils';
-import useOnClickOutside from '../../../utils/hooks/useOnClickOutside';
 import ChartSettings from '../../Chart/ChartSettings/ChartSettings';
-import { BrandContext } from '../../../contexts/BrandContext';
-import CandleLineChart from './LineChart/LineChart';
+import useOnClickOutside from '../../../utils/hooks/useOnClickOutside';
 import { LiquidityDataLocal } from '../Trade/TradeCharts/TradeCharts';
+import { BrandContext } from '../../../contexts';
+import CandleLineChart from './LineChart/LineChart';
 
 interface propsIF {
-    isTokenABase: boolean;
     liquidityData: liquidityChartData | undefined;
     changeState: (
         isOpen: boolean | undefined,
         candleData: CandleDataIF | undefined,
     ) => void;
-    denomInBase: boolean;
     chartItemStates: chartItemStates;
     setCurrentData: React.Dispatch<
         React.SetStateAction<CandleDataIF | undefined>
     >;
     currentData: CandleDataIF | undefined;
-    isCandleAdded: boolean | undefined;
-    setIsCandleAdded: React.Dispatch<boolean>;
     scaleData: scaleData;
-    poolPriceNonDisplay: number | undefined;
     selectedDate: number | undefined;
     setSelectedDate: React.Dispatch<number | undefined>;
     rescale: boolean | undefined;
@@ -157,33 +150,20 @@ interface propsIF {
     setShowTooltip: React.Dispatch<React.SetStateAction<boolean>>;
     liquidityScale: d3.ScaleLinear<number, number> | undefined;
     liquidityDepthScale: d3.ScaleLinear<number, number> | undefined;
-    candleTime: candleTimeIF;
-    unparsedData: CandlesByPoolAndDurationIF;
+    parsedData: CandleDataChart[];
     prevPeriod: number;
     candleTimeInSeconds: number | undefined;
     updateURL: (changes: updatesIF) => void;
     userTransactionData: Array<TransactionIF> | undefined;
     setPrevCandleCount: React.Dispatch<React.SetStateAction<number>>;
-    isFetchingEnoughData: boolean;
-    setIsFetchingEnoughData: React.Dispatch<React.SetStateAction<boolean>>;
-    isCompletedFetchData: boolean;
-    setIsCompletedFetchData: React.Dispatch<React.SetStateAction<boolean>>;
-    setChartResetStatus: React.Dispatch<
-        React.SetStateAction<{
-            isResetChart: boolean;
-        }>
-    >;
-    chartResetStatus: {
-        isResetChart: boolean;
-    };
+    showTooltip: boolean;
+    period: number;
+    timeGaps: TransactionDataRange[];
 }
 
 export default function Chart(props: propsIF) {
     const {
-        isTokenABase,
-        denomInBase,
         scaleData,
-        poolPriceNonDisplay,
         selectedDate,
         setSelectedDate,
         rescale,
@@ -197,16 +177,14 @@ export default function Chart(props: propsIF) {
         liquidityData,
         liquidityScale,
         liquidityDepthScale,
-        unparsedData,
+        parsedData,
         prevPeriod,
         candleTimeInSeconds,
         updateURL,
         userTransactionData,
         setPrevCandleCount,
-        isCompletedFetchData,
-        setIsCompletedFetchData,
-        setChartResetStatus,
-        chartResetStatus,
+        period,
+        timeGaps,
     } = props;
 
     const {
@@ -255,7 +233,8 @@ export default function Chart(props: propsIF) {
         isCondensedModeEnabled,
         setIsCondensedModeEnabled,
         setCandleData,
-        showFutaCandles,
+        candleData,
+        showFutaCandles
     } = useContext(CandleContext);
 
     const { pool, poolPriceDisplay: poolPriceWithoutDenom } =
@@ -296,13 +275,14 @@ export default function Chart(props: propsIF) {
         tokenA,
         tokenB,
         isDenomBase,
-        isTokenABase: isBid,
+        isTokenABase,
         setIsTokenAPrimary,
         limitTick,
         setLimitTick,
         currentPoolPriceTick,
         noGoZoneBoundaries,
         setNoGoZoneBoundaries,
+        poolPriceNonDisplay,
     } = currentPool;
 
     const [isChartZoom, setIsChartZoom] = useState(false);
@@ -315,12 +295,13 @@ export default function Chart(props: propsIF) {
     const [maxTickForLimit, setMaxTickForLimit] = useState<number>(0);
     const [isShowFloatingToolbar, setIsShowFloatingToolbar] = useState(false);
     const [handleDocumentEvent, setHandleDocumentEvent] = useState();
-    const period = unparsedData.duration;
 
     const [colorChangeTrigger, setColorChangeTrigger] = useState(false);
 
     const side =
-        (isDenomBase && !isBid) || (!isDenomBase && isBid) ? 'buy' : 'sell';
+        (isDenomBase && !isTokenABase) || (!isDenomBase && isTokenABase)
+            ? 'buy'
+            : 'sell';
     const sellOrderStyle = side === 'sell' ? 'order_sell' : 'order_buy';
     // const [activeDrawingType, setActiveDrawingType] = useState('Cross');
 
@@ -330,10 +311,7 @@ export default function Chart(props: propsIF) {
     const [mouseLeaveEvent, setMouseLeaveEvent] =
         useState<MouseEvent<HTMLDivElement>>();
     const [chartZoomEvent, setChartZoomEvent] = useState('');
-    const [timeGaps, setTimeGaps] = useState<timeGapsValue[]>([]);
 
-    const [discontinuityProvider, setDiscontinuityProvider] =
-        useState(undefined);
     const [lineSellColor, setLineSellColor] = useState('rgba(115, 113, 252)');
     const [lineBuyColor, setLineBuyColor] = useState('rgba(205, 193, 255)');
 
@@ -486,79 +464,6 @@ export default function Chart(props: propsIF) {
         return checkShowLatestCandle(period, scaleData?.xScale);
     }, [period, diffHashSigScaleData(scaleData, 'x')]);
 
-    /**
-     * This function processes a given data array to calculate discontinuities in time intervals and updates them.
-     * @param data
-     */
-    const calculateDiscontinuityRange = async (data: CandleDataChart[]) => {
-        // timeGaps each element in the data array represents a time interval and consists of two dates: [candleDate, shiftDate].
-
-        const timesToCheck = data
-            .filter((i) => i.isShowData)
-            .map((item) => item.time * 1000);
-
-        const filterTimeGapsNotInclude = timeGaps.filter(
-            (item) => !timesToCheck.some((time) => time === item.range[1]),
-        );
-        const localTimeGaps: { range: number[]; isAddedPixel: boolean }[] =
-            structuredClone(filterTimeGapsNotInclude);
-        let notTransactionDataTime: undefined | number = undefined;
-        let transationDataTime: undefined | number = undefined;
-        if (scaleData) {
-            data.slice(isShowLatestCandle ? 2 : 1).forEach((item) => {
-                if (notTransactionDataTime === undefined && !item.isShowData) {
-                    notTransactionDataTime = item.time * 1000;
-                }
-                if (notTransactionDataTime !== undefined && item.isShowData) {
-                    transationDataTime = item.time * 1000;
-                }
-                if (notTransactionDataTime && transationDataTime) {
-                    const newRange = [
-                        transationDataTime,
-                        notTransactionDataTime,
-                    ];
-
-                    const isRangeExists = localTimeGaps.findIndex(
-                        (gap: timeGapsValue) => gap.range[0] === newRange[0],
-                    );
-                    const isRangeExistsNoTransaction = localTimeGaps.findIndex(
-                        (gap: timeGapsValue) => gap.range[1] === newRange[1],
-                    );
-
-                    const isSameRange = localTimeGaps.some(
-                        (gap: timeGapsValue) =>
-                            gap.range[0] === newRange[0] &&
-                            gap.range[1] === newRange[1],
-                    );
-
-                    if (!isSameRange) {
-                        if (isRangeExists !== -1) {
-                            localTimeGaps[isRangeExists].range[1] =
-                                notTransactionDataTime;
-                            localTimeGaps[isRangeExists].isAddedPixel = false;
-                        } else if (isRangeExistsNoTransaction !== -1) {
-                            localTimeGaps[isRangeExistsNoTransaction].range[0] =
-                                transationDataTime;
-                            localTimeGaps[
-                                isRangeExistsNoTransaction
-                            ].isAddedPixel = false;
-                        } else {
-                            localTimeGaps.push({
-                                range: newRange,
-                                isAddedPixel: false,
-                            });
-                        }
-                    }
-
-                    notTransactionDataTime = undefined;
-                    transationDataTime = undefined;
-                }
-            });
-
-            setTimeGaps(localTimeGaps);
-        }
-    };
-
     const calculateVisibleCandles = (
         scaleData: scaleData | undefined,
         unparsedCandleData: CandleDataChart[],
@@ -589,10 +494,7 @@ export default function Chart(props: propsIF) {
     };
 
     const unparsedCandleData = useMemo(() => {
-        const data = filterCandleWithTransaction(
-            unparsedData.candles,
-            period,
-        ).sort((a, b) => b.time - a.time);
+        const data = structuredClone(parsedData);
 
         if (
             poolPriceWithoutDenom &&
@@ -652,7 +554,6 @@ export default function Chart(props: propsIF) {
             }
         }
 
-        calculateDiscontinuityRange(data);
         return calculateVisibleCandles(
             scaleData,
             data,
@@ -660,7 +561,7 @@ export default function Chart(props: propsIF) {
             mobileView ? 300 : 100,
         ) as CandleDataChart[];
     }, [
-        diffHashSigChart(unparsedData.candles),
+        diffHashSigChart(parsedData),
         poolPriceWithoutDenom,
         isShowLatestCandle,
         isCondensedModeEnabled,
@@ -685,21 +586,13 @@ export default function Chart(props: propsIF) {
         isCondensedModeEnabled,
     ]);
 
-    const lastCandleData = unparsedData.candles?.reduce(
-        function (prev, current) {
-            return prev.time > current.time ? prev : current;
-        },
-    );
+    const lastCandleData = parsedData?.reduce(function (prev, current) {
+        return prev.time > current.time ? prev : current;
+    });
 
-    const firstCandleData = unparsedData.candles?.reduce(
-        function (prev, current) {
-            return prev.time < current.time ? prev : current;
-        },
-    );
-
-    const [visibleDateForCandle, setVisibleDateForCandle] = useState(
-        lastCandleData.time * 1000,
-    );
+    const firstCandleData = parsedData?.reduce(function (prev, current) {
+        return prev.time < current.time ? prev : current;
+    });
 
     const [bandwidth, setBandwidth] = useState(5);
 
@@ -907,141 +800,10 @@ export default function Chart(props: propsIF) {
     }
 
     useEffect(() => {
-        if (chartResetStatus.isResetChart) {
-            setXScaleDefault();
-        }
-    }, []);
-
-    useEffect(() => {
         if (shouldResetBuffer) {
-            setXScaleDefault();
+            resetXScale();
         }
     }, [liqMode, shouldResetBuffer]);
-
-    useEffect(() => {
-        (async () => {
-            if (scaleData && timeGaps.length > 0) {
-                const canvas = d3
-                    .select(d3CanvasMain.current)
-                    .select('canvas')
-                    .node() as HTMLCanvasElement;
-
-                const rectCanvas = canvas.getBoundingClientRect();
-                const width = rectCanvas.width;
-                scaleData.xScale.range([0, width]);
-                const lastDateArray = timeGaps
-                    .sort((a, b) => b.range[1] - a.range[1])
-                    .filter((i) => i.isAddedPixel);
-                let lastDate: undefined | number = undefined;
-                if (lastDateArray.length > 0) {
-                    lastDate = lastDateArray[0].range[1];
-                }
-
-                // To maintain the bandwidth of the candles, the domain is updated by the amount of shift.
-                // If new data comes from the left, the scale is shifted to the right for a smaller scale, and vice versa.
-                timeGaps
-                    .filter((i) => !i.isAddedPixel)
-                    .forEach((element: timeGapsValue) => {
-                        if (isCondensedModeEnabled) {
-                            const pix =
-                                scaleData.xScale(element.range[0]) -
-                                scaleData.xScale(element.range[1]);
-
-                            // shift to right
-                            let min = scaleData.xScale.invert(pix);
-                            let maxDom = scaleData.xScale.domain()[1];
-
-                            const dom = scaleData?.xScale.domain();
-                            const check =
-                                element.range[1] < dom[1] &&
-                                element.range[1] > dom[0];
-
-                            if (check) {
-                                if (lastDate && lastDate < element.range[1]) {
-                                    min = scaleData.xScale.domain()[0];
-                                    // shift to left
-                                    maxDom = scaleData.xScale.invert(
-                                        scaleData.xScale.range()[1] - pix,
-                                    );
-                                }
-                                scaleData.xScale.domain([min, maxDom]);
-
-                                element.isAddedPixel = true;
-                            }
-                        }
-                    });
-            }
-        })().then(() => {
-            if (scaleData) {
-                const data = isCondensedModeEnabled
-                    ? timeGaps
-                          .filter((element) => element.isAddedPixel)
-                          .map((i: timeGapsValue) => i.range)
-                    : [];
-
-                const newDiscontinuityProvider = d3fc.discontinuityRange(
-                    ...data,
-                );
-
-                setDiscontinuityProvider(newDiscontinuityProvider);
-
-                scaleData.xScale.discontinuityProvider(
-                    newDiscontinuityProvider,
-                );
-
-                setVisibleDateForCandle(scaleData.xScale.domain()[1]);
-                changeScale(false);
-                render();
-            }
-        });
-    }, [
-        diffHashSig(timeGaps),
-        diffHashSigScaleData(scaleData, 'x'),
-        isCondensedModeEnabled,
-    ]);
-
-    useEffect(() => {
-        if (discontinuityProvider) {
-            if (!chartResetStatus.isResetChart) {
-                const xmin = scaleData?.xScale.domain()[0];
-                const xmax = scaleData?.xScale.domain()[1];
-                const data = visibleCandleData.filter(
-                    (i) => i.time * 1000 <= xmax && i.time * 1000 >= xmin,
-                );
-                if (data.length > 0) {
-                    const width = scaleData?.xScale.range()[1];
-
-                    const minDate = data[data.length - 1].time * 1000;
-                    const maxDate = data[0].time * 1000;
-
-                    const diffPixel =
-                        (isShowLatestCandle
-                            ? width
-                            : scaleData?.xScale(maxDate)) -
-                        scaleData?.xScale(minDate);
-
-                    const percentPixel = diffPixel / width;
-
-                    const isIncludeTimeOfEndCanlde = timeOfEndCandle
-                        ? timeOfEndCandle < scaleData?.xScale.domain()[1] &&
-                          timeOfEndCandle > scaleData?.xScale.domain()[0]
-                        : false;
-
-                    if (
-                        percentPixel < 0.75 &&
-                        isCondensedModeEnabled &&
-                        !isIncludeTimeOfEndCanlde
-                    ) {
-                        resetFunc(true);
-                    } else {
-                        setIsCompletedFetchData(false);
-                    }
-                }
-            } else {
-                setIsCompletedFetchData(false);
-            }
-        }
-    }, [discontinuityProvider === undefined]);
 
     useEffect(() => {
         updateDrawnShapeHistoryonLocalStorage();
@@ -1049,11 +811,11 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         setMarketLineValue();
-    }, [poolPriceWithoutDenom, denomInBase]);
+    }, [poolPriceWithoutDenom, isDenomBase]);
 
     const setMarketLineValue = () => {
         if (poolPriceWithoutDenom !== undefined) {
-            const lastCandlePrice = denomInBase
+            const lastCandlePrice = isDenomBase
                 ? 1 / poolPriceWithoutDenom
                 : poolPriceWithoutDenom;
 
@@ -1119,7 +881,7 @@ export default function Chart(props: propsIF) {
     useEffect(() => {
         // auto zoom active
         setRescale(true);
-    }, [location.pathname, period, denomInBase]);
+    }, [location.pathname, period, isDenomBase]);
 
     // finds candle closest to the mouse
     const snapForCandle = (point: number, filtered: Array<CandleDataIF>) => {
@@ -1186,10 +948,9 @@ export default function Chart(props: propsIF) {
 
     useEffect(() => {
         if (isCondensedModeEnabled) {
-            const isShowSelectedDate = filterCandleWithTransaction(
-                unparsedData.candles,
-                period,
-            ).find((i) => i.isShowData && i.time * 1000 === selectedDate);
+            const isShowSelectedDate = parsedData.find(
+                (i) => i.isShowData && i.time * 1000 === selectedDate,
+            );
             if (!isShowSelectedDate) {
                 setSelectedDate(undefined);
                 props.setCurrentData(undefined);
@@ -1347,6 +1108,7 @@ export default function Chart(props: propsIF) {
                                         scaleData,
                                         firstCandleDate,
                                         lastCandleDate,
+                                        timeGaps,
                                     );
                                 }
 
@@ -1547,6 +1309,7 @@ export default function Chart(props: propsIF) {
         isChartZoom,
         liqMaxActiveLiq,
         zoomBase,
+        timeGaps,
     ]);
 
     useEffect(() => {
@@ -1649,7 +1412,7 @@ export default function Chart(props: propsIF) {
                 return newTargets;
             });
         }
-    }, [denomInBase]);
+    }, [isDenomBase]);
 
     const setAdvancedLines = () => {
         if (minPrice !== undefined && maxPrice !== undefined) {
@@ -1684,7 +1447,7 @@ export default function Chart(props: propsIF) {
         }
     }, [
         location.pathname,
-        denomInBase,
+        isDenomBase,
         minPrice,
         maxPrice,
         rescaleRangeBoundariesWithSlider,
@@ -1697,7 +1460,7 @@ export default function Chart(props: propsIF) {
             advancedMode &&
             scaleData &&
             liquidityData &&
-            denomInBase === boundaries
+            isDenomBase === boundaries
         ) {
             const liqAllBidPrices = liquidityData?.liqBidData.map(
                 (liqData: LiquidityDataLocal) => liqData.liqPrices,
@@ -1706,7 +1469,7 @@ export default function Chart(props: propsIF) {
 
             fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
         } else {
-            setBoundaries(denomInBase);
+            setBoundaries(isDenomBase);
         }
     }, [
         advancedMode,
@@ -1770,7 +1533,7 @@ export default function Chart(props: propsIF) {
      * @param high  The high value for the calculation
      */
     const setLimitTickNearNoGoZone = (low: number, high: number) => {
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(parseFloat(low.toString()))
             : pool?.fromDisplayPrice(1 / parseFloat(low.toString()));
 
@@ -1779,21 +1542,21 @@ export default function Chart(props: propsIF) {
             const pinnedTick: number = pinTickLower(limit, chainData.gridSize);
 
             const tickPrice = tickToPrice(
-                pinnedTick + (denomInBase ? 1 : -1) * chainData.gridSize * 2,
+                pinnedTick + (isDenomBase ? 1 : -1) * chainData.gridSize * 2,
             );
 
             const tickDispPrice = pool?.toDisplayPrice(tickPrice);
 
             if (tickDispPrice) {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
 
                     setMinTickForLimit(displayPriceWithDenom);
                 });
             }
         });
 
-        const limitNonDisplayMax = denomInBase
+        const limitNonDisplayMax = isDenomBase
             ? pool?.fromDisplayPrice(parseFloat(high.toString()))
             : pool?.fromDisplayPrice(1 / parseFloat(high.toString()));
 
@@ -1802,14 +1565,14 @@ export default function Chart(props: propsIF) {
             const pinnedTick: number = pinTickUpper(limit, chainData.gridSize);
 
             const tickPrice = tickToPrice(
-                pinnedTick + (denomInBase ? -1 : 1) * chainData.gridSize * 2,
+                pinnedTick + (isDenomBase ? -1 : 1) * chainData.gridSize * 2,
             );
 
             const tickDispPrice = pool?.toDisplayPrice(tickPrice);
 
             if (tickDispPrice) {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
                     setMaxTickForLimit(displayPriceWithDenom);
                 });
             }
@@ -1850,7 +1613,7 @@ export default function Chart(props: propsIF) {
         // Get data for the No-Go Zone (minimum and maximum values)
         const { noGoZoneMin, noGoZoneMax } = getNoZoneData();
 
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(newLimitValue)
             : pool?.fromDisplayPrice(1 / newLimitValue);
 
@@ -1884,7 +1647,7 @@ export default function Chart(props: propsIF) {
 
             if (tickDispPrice) {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
 
                     newLimitValue = displayPriceWithDenom;
 
@@ -2073,7 +1836,7 @@ export default function Chart(props: propsIF) {
 
                                     pinnedDisplayPrices =
                                         getPinnedPriceValuesFromTicks(
-                                            denomInBase,
+                                            isDenomBase,
                                             baseTokenDecimals,
                                             quoteTokenDecimals,
                                             lowTick,
@@ -2106,7 +1869,7 @@ export default function Chart(props: propsIF) {
 
                                     pinnedDisplayPrices =
                                         getPinnedPriceValuesFromTicks(
-                                            denomInBase,
+                                            isDenomBase,
                                             baseTokenDecimals,
                                             quoteTokenDecimals,
                                             lowTick,
@@ -2151,7 +1914,7 @@ export default function Chart(props: propsIF) {
                                     if (advancedValue < low) {
                                         pinnedDisplayPrices =
                                             getPinnedPriceValuesFromDisplayPrices(
-                                                denomInBase,
+                                                isDenomBase,
                                                 baseTokenDecimals,
                                                 quoteTokenDecimals,
                                                 high.toString(),
@@ -2161,7 +1924,7 @@ export default function Chart(props: propsIF) {
                                     } else {
                                         pinnedDisplayPrices =
                                             getPinnedPriceValuesFromDisplayPrices(
-                                                denomInBase,
+                                                isDenomBase,
                                                 baseTokenDecimals,
                                                 quoteTokenDecimals,
                                                 low.toString(),
@@ -2172,7 +1935,7 @@ export default function Chart(props: propsIF) {
                                 } else {
                                     pinnedDisplayPrices =
                                         getPinnedPriceValuesFromDisplayPrices(
-                                            denomInBase,
+                                            isDenomBase,
                                             baseTokenDecimals,
                                             quoteTokenDecimals,
                                             advancedValue.toString(),
@@ -2325,7 +2088,7 @@ export default function Chart(props: propsIF) {
         baseTokenDecimals,
         quoteTokenDecimals,
         currentPoolPriceTick,
-        denomInBase,
+        isDenomBase,
         isTokenABase,
         chainData.gridSize,
         rescale,
@@ -2499,7 +2262,7 @@ export default function Chart(props: propsIF) {
         baseTokenDecimals,
         quoteTokenDecimals,
         currentPoolPriceTick,
-        denomInBase,
+        isDenomBase,
         isTokenABase,
         chainData.gridSize,
         rescale,
@@ -2577,67 +2340,27 @@ export default function Chart(props: propsIF) {
         isDenomBase,
     ]);
 
-    async function setXScaleDefault() {
-        if (scaleData) {
-            const localInitialDisplayCandleCount =
-                getInitialDisplayCandleCount(mobileView);
-            const nowDate = Date.now();
-
-            const snapDiff = nowDate % (period * 1000);
-            const snappedTime = nowDate + (period * 1000 - snapDiff);
-
-            const liqBuffer =
-                liqMode === 'none' || ['futa'].includes(platformName)
-                    ? 0.95
-                    : xAxisBuffer;
-
-            const centerX = snappedTime;
-            const diff =
-                (localInitialDisplayCandleCount * period * 1000) / liqBuffer;
-
-            setPrevLastCandleTime(snappedTime / 1000);
-
-            if (scaleData) {
-                scaleData.xScale.discontinuityProvider(
-                    d3fc.discontinuityRange(...[]),
-                );
-            }
-
-            setChartResetStatus({
-                isResetChart: true,
-            });
-            timeGaps.forEach((obj) => (obj.isAddedPixel = false));
-
-            const canvasDiv = d3.select(d3CanvasMain.current);
-
-            const canvas = canvasDiv
-                .select('canvas')
-                .node() as HTMLCanvasElement;
-
-            const currentRange = [0, canvas.getBoundingClientRect().width];
-            const currentDomain = [
-                centerX - diff * liqBuffer,
-                centerX + diff * (1 - liqBuffer),
-            ];
-
-            const targetValue = Date.now();
-            const targetPixel = currentRange[1] * (1 - liqBuffer);
-
-            const newDomainMin =
-                targetValue -
-                ((targetPixel - currentRange[1]) /
-                    (currentRange[0] - currentRange[1])) *
-                    (currentDomain[1] - currentDomain[0]);
-            const newDomainMax =
-                targetValue +
-                ((currentRange[0] - targetPixel) /
-                    (currentRange[0] - currentRange[1])) *
-                    (currentDomain[1] - currentDomain[0]);
-            const domain = [newDomainMin, newDomainMax];
-
-            scaleData?.xScale.domain([domain[0], domain[1]]);
+    const resetXScale = () => {
+        const localInitialDisplayCandleCount = getInitialDisplayCandleCount(
+            mobileView,
+            liqMode,
+        );
+        if (isCondensedModeEnabled) {
+            const data = parsedData.filter((i) => i.isShowData);
+            resetForCondensedMode(
+                scaleData.xScale,
+                data,
+                period,
+                localInitialDisplayCandleCount,
+            );
+        } else {
+            resetForNoncondensedMode(
+                scaleData.xScale,
+                period,
+                localInitialDisplayCandleCount,
+            );
         }
-    }
+    };
 
     function fetchCandleForResetOrLatest(isReset = false) {
         const nowDate = Date.now();
@@ -2667,23 +2390,22 @@ export default function Chart(props: propsIF) {
 
                 if (!isReset) {
                     let maxTime: number | undefined = undefined;
-                    for (let i = 0; i < unparsedData.candles.length - 1; i++) {
+                    for (let i = 0; i < parsedData.length - 1; i++) {
                         if (
-                            unparsedData.candles[i].time -
-                                unparsedData.candles[i + 1].time >
+                            parsedData[i].time - parsedData[i + 1].time >
                             period
                         ) {
-                            maxTime = unparsedData.candles[i].time * 1000;
+                            maxTime = parsedData[i].time * 1000;
                         }
                     }
-                    if (maxTime && unparsedData) {
-                        const localCandles = unparsedData.candles.filter(
+                    if (maxTime && candleData) {
+                        const localCandles = parsedData.filter(
                             (i) =>
                                 maxTime === undefined ||
                                 i.time * 1000 >= maxTime,
                         );
                         const localCandleData = {
-                            ...unparsedData,
+                            ...candleData,
                             candles: localCandles,
                         };
 
@@ -2697,8 +2419,8 @@ export default function Chart(props: propsIF) {
     async function resetFunc(isReset = false) {
         if (scaleData) {
             setBandwidth(defaultCandleBandwith);
-            setXScaleDefault();
             fetchCandleForResetOrLatest(isReset);
+            resetXScale();
             setIsChangeScaleChart(false);
             changeScale(false);
         }
@@ -2711,7 +2433,6 @@ export default function Chart(props: propsIF) {
             reset &&
             poolPriceDisplay !== undefined
         ) {
-            setShouldResetBuffer(true);
             resetFunc();
             setReset(false);
             setShowLatest(false);
@@ -2725,7 +2446,7 @@ export default function Chart(props: propsIF) {
             if (rescale) {
                 resetFunc();
             } else {
-                setXScaleDefault();
+                resetXScale();
                 fetchCandleForResetOrLatest();
 
                 const targetValue = poolPriceDisplay;
@@ -2753,14 +2474,7 @@ export default function Chart(props: propsIF) {
             setLatest(false);
             setShowLatest(false);
         }
-    }, [
-        latest,
-        denomInBase,
-        poolPriceDisplay,
-        rescale,
-        location.pathname,
-        liqMode,
-    ]);
+    }, [latest, isDenomBase, poolPriceDisplay, rescale, location.pathname]);
 
     const onClickRange = async (event: PointerEvent) => {
         if (scaleData && liquidityData) {
@@ -2896,7 +2610,7 @@ export default function Chart(props: propsIF) {
 
                 if (lineToBeSet === 'Max') {
                     pinnedDisplayPrices = getPinnedPriceValuesFromDisplayPrices(
-                        denomInBase,
+                        isDenomBase,
                         baseTokenDecimals,
                         quoteTokenDecimals,
                         low.toString(),
@@ -2905,7 +2619,7 @@ export default function Chart(props: propsIF) {
                     );
                 } else {
                     pinnedDisplayPrices = getPinnedPriceValuesFromDisplayPrices(
-                        denomInBase,
+                        isDenomBase,
                         baseTokenDecimals,
                         quoteTokenDecimals,
                         value.toString(),
@@ -3058,7 +2772,7 @@ export default function Chart(props: propsIF) {
 
             return () => resizeObserver.unobserve(canvasDiv.node());
         }
-    }, [handleDocumentEvent, isCompletedFetchData]);
+    }, [handleDocumentEvent]);
 
     useEffect(() => {
         const canvas = d3
@@ -3099,7 +2813,7 @@ export default function Chart(props: propsIF) {
         scaleData?.yScale,
         60,
         0.5,
-        denomInBase,
+        isDenomBase,
     );
 
     const selectedCircleSeries = createCircle(
@@ -3107,7 +2821,7 @@ export default function Chart(props: propsIF) {
         scaleData?.yScale,
         80,
         0.5,
-        denomInBase,
+        isDenomBase,
         true,
     );
 
@@ -3124,13 +2838,13 @@ export default function Chart(props: propsIF) {
             const rayLine = createAnnotationLineSeries(
                 scaleData?.xScale.copy(),
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             const bandArea = createBandArea(
                 scaleData?.xScale.copy(),
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             d3.select(d3CanvasMain.current)
@@ -3181,7 +2895,7 @@ export default function Chart(props: propsIF) {
                                     if (item.background.active) {
                                         const checkDenom =
                                             item.data[0].denomInBase ===
-                                            denomInBase;
+                                            isDenomBase;
                                         const bandData = {
                                             fromValue: checkDenom
                                                 ? item.data[0].y
@@ -3189,7 +2903,7 @@ export default function Chart(props: propsIF) {
                                             toValue: checkDenom
                                                 ? item.data[1].y
                                                 : 1 / item.data[1].y,
-                                            denomInBase: denomInBase,
+                                            denomInBase: isDenomBase,
                                         } as bandLineData;
 
                                         if (item.background) {
@@ -3252,7 +2966,7 @@ export default function Chart(props: propsIF) {
                                                                     ),
                                                                 ) ===
                                                                     (element.denomInBase ===
-                                                                    denomInBase
+                                                                    isDenomBase
                                                                         ? Number(
                                                                               hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                                                   12,
@@ -3336,12 +3050,12 @@ export default function Chart(props: propsIF) {
 
                                         const firstPointYAxisData =
                                             item.data[0].denomInBase ===
-                                            denomInBase
+                                            isDenomBase
                                                 ? item.data[0].y
                                                 : 1 / item.data[0].y;
                                         const secondPointYAxisData =
                                             item.data[1].denomInBase ===
-                                            denomInBase
+                                            isDenomBase
                                                 ? item.data[1].y
                                                 : 1 / item.data[1].y;
 
@@ -3477,7 +3191,7 @@ export default function Chart(props: propsIF) {
                                             createArrowPointsOfDPRangeLine(
                                                 item.data,
                                                 scaleData,
-                                                denomInBase,
+                                                isDenomBase,
                                                 height > 30 && width > 30
                                                     ? 10
                                                     : 5,
@@ -3597,7 +3311,7 @@ export default function Chart(props: propsIF) {
                                                     element.y.toFixed(12),
                                                 ) ===
                                                     (element.denomInBase ===
-                                                    denomInBase
+                                                    isDenomBase
                                                         ? Number(
                                                               hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                                   12,
@@ -3676,7 +3390,7 @@ export default function Chart(props: propsIF) {
                                                 item.data[0].y.toFixed(12),
                                             ) ===
                                                 (item.data[0].denomInBase ===
-                                                denomInBase
+                                                isDenomBase
                                                     ? Number(
                                                           hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                               12,
@@ -3982,7 +3696,7 @@ export default function Chart(props: propsIF) {
                                                 lineLabel,
                                                 linePlacement,
                                                 scaleData.yScale(
-                                                    denomInBase ===
+                                                    isDenomBase ===
                                                         lineData[0].denomInBase
                                                         ? lineData[0].y
                                                         : 1 / lineData[0].y,
@@ -4040,7 +3754,7 @@ export default function Chart(props: propsIF) {
                                                     element.y.toFixed(12),
                                                 ) ===
                                                     (element.denomInBase ===
-                                                    denomInBase
+                                                    isDenomBase
                                                         ? Number(
                                                               hoveredDrawnShape?.selectedCircle.y.toFixed(
                                                                   12,
@@ -4090,7 +3804,7 @@ export default function Chart(props: propsIF) {
         hoveredDrawnShape,
         selectedDrawnShape,
         isUpdatingShape,
-        denomInBase,
+        isDenomBase,
         period,
         isShapeEdited,
         getDollarPrice,
@@ -4257,12 +3971,12 @@ export default function Chart(props: propsIF) {
             ) {
                 const isLine = ['futa'].includes(platformName);
 
-                const placeHolderPrice = denomInBase
+                const placeHolderPrice = isDenomBase
                     ? 1 / poolPriceWithoutDenom
                     : poolPriceWithoutDenom;
 
                 const filteredMin = d3.min(unparsedCandleData, (d) =>
-                    denomInBase
+                    isDenomBase
                         ? isLine
                             ? d.invPriceCloseExclMEVDecimalCorrected
                             : d.invMaxPriceExclMEVDecimalCorrected
@@ -4272,7 +3986,7 @@ export default function Chart(props: propsIF) {
                 );
 
                 const filteredMax = d3.max(unparsedCandleData, (d) =>
-                    denomInBase
+                    isDenomBase
                         ? isLine
                             ? d.invPriceCloseExclMEVDecimalCorrected
                             : d.invMinPriceExclMEVDecimalCorrected
@@ -4293,7 +4007,7 @@ export default function Chart(props: propsIF) {
 
     function changeScaleSwap(isTriggeredByZoom: boolean) {
         if (scaleData && poolPriceWithoutDenom && rescale) {
-            const placeHolderPrice = denomInBase
+            const placeHolderPrice = isDenomBase
                 ? 1 / poolPriceWithoutDenom
                 : poolPriceWithoutDenom;
 
@@ -4452,7 +4166,7 @@ export default function Chart(props: propsIF) {
         diffHashSigChart(visibleCandleData),
         prevPeriod === period,
         candleTimeInSeconds === period,
-        denomInBase,
+        isDenomBase,
     ]);
 
     useEffect(() => {
@@ -4749,7 +4463,7 @@ export default function Chart(props: propsIF) {
             );
         }
     }, [
-        denomInBase,
+        isDenomBase,
         selectedDate,
         isSidebarOpen,
         liqMode,
@@ -4819,11 +4533,11 @@ export default function Chart(props: propsIF) {
             const threshold = 10;
 
             const denomStartY =
-                element[0].denomInBase === denomInBase || isDenomPrices
+                element[0].denomInBase === isDenomBase || isDenomPrices
                     ? element[0].y
                     : 1 / element[0].y;
             const denomEndY =
-                element[0].denomInBase === denomInBase || isDenomPrices
+                element[0].denomInBase === isDenomBase || isDenomPrices
                     ? element[1].y
                     : 1 / element[1].y;
 
@@ -4996,7 +4710,7 @@ export default function Chart(props: propsIF) {
                             element.extraData,
                             mouseX,
                             mouseY,
-                            denomInBase,
+                            isDenomBase,
                         )
                     ) {
                         resElement = element;
@@ -5009,7 +4723,7 @@ export default function Chart(props: propsIF) {
 
                     lineData.forEach((line) => {
                         if (
-                            checkLineLocation(line, mouseX, mouseY, denomInBase)
+                            checkLineLocation(line, mouseX, mouseY, isDenomBase)
                         ) {
                             resElement = element;
                         }
@@ -5019,11 +4733,11 @@ export default function Chart(props: propsIF) {
                 if (element.type === 'Rect' || element.type === 'DPRange') {
                     if (element.type === 'DPRange' && scaleData) {
                         const endY =
-                            element.data[1].denomInBase === denomInBase
+                            element.data[1].denomInBase === isDenomBase
                                 ? element.data[1].y
                                 : 1 / element.data[1].y;
                         const startY =
-                            element.data[0].denomInBase === denomInBase
+                            element.data[0].denomInBase === isDenomBase
                                 ? element.data[0].y
                                 : 1 / element.data[0].y;
 
@@ -5094,7 +4808,7 @@ export default function Chart(props: propsIF) {
                             element.data,
                             mouseX,
                             mouseY,
-                            denomInBase,
+                            isDenomBase,
                         )
                     ) {
                         resElement = element;
@@ -5109,7 +4823,7 @@ export default function Chart(props: propsIF) {
                 mouseX,
                 mouseY,
                 scaleData,
-                denomInBase,
+                isDenomBase,
             );
 
             setHoveredDrawnShape({
@@ -5144,7 +4858,7 @@ export default function Chart(props: propsIF) {
                 });
             }
         }
-    }, [userTransactionData, denomInBase]);
+    }, [userTransactionData, isDenomBase]);
 
     const handleCardClick = (tx: TransactionIF): void => {
         setSelectedDate(undefined);
@@ -5175,10 +4889,10 @@ export default function Chart(props: propsIF) {
                     const swapOrderData = [
                         {
                             x: element.txTime * 1000,
-                            y: denomInBase
+                            y: isDenomBase
                                 ? element.swapInvPriceDecimalCorrected
                                 : element.swapPriceDecimalCorrected,
-                            denomInBase: denomInBase,
+                            denomInBase: isDenomBase,
                         },
                     ];
                     if (
@@ -5254,10 +4968,10 @@ export default function Chart(props: propsIF) {
             avaregeHeight =
                 avaregeHeight +
                 Math.abs(
-                    (denomInBase
+                    (isDenomBase
                         ? d.invPriceCloseExclMEVDecimalCorrected
                         : d.priceCloseExclMEVDecimalCorrected) -
-                        (denomInBase
+                        (isDenomBase
                             ? d.invPriceOpenExclMEVDecimalCorrected
                             : d.priceOpenExclMEVDecimalCorrected),
                 );
@@ -5301,23 +5015,23 @@ export default function Chart(props: propsIF) {
                     : false
                 : false;
 
-        let close = denomInBase
+        let close = isDenomBase
             ? nearest?.invMinPriceExclMEVDecimalCorrected
             : nearest?.minPriceExclMEVDecimalCorrected;
 
-        let open = denomInBase
+        let open = isDenomBase
             ? nearest?.invMaxPriceExclMEVDecimalCorrected
             : nearest?.maxPriceExclMEVDecimalCorrected;
 
         if (tempFilterData.length > 1) {
             close = d3.max(tempFilterData, (d: CandleDataIF) =>
-                denomInBase
+                isDenomBase
                     ? d?.invMinPriceExclMEVDecimalCorrected
                     : d?.minPriceExclMEVDecimalCorrected,
             ) as number;
 
             open = d3.min(tempFilterData, (d: CandleDataIF) =>
-                denomInBase
+                isDenomBase
                     ? d?.invMaxPriceExclMEVDecimalCorrected
                     : d?.maxPriceExclMEVDecimalCorrected,
             ) as number;
@@ -5646,7 +5360,7 @@ export default function Chart(props: propsIF) {
     ): void => {
         if (newLimitValue === undefined) return;
 
-        const limitNonDisplay = denomInBase
+        const limitNonDisplay = isDenomBase
             ? pool?.fromDisplayPrice(newLimitValue)
             : pool?.fromDisplayPrice(1 / newLimitValue);
 
@@ -5683,7 +5397,7 @@ export default function Chart(props: propsIF) {
                 });
             } else {
                 tickDispPrice.then((tp) => {
-                    const displayPriceWithDenom = denomInBase ? tp : 1 / tp;
+                    const displayPriceWithDenom = isDenomBase ? tp : 1 / tp;
                     newLimitValue = displayPriceWithDenom;
                     setLimit(() => {
                         return newLimitValue;
@@ -5698,7 +5412,7 @@ export default function Chart(props: propsIF) {
             const lineSeries = createLinearLineSeries(
                 scaleData?.xScale,
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             setLineSeries(() => lineSeries);
@@ -5706,7 +5420,7 @@ export default function Chart(props: propsIF) {
             const annotationLineSeries = createAnnotationLineSeries(
                 scaleData?.xScale.copy(),
                 scaleData?.yScale,
-                denomInBase,
+                isDenomBase,
             );
 
             annotationLineSeries.decorate(
@@ -5717,7 +5431,7 @@ export default function Chart(props: propsIF) {
 
             setAnnotationLineSeries(() => annotationLineSeries);
         }
-    }, [scaleData, denomInBase]);
+    }, [scaleData, isDenomBase]);
 
     const rangeCanvasProps = {
         scaleData: scaleData,
@@ -5789,7 +5503,7 @@ export default function Chart(props: propsIF) {
         dragRange,
         dragLimit,
         setCrosshairActive,
-        denomInBase,
+        isDenomBase,
         setYaxisWidth,
         yAxisWidth,
         simpleRangeWidth,
@@ -5806,7 +5520,7 @@ export default function Chart(props: propsIF) {
             if (isHoveredOrderHistory && hoveredOrderHistory) {
                 setHoveredOrderTooltipPlacement(() => {
                     const top = scaleData.yScale(
-                        denomInBase
+                        isDenomBase
                             ? hoveredOrderHistory.swapInvPriceDecimalCorrected
                             : hoveredOrderHistory.swapPriceDecimalCorrected,
                     );
@@ -5867,7 +5581,7 @@ export default function Chart(props: propsIF) {
             if (isSelectedOrderHistory && selectedOrderHistory) {
                 setSelectedOrderTooltipPlacement(() => {
                     const top = scaleData.yScale(
-                        denomInBase
+                        isDenomBase
                             ? selectedOrderHistory.swapInvPriceDecimalCorrected
                             : selectedOrderHistory.swapPriceDecimalCorrected,
                     );
@@ -5890,7 +5604,7 @@ export default function Chart(props: propsIF) {
         diffHashSig(hoveredOrderHistory),
         diffHashSigScaleData(scaleData),
         reset,
-        denomInBase,
+        isDenomBase,
     ]);
 
     useEffect(() => {
@@ -5925,7 +5639,6 @@ export default function Chart(props: propsIF) {
                 gridColumnEnd: 1,
                 gridRowStart: 1,
                 gridRowEnd: 3,
-                visibility: isCompletedFetchData ? 'hidden' : 'visible',
                 paddingLeft: toolbarWidth + 'px',
             }}
         >
@@ -5942,7 +5655,7 @@ export default function Chart(props: propsIF) {
                     <CandleChart
                         chartItemStates={props.chartItemStates}
                         data={unparsedCandleData}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         lastCandleData={lastCandleData}
                         period={period}
                         scaleData={scaleData}
@@ -5952,7 +5665,6 @@ export default function Chart(props: propsIF) {
                         prevlastCandleTime={prevlastCandleTime}
                         setPrevLastCandleTime={setPrevLastCandleTime}
                         isDiscontinuityScaleEnabled={isCondensedModeEnabled}
-                        visibleDateForCandle={visibleDateForCandle}
                         chartThemeColors={chartThemeColors}
                         showFutaCandles={showFutaCandles}
                     />
@@ -5960,7 +5672,7 @@ export default function Chart(props: propsIF) {
                     <CandleLineChart
                         period={period}
                         scaleData={scaleData}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         data={visibleCandleData}
                         showLatest={showLatest}
                         lastCandleData={lastCandleData}
@@ -5974,10 +5686,9 @@ export default function Chart(props: propsIF) {
                 <VolumeBarCanvas
                     scaleData={scaleData}
                     volumeData={unparsedCandleData}
-                    denomInBase={denomInBase}
+                    denomInBase={isDenomBase}
                     selectedDate={selectedDate}
                     showVolume={showVolume}
-                    visibleDateForCandle={visibleDateForCandle}
                     chartThemeColors={chartThemeColors}
                 />
 
@@ -6009,7 +5720,7 @@ export default function Chart(props: propsIF) {
                     scaleData && (
                         <OrderHistoryCanvas
                             scaleData={scaleData}
-                            denomInBase={denomInBase}
+                            denomInBase={isDenomBase}
                             showSwap={showSwap}
                             showLiquidity={showLiquidity}
                             showHistorical={showHistorical}
@@ -6050,7 +5761,7 @@ export default function Chart(props: propsIF) {
                         activeDrawingType={activeDrawingType}
                         setActiveDrawingType={setActiveDrawingType}
                         setSelectedDrawnShape={setSelectedDrawnShape}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         addDrawActionStack={addDrawActionStack}
                         period={period}
                         crosshairData={crosshairData}
@@ -6082,7 +5793,7 @@ export default function Chart(props: propsIF) {
                         setCrossHairDataFunc={setCrossHairDataFunc}
                         setSelectedDrawnShape={setSelectedDrawnShape}
                         setIsUpdatingShape={setIsUpdatingShape}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         addDrawActionStack={addDrawActionStack}
                         snapForCandle={snapForCandle}
                         visibleCandleData={visibleCandleData}
@@ -6246,7 +5957,7 @@ export default function Chart(props: propsIF) {
                     <OrderHistoryTooltip
                         hoveredOrderHistory={hoveredOrderHistory}
                         isHoveredOrderHistory={isHoveredOrderHistory}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         hoveredOrderTooltipPlacement={
                             hoveredOrderTooltipPlacement
                         }
@@ -6267,7 +5978,7 @@ export default function Chart(props: propsIF) {
                     <OrderHistoryTooltip
                         hoveredOrderHistory={selectedOrderHistory}
                         isHoveredOrderHistory={isSelectedOrderHistory}
-                        denomInBase={denomInBase}
+                        denomInBase={isDenomBase}
                         hoveredOrderTooltipPlacement={
                             selectedOrderTooltipPlacement
                         }
