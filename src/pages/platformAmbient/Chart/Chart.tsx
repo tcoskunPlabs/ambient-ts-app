@@ -1324,7 +1324,7 @@ export default function Chart(props: propsIF) {
     }, [diffHashSig(showFutaCandles)]);
 
     useEffect(() => {
-        IS_LOCAL_ENV && console.debug('timeframe changed');
+        IS_LOCAL_ENV && console.debug('timeframe changed',period);
         showLatestActive();
     }, [period]);
 
@@ -2345,6 +2345,9 @@ export default function Chart(props: propsIF) {
             mobileView,
             liqMode,
         );
+
+        console.log({isCondensedModeEnabled});
+        
         if (isCondensedModeEnabled) {
             const data = parsedData.filter((i) => i.isShowData);
             resetForCondensedMode(

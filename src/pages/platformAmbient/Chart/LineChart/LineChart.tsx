@@ -64,10 +64,12 @@ export default function CandleLineChart(props: LineChartIF) {
                 ).length;
                 setPrevLastCandleTime(lastCandleData.time - period);
 
-                scaleData?.xScale.domain([
-                    domainLeft + count * period * 1000,
-                    domainRight + count * period * 1000,
-                ]);
+                console.log({domainLeft,domainRight,count});
+                
+                // scaleData?.xScale.domain([
+                //     domainLeft + count * period * 1000,
+                //     domainRight + count * period * 1000,
+                // ]);
             }
         }
     }, [tradeTableState, lastCandleData?.time]);

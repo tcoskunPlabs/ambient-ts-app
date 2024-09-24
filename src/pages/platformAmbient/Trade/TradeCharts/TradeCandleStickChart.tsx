@@ -14,6 +14,7 @@ import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import {
     diffHashSigLiquidity,
+    diffHashSigScaleData,
     getPinnedPriceValuesFromTicks,
 } from '../../../../ambient-utils/dataLayer';
 import { CandleContext } from '../../../../contexts/CandleContext';
@@ -722,6 +723,9 @@ function TradeCandleStickChart(props: propsIF) {
             const xScaleTime = d3.scaleTime();
             const yScale = d3.scaleLinear();
             xScale = d3fc.scaleDiscontinuous(d3.scaleLinear());
+
+            console.log('xExtent(boundaryCandles)',new Date(xExtent(boundaryCandles)[0]));
+            
             xScale.domain(xExtent(boundaryCandles));
 
             resetXScale(xScale);
@@ -832,6 +836,9 @@ function TradeCandleStickChart(props: propsIF) {
                         isChangeScaleChart &&
                         !isShowLatestCandle
                     ) {
+
+                        console.log('new Date(domainLeft)',new Date(domainLeft),new Date(domainRight));
+                        
                         scaleData.xScale.domain([domainLeft, domainRight]);
 
                         let nCandles = Math.floor(
@@ -955,6 +962,18 @@ function TradeCandleStickChart(props: propsIF) {
         }
     }, [period]);
 
+    useEffect(() => {
+      
+        if (scaleData) {
+
+            const minDom = scaleData?.xScale.domain()[0];
+            const maxDom = scaleData?.xScale.domain()[1];
+            console.log('min,max Dom000 : ',new Date(minDom),new Date(maxDom));
+        }
+
+    }, [diffHashSigScaleData(scaleData,'x')])
+    
+
     const isLoading = useMemo(
         () =>
             scaleData === undefined ||
@@ -1009,6 +1028,8 @@ function TradeCandleStickChart(props: propsIF) {
                 );
 
                 if (scaleData !== undefined && checkDomainData.length === 0) {
+                    console.log('sen missin');
+                    
                     setIsCondensedModeEnabled(false);
                     setFetchCountForEnoughData(1);
                     return;
@@ -1048,12 +1069,16 @@ function TradeCandleStickChart(props: propsIF) {
                         return dom;
                     });
                 } else {
+                    console.log('candles.length',candles.length);
+                    
                     if (
                         fetchCountForEnoughData ===
                             maxRequestCountForCondensed &&
                         period !== 86400 &&
                         candles.length < 100
                     ) {
+                        console.log('bu mu');
+                        
                         setIsCondensedModeEnabled(false);
                     } else {
                         if (!candleDomains.isResetRequest) {

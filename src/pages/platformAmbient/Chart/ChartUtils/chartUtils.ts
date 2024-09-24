@@ -522,6 +522,7 @@ export const getInitialDisplayCandleCount = (
     mobileView: boolean,
     liqMode: string,
 ) => {
+    
     const liqBuffer = liqMode === 'none' ? 5 : initialDisplayBufferCandleCount;
     if (mobileView) {
         return {
@@ -673,6 +674,8 @@ export function resetForNoncondensedMode(
     const maxDom = nowDate + candleCount.bufferCandle * period * 1000;
     const minDom = nowDate - candleCount.candle * period * 1000;
 
+    console.log('minDom,maxDom resetForNoncondensedMode',new Date(minDom),new Date(maxDom));
+    
     xScale.domain([minDom, maxDom]);
 }
 
@@ -702,8 +705,13 @@ export function resetForCondensedMode(
                 (candleCount.candle - filteredLenght) * period * 1000;
         }
     } else {
+        console.log('minmaxxx ********************');
+        
         resetForNoncondensedMode(xScale, period, candleCount);
     }
 
+
+    console.log('min,max Dom : ',new Date(minDom),new Date(maxDom));
+    
     xScale.domain([minDom, maxDom]);
 }

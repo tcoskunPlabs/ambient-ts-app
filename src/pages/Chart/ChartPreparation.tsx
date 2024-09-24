@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import {
     CandleDataChart,
@@ -139,9 +140,17 @@ export default function ChartPreparation(props: propsIF) {
                 ]),
             );
 
-            scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
+            
+            const minDom = scaleData?.xScale.domain()[0];
+            const maxDom = scaleData?.xScale.domain()[1];
+            console.log('min,max Dom2222 : ',new Date(minDom),new Date(maxDom));            
+            // scaleData.xScale.discontinuityProvider(newDiscontinuityProvider);
+            const minDom1 = scaleData?.xScale.domain()[0];
+            const maxDom1 = scaleData?.xScale.domain()[1];
+            console.log('min,max Dom3333 : ',new Date(minDom1),new Date(maxDom1));
 
             setTimeGaps(localTimeGaps);
+
 
             return localTimeGaps;
         }
@@ -149,6 +158,7 @@ export default function ChartPreparation(props: propsIF) {
 
     useEffect(() => {
         const domain = scaleData.xScale.domain();
+        console.log('min,max Dom111 : ',new Date(domain[0]),new Date(domain[1]));
 
         const showData = candleDataWithTransactionInfo.filter(
             (i) => i.isShowData,
@@ -212,10 +222,17 @@ export default function ChartPreparation(props: propsIF) {
                                     showData[needCandleCount].time * 1000 -
                                     diffCandleCount * period * 1000;
 
+                                    console.log({newCandleTime},new Date(newCandleTime));
+                                    
+
                                 scaleData.xScale.domain([
                                     newCandleTime,
                                     domain[1],
                                 ]);
+
+                                const minDom = scaleData?.xScale.domain()[0];
+                                const maxDom = scaleData?.xScale.domain()[1];
+                                console.log('min,max Dom444 : ',new Date(minDom),new Date(maxDom));    
                             }
                         }
 
@@ -263,6 +280,11 @@ export default function ChartPreparation(props: propsIF) {
                                     scaleData.xScale.domain()[0],
                                     newCandleTimeMax,
                                 ]);
+
+
+                                const minDom = scaleData?.xScale.domain()[0];
+                                const maxDom = scaleData?.xScale.domain()[1];
+                                console.log('min,max Dom555 : ',new Date(minDom),new Date(maxDom));         
                             }
                         }
                     }
