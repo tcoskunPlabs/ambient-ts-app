@@ -241,6 +241,9 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     },
                 );
 
+                console.log(liqMaxActiveLiq,filteredAllData);
+                
+
                 return liqMaxActiveLiq;
             }
         }
@@ -591,7 +594,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 })
                 .on('measure', (event: CustomEvent) => {
                     liquidityScale.range([
-                        event.detail.width,
+                        event.detail.width ,
                         mobileView ? 0 : (event.detail.width / 10) * 6,
                     ]);
 
@@ -946,13 +949,15 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 liqMode === 'depth'
                     ? liquidityDepthScale(liqMaxActiveLiq)
                     : liquidityScale(liqMaxActiveLiq);
-
+            
+            console.log('liqMaxActiveLiq',liquidityScale.domain(),liqMaxActiveLiq,liquidityScale(liqMaxActiveLiq));
+            
             setLiqMaxActiveLiq(liqMaxActiveLiqX * 8);
         }
     }, [
         liqMaxActiveLiq,
-        liquidityDepthScale?.domain(),
-        liquidityScale?.domain(),
+        diffHashSig(liquidityDepthScale?.domain()),
+        diffHashSig(liquidityScale?.domain()),
         liqMode,
     ]);
 

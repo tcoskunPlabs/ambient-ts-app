@@ -185,6 +185,8 @@ export default function TradeMobile(props: propsIF) {
     const handleTabChange = (newTab: string): void => {
         const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
         const newIndex = tabs.findIndex((tab) => tab.id === newTab);
+        console.log({newTab});
+        
         setDirection(newIndex > currentIndex ? 1 : -1);
         setActiveTab(newTab);
     };
@@ -197,28 +199,33 @@ export default function TradeMobile(props: propsIF) {
         touchEndX.current = e.touches[0].clientX;
     };
 
-    const handleTouchEnd = (): void => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    const handleTouchEnd = (event:any): void => {
+        // console.log({event},touchStartX.current ,touchEndX.current);
+        
         if (!touchStartX.current || !touchEndX.current) return;
 
         const distance = touchStartX.current - touchEndX.current;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
+        const isLeftSwipe = distance > 5;
+        const isRightSwipe = distance < -5;
 
         const currentIndex = tabs.findIndex((tab) => tab.id === activeTab);
-
+        // const canvases = document.querySelectorAll('canvas');
+        // console.log('[...canvases].includes(event.target)',[...canvases].includes(event.target));
+        
         if (isLeftSwipe && currentIndex < tabs.length - 1) {
-            handleTabChange(tabs[currentIndex + 1].id);
+            console.log('right');
+            
+            // handleTabChange(tabs[currentIndex + 1].id);
         } else if (isRightSwipe && currentIndex > 0) {
-            handleTabChange(tabs[currentIndex - 1].id);
+            console.log('left');
+            // handleTabChange(tabs[currentIndex - 1].id);
         }
 
         touchStartX.current = null;
         touchEndX.current = null;
     };
 
-
-    
-    
     
     const mobileTabs = (
         <div className={styles.mobile_tabs_container}>

@@ -1510,6 +1510,8 @@ export default function Chart(props: propsIF) {
                                 ? liqMaxActiveLiq - eventPointX > 10
                                 : true;
 
+                            console.log({isHoverLiquidity},liqMaxActiveLiq);
+                            
                             const limitLineValue = limit;
 
                             const minRangeValue = ranges.filter(
