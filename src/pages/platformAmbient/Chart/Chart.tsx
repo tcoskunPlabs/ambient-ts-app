@@ -1506,6 +1506,8 @@ export default function Chart(props: propsIF) {
                             const mousePlacement =
                                 scaleData?.yScale.invert(eventPoint);
 
+                            console.log({liqMaxActiveLiq,eventPointX});
+                            
                             const isHoverLiquidity = liqMaxActiveLiq
                                 ? liqMaxActiveLiq - eventPointX > 10
                                 : true;

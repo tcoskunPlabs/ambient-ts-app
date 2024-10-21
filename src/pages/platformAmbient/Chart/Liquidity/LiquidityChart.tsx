@@ -593,9 +593,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     }
                 })
                 .on('measure', (event: CustomEvent) => {
+                    console.log(' event.detail.width',event.detail.width);
+                    
                     liquidityScale.range([
                         event.detail.width ,
-                        mobileView ? 0 : (event.detail.width / 10) * 6,
+                        mobileView ?   0: (event.detail.width / 10) * 6,
                     ]);
 
                     liquidityDepthScale.range([
@@ -951,8 +953,16 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     : liquidityScale(liqMaxActiveLiq);
             
             console.log('liqMaxActiveLiq',liquidityScale.domain(),liqMaxActiveLiq,liquidityScale(liqMaxActiveLiq));
-            
-            setLiqMaxActiveLiq(liqMaxActiveLiqX * 8);
+            const canvasDiv = d3.select(d3CanvasLiq.current);
+
+            const canvas = canvasDiv
+                .select('canvas')
+                .node() as HTMLCanvasElement;
+
+
+            const canvasWidth =  canvas.getBoundingClientRect().width;
+
+            setLiqMaxActiveLiq(mobileView ? (liqMaxActiveLiqX === 1 ? canvasWidth : liqMaxActiveLiqX) : liqMaxActiveLiqX * 8);
         }
     }, [
         liqMaxActiveLiq,
