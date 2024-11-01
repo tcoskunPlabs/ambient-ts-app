@@ -51,7 +51,6 @@ interface liquidityPropsIF {
     isActiveDragOrZoom: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mainCanvasBoundingClientRect: any;
-    setLiqMaxActiveLiq: React.Dispatch<number | undefined>;
     chartThemeColors: ChartThemeIF | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     render: any;
@@ -128,14 +127,13 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         mouseLeaveEvent,
         isActiveDragOrZoom,
         mainCanvasBoundingClientRect,
-        setLiqMaxActiveLiq,
         chartThemeColors,
         render,
         colorChangeTrigger,
         setColorChangeTrigger,
     } = props;
 
-    const mobileView = useMediaQuery('(max-width: 1200px)');
+    const mobileView = useMediaQuery('(min-width: 800px)');
 
     const currentPoolPriceTick =
         poolPriceNonDisplay === undefined
@@ -241,9 +239,6 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     },
                 );
 
-                console.log(liqMaxActiveLiq,filteredAllData);
-                
-
                 return liqMaxActiveLiq;
             }
         }
@@ -271,7 +266,6 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
     // Auto scale fo liq Curve
     useEffect(() => {
-        // if (mobileView) {
             const mergedLiqData = liqDataBid.concat(liqDataAsk);
 
             try {
@@ -300,12 +294,10 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             } catch (error) {
                 console.error({ error });
             }
-        // }
     }, [
         diffHashSigScaleData(scaleData, 'y'),
         liquidityData?.depthLiqAskData,
         liquidityData?.depthLiqBidData,
-        mobileView,
     ]);
 
     useEffect(() => {
@@ -592,15 +584,15 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                         drawDepthLines(canvas);
                     }
                 })
-                .on('measure', (event: CustomEvent) => {
+                .on('measure', (event: CustomEvent) => {                    
                     liquidityScale.range([
-                        event.detail.width ,
-                        mobileView ? 0 : (event.detail.width / 10) * 6,
+                        event.detail.width,
+                        0,
                     ]);
 
                     liquidityDepthScale.range([
                         event.detail.width,
-                        event.detail.width * 0.5,
+                        0,
                     ]);
                     scaleData?.yScale.range([event.detail.height, 0]);
 
@@ -944,24 +936,6 @@ export default function LiquidityChart(props: liquidityPropsIF) {
     ]);
 
     useEffect(() => {
-        if (liquidityDepthScale && liquidityScale && liqMaxActiveLiq) {
-            const liqMaxActiveLiqX =
-                liqMode === 'depth'
-                    ? liquidityDepthScale(liqMaxActiveLiq)
-                    : liquidityScale(liqMaxActiveLiq);
-            
-            console.log('liqMaxActiveLiq',liquidityScale.domain(),liqMaxActiveLiq,liquidityScale(liqMaxActiveLiq));
-            
-            setLiqMaxActiveLiq(liqMaxActiveLiqX * 8);
-        }
-    }, [
-        liqMaxActiveLiq,
-        diffHashSig(liquidityDepthScale?.domain()),
-        diffHashSig(liquidityScale?.domain()),
-        liqMode,
-    ]);
-
-    useEffect(() => {
         if (chartMousemoveEvent && liqMode !== 'none') {
             liqDataHover(chartMousemoveEvent);
             renderCanvasArray([d3CanvasLiqHover]);
@@ -1016,16 +990,16 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 ref={d3CanvasLiqHover}
                 style={{
                     position: 'relative',
-                    width: '20%',
-                    marginLeft: '80%',
+                    width: mobileView ? '10%' : '20%',
+                    marginLeft:  mobileView ? '90%' : '80%',
                 }}
             ></d3fc-canvas>
             <d3fc-canvas
                 ref={d3CanvasLiq}
                 style={{
                     position: 'relative',
-                    width: '20%',
-                    marginLeft: '80%',
+                    width: mobileView ? '10%' : '20%',
+                    marginLeft:  mobileView ? '90%' : '80%',
                 }}
             ></d3fc-canvas>
         </>

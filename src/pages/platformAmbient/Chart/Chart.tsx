@@ -263,9 +263,6 @@ export default function Chart(props: propsIF) {
     const { pool, poolPriceDisplay: poolPriceWithoutDenom } =
         useContext(PoolContext);
 
-    const [liqMaxActiveLiq, setLiqMaxActiveLiq] = useState<
-        number | undefined
-    >();
     const { advancedMode, setIsLinesSwitched } = useContext(RangeContext);
     const [isUpdatingShape, setIsUpdatingShape] = useState(false);
 
@@ -350,7 +347,7 @@ export default function Chart(props: propsIF) {
     const poolPriceDisplay = poolPriceWithoutDenom
         ? isDenomBase && poolPriceWithoutDenom
             ? 1 / poolPriceWithoutDenom
-            : poolPriceWithoutDenom ?? 0
+            : (poolPriceWithoutDenom ?? 0)
         : 0;
 
     const d3Container = useRef<HTMLDivElement | null>(null);
@@ -456,7 +453,7 @@ export default function Chart(props: propsIF) {
     const [closeOutherChartSetting, setCloseOutherChartSetting] =
         useState<boolean>(false);
 
-    const mobileView = useMediaQuery('(max-width: 1200px)');
+    const mobileView = useMediaQuery('(min-width: 800px)');
 
     const drawSettings = useDrawSettings(chartThemeColors);
     const getDollarPrice = useDollarPrice();
@@ -1506,12 +1503,13 @@ export default function Chart(props: propsIF) {
                             const mousePlacement =
                                 scaleData?.yScale.invert(eventPoint);
 
-                            const isHoverLiquidity = liqMaxActiveLiq
-                                ? liqMaxActiveLiq - eventPointX > 10
-                                : true;
+                            const maxLiqPixelPercent = mobileView
+                                ? 9 / 10
+                                : 4 / 5;
+                            const isHoverLiquidity =
+                                rectCanvas.width * maxLiqPixelPercent >=
+                                eventPointX;
 
-                            console.log({isHoverLiquidity},liqMaxActiveLiq);
-                            
                             const limitLineValue = limit;
 
                             const minRangeValue = ranges.filter(
@@ -1572,7 +1570,6 @@ export default function Chart(props: propsIF) {
         period,
         advancedMode,
         isChartZoom,
-        liqMaxActiveLiq,
         zoomBase,
         contextmenu,
     ]);
@@ -2357,7 +2354,6 @@ export default function Chart(props: propsIF) {
         isTokenABase,
         chainData.gridSize,
         rescale,
-        liqMaxActiveLiq,
     ]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2367,10 +2363,15 @@ export default function Chart(props: propsIF) {
         if (event.type.includes('touch') && checkMainCanvas) {
             const eventPointX = event.targetTouches[0].clientX - leftPositin;
 
-            const isHoverLiquidity = liqMaxActiveLiq
-                ? liqMaxActiveLiq - eventPointX > 10
-                : true;
+            const canvas = d3
+                .select(d3CanvasMain.current)
+                .select('canvas')
+                .node() as HTMLCanvasElement;
 
+            const rectCanvas = canvas.getBoundingClientRect();
+            const maxLiqPixelPercent = mobileView ? 9 / 10 : 4 / 5;
+            const isHoverLiquidity =
+                rectCanvas.width * maxLiqPixelPercent >= eventPointX;
             return isHoverLiquidity;
         }
 
@@ -2531,7 +2532,6 @@ export default function Chart(props: propsIF) {
         isTokenABase,
         chainData.gridSize,
         rescale,
-        liqMaxActiveLiq,
     ]);
 
     useEffect(() => {
@@ -6056,7 +6056,6 @@ export default function Chart(props: propsIF) {
                         mainCanvasBoundingClientRect={
                             mainCanvasBoundingClientRect
                         }
-                        setLiqMaxActiveLiq={setLiqMaxActiveLiq}
                         chartThemeColors={chartThemeColors}
                         render={render}
                         colorChangeTrigger={colorChangeTrigger}
