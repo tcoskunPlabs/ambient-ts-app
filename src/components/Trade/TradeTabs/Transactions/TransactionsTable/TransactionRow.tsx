@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { memo, useContext, useEffect, useRef } from 'react';
 import { useProcessTransaction } from '../../../../../utils/hooks/useProcessTransaction';
 import TransactionsMenu from '../../../../Global/Tabs/TableMenu/TableMenuComponents/TransactionsMenu';
@@ -205,6 +206,40 @@ function TransactionRow(props: propsIF) {
         priceDisplay,
     } = txRowConstants(txRowConstantsProps);
 
+
+
+    useEffect(() => {
+        console.log({ IDWithTooltip,
+        usdValueWithTooltip,
+        walletWithTooltip,
+        tokenPair,
+        baseQtyDisplayWithTooltip,
+        quoteQtyDisplayWithTooltip,
+        TxTimeWithTooltip,
+        sideDisplay,
+        baseQuoteQtyDisplayColumn,
+        typeDisplay,
+        typeAndSideColumn,
+        ambientPriceDisplay,
+        lowAndHighPriceDisplay,
+        priceDisplay});
+        
+    }, [ IDWithTooltip
+     /*    usdValueWithTooltip,
+        walletWithTooltip,
+        tokenPair,
+        baseQtyDisplayWithTooltip,
+        quoteQtyDisplayWithTooltip,
+        TxTimeWithTooltip,
+        sideDisplay,
+        baseQuoteQtyDisplayColumn,
+        typeDisplay,
+        typeAndSideColumn,
+        ambientPriceDisplay,
+        lowAndHighPriceDisplay,
+        priceDisplay */,])
+    
+
     return (
         <>
             <TransactionRowStyled
@@ -220,26 +255,26 @@ function TransactionRow(props: propsIF) {
             >
                 {tableView !== 'small' && TxTimeWithTooltip}
                 {isAccountView && tokenPair}
-                {(tableView === 'large' ||
+                {/* {(tableView === 'large' ||
                     (tableView === 'medium' && isAccountView)) && (
                     <div>{IDWithTooltip}</div>
-                )}
-                {!isAccountView && walletWithTooltip}
-                {tableView !== 'small' &&
+                )} */}
+                {/* {!isAccountView && walletWithTooltip} */}
+                {/* {tableView !== 'small' &&
                     (tx.entityType === 'liqchange'
                         ? tx.positionType === 'ambient'
                             ? ambientPriceDisplay
                             : lowAndHighPriceDisplay
-                        : priceDisplay)}
-                {tableView === 'large' && sideDisplay}
+                        : priceDisplay)} */}
+                {/* {tableView === 'large' && sideDisplay}
                 {tableView === 'large' && typeDisplay}
                 {tableView !== 'large' && typeAndSideColumn}
                 {usdValueWithTooltip}
                 {tableView === 'large' && baseQtyDisplayWithTooltip}
                 {tableView === 'large' && quoteQtyDisplayWithTooltip}
-                {tableView === 'medium' && baseQuoteQtyDisplayColumn}
+                {tableView === 'medium' && baseQuoteQtyDisplayColumn} */}
 
-                <div data-label='menu'>
+                {/* <div data-label='menu'>
                     <TransactionsMenu
                         tx={tx}
                         isAccountView={props.isAccountView}
@@ -248,7 +283,7 @@ function TransactionRow(props: propsIF) {
                         isOwnerActiveAccount={isOwnerActiveAccount}
                         positionHash={positionHash}
                     />
-                </div>
+                </div> */}
             </TransactionRowStyled>
         </>
     );

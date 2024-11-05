@@ -198,15 +198,31 @@ function Transactions(props: propsIF) {
         ],
     );
 
-    const unindexedNonFailedTransactions = transactionsByType.filter(
-        (tx) =>
-            unindexedNonFailedSessionTransactionHashes.includes(tx.txHash) &&
-            tx.txDetails?.baseAddress.toLowerCase() ===
-                baseToken.address.toLowerCase() &&
-            tx.txDetails?.quoteAddress.toLowerCase() ===
-                quoteToken.address.toLowerCase() &&
-            tx.txDetails?.poolIdx === poolIndex,
-    );
+    const unindexedNonFailedTransactions = useMemo(() => {
+        return transactionsByType.filter(
+            (tx) =>
+                unindexedNonFailedSessionTransactionHashes.includes(tx.txHash) &&
+                tx.txDetails?.baseAddress.toLowerCase() ===
+                    baseToken.address.toLowerCase() &&
+                tx.txDetails?.quoteAddress.toLowerCase() ===
+                    quoteToken.address.toLowerCase() &&
+                tx.txDetails?.poolIdx === poolIndex
+        );
+    }, [
+        transactionsByType,
+        unindexedNonFailedSessionTransactionHashes,
+        baseToken.address,
+        quoteToken.address,
+        poolIndex,
+    ]);
+
+
+    useEffect(() => {
+        console.log('5555555555555',{unindexedNonFailedSessionTransactionHashes});
+        
+    }, [unindexedNonFailedSessionTransactionHashes])
+    
+    
 
     // TODO: Use these as media width constants
     const isSmallScreen: boolean = useMediaQuery('(max-width: 768px)');
@@ -463,6 +479,21 @@ function Transactions(props: propsIF) {
         !txDataToDisplay.length &&
         unindexedNonFailedTransactions.length === 0;
 
+
+    useEffect(() => {
+      
+        console.log('unindexedNonFailedTransactions',{unindexedNonFailedTransactions});
+        
+    }, [unindexedNonFailedTransactions])
+    
+
+    useEffect(() => {
+      
+        console.log('sortedTransactions*******************0',{sortedTransactions});
+        
+    }, [sortedTransactions])
+    
+
     const transactionDataOrNull: JSX.Element = shouldDisplayNoTableData ? (
         <NoTableData
             setSelectedDate={setSelectedDate}
@@ -617,6 +648,15 @@ function Transactions(props: propsIF) {
                 </div>
             </div>
         );
+
+
+
+    useEffect(() => {
+      
+        console.log({transactionDataOrNull});
+        
+    }, [transactionDataOrNull])
+    
 
     return (
         <FlexContainer flexDirection='column' style={{ height: '100%' }}>

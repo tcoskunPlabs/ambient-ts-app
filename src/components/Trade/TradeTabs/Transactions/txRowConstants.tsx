@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { FiCopy, FiExternalLink } from 'react-icons/fi';
 import useMediaQuery from '../../../../utils/hooks/useMediaQuery';
 
@@ -10,7 +11,7 @@ import moment from 'moment';
 import { IS_LOCAL_ENV } from '../../../../ambient-utils/constants';
 import { formSlugForPairParams } from '../../../../App/functions/urlSlugs';
 import TokenIcon from '../../../Global/TokenIcon/TokenIcon';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { TokenContext } from '../../../../contexts/TokenContext';
 import { FlexContainer, Text } from '../../../../styled/Common';
 import { RowItem } from '../../../../styled/Components/TransactionTable';
@@ -136,39 +137,56 @@ export const txRowConstants = (props: propsIF) => {
 
     const IDWithTooltip = (
         <RowItem hover data-label='id' role='button' tabIndex={0}>
-            <TextOnlyTooltip
+            {/* <TextOnlyTooltip
                 interactive
-                title={
-                    <FlexContainer
-                        justifyContent='center'
-                        background='dark3'
-                        color='text1'
-                        padding='12px'
-                        gap={8}
-                        rounded
-                        font='roboto'
-                        role='button'
-                        style={{ width: '440px', cursor: 'pointer' }}
-                        onClick={(event: React.MouseEvent<HTMLDivElement>) =>
-                            event.stopPropagation()
-                        }
-                    >
-                        <span onClick={handleOpenExplorer}>{tx.txHash}</span>
-                        <FiCopy size={'12px'} onClick={handleCopyTxHash} />{' '}
-                        <FiExternalLink
-                            size={'12px'}
-                            onClick={handleOpenExplorer}
-                        />
-                    </FlexContainer>
-                }
+                title={'444'}
+                // title={
+                //     <FlexContainer
+                //         justifyContent='center'
+                //         background='dark3'
+                //         color='text1'
+                //         padding='12px'
+                //         gap={8}
+                //         rounded
+                //         font='roboto'
+                //         role='button'
+                //         style={{ width: '440px', cursor: 'pointer' }}
+                //         onClick={(event: React.MouseEvent<HTMLDivElement>) =>
+                //             event.stopPropagation()
+                //         }
+                //     >
+                //         <span onClick={handleOpenExplorer}>{tx.txHash}</span>
+                //         <FiCopy size={'12px'} onClick={handleCopyTxHash} />{' '}
+                //         <FiExternalLink
+                //             size={'12px'}
+                //             onClick={handleOpenExplorer}
+                //         />
+                //     </FlexContainer>
+                // }
                 placement={'right'}
                 enterDelay={750}
                 leaveDelay={0}
             >
                 <Text font='roboto'>{txHashTruncated}</Text>
-            </TextOnlyTooltip>
+            </TextOnlyTooltip> */}
         </RowItem>
     );
+
+
+
+    useEffect(() => {
+      
+        console.log('txHashTruncated,',{IDWithTooltip});
+        
+    }, [IDWithTooltip])
+
+
+    useEffect(() => {
+      
+        console.log({txHashTruncated});
+        
+    }, [txHashTruncated])
+    
 
     const formattedUsdPrice = displayPriceNumInUsd
         ? getFormattedNumber({ value: displayPriceNumInUsd, prefix: '$' })

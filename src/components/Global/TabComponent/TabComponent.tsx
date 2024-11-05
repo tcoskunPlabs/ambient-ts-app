@@ -152,27 +152,34 @@ export default function TabComponent(props: TabPropsIF) {
         }
     }, [data, outsideControl]);
 
+
+    useEffect(() => {
+        console.log({data});
+        
+    }, [data])
+    
+
     function handleOutside2() {
         if (!outsideControl) {
             return;
         } else {
-            if (outsideControl) {
-                if (data[selectedOutsideTab]) {
-                    setSelectedTab(data[selectedOutsideTab]);
+            // if (outsideControl) {
+            //     if (data[selectedOutsideTab]) {
+            //         setSelectedTab(data[selectedOutsideTab]);
 
-                    if (
-                        ['transactions', 'limits', 'liquidity'].includes(
-                            data[selectedOutsideTab].label.toLowerCase(),
-                        )
-                    ) {
-                        setActiveTradeTab(
-                            data[selectedOutsideTab].label.toLowerCase(),
-                        );
-                    }
-                } else {
-                    setSelectedTab(data[0]);
-                }
-            }
+            //         if (
+            //             ['transactions', 'limits', 'liquidity'].includes(
+            //                 data[selectedOutsideTab].label.toLowerCase(),
+            //             )
+            //         ) {
+            //             setActiveTradeTab(
+            //                 data[selectedOutsideTab].label.toLowerCase(),
+            //             );
+            //         }
+            //     } else {
+            //         setSelectedTab(data[0]);
+            //     }
+            // }
         }
     }
 

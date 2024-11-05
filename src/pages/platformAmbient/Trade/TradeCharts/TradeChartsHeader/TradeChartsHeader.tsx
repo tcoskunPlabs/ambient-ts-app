@@ -75,6 +75,9 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
 
     const copyChartToClipboard = async () => {
         if (canvasRef.current && chartCanvasRef.current) {
+
+            console.log('start First');
+            
             const blob = isChartFullScreen
                 ? await printDomToImage(chartCanvasRef.current, '')
                 : await printDomToImage(
@@ -84,6 +87,8 @@ export const TradeChartsHeader = (props: { tradePage?: boolean }) => {
                       // height, trade charts header + chart height
                       (smallView ? 100 : 50) + chartHeights.current,
                   );
+
+                console.log('end First');
             if (blob) {
                 copy(blob);
                 openSnackbar('Chart image copied to clipboard', 'info');

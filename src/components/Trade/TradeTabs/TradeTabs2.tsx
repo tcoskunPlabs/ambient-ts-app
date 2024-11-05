@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
     useEffect,
     Dispatch,
@@ -5,6 +6,7 @@ import {
     useRef,
     useContext,
     memo,
+    useMemo,
 } from 'react';
 
 import Transactions from './Transactions/Transactions';
@@ -81,74 +83,128 @@ function TradeTabs2(props: propsIF) {
     // -------------------------------DATA-----------------------------------------
 
     // Props for <Ranges/> React Element
-    const rangesProps = {
-        notOnTradeRoute: false,
-        isAccountView: false,
-    };
+    const rangesProps = useMemo(() => {
+        return {
+            notOnTradeRoute: false,
+            isAccountView: false,
+        };
+    }, []);
 
     // Props for <Transactions/> React Element
-    const transactionsProps = {
-        filter,
-        changeState,
-        setSelectedDate,
-        isAccountView: false,
-    };
+    const transactionsProps = useMemo(() => {
+        return {
+            filter,
+            changeState,
+            setSelectedDate,
+            isAccountView: false,
+        };
+    }, [filter, changeState, setSelectedDate]); 
+    
 
     // Props for <Orders/> React Element
-    const ordersProps = {
-        changeState,
-        isAccountView: false,
-    };
+    const ordersProps = useMemo(() => {
+        return {
+            changeState,
+            isAccountView: false,
+        };
+    }, [changeState]);
 
-    const positionsOnlyToggleProps = {
-        setTransactionFilter,
-        changeState,
-        setSelectedDate,
-    };
+    const positionsOnlyToggleProps = useMemo(() => {
+        return {
+            setTransactionFilter,
+            changeState,
+            setSelectedDate,
+        };
+    }, [setTransactionFilter, changeState, setSelectedDate]);
 
     // data for headings of each of the three tabs
-    const tradeTabData = isCandleSelected
-        ? [
-              {
-                  label: 'Transactions',
-                  content: <Transactions {...transactionsProps} />,
-                  icon: recentTransactionsImage,
-                  showRightSideOption: true,
-              },
-          ]
-        : [
-              {
-                  label: 'Transactions',
-                  content: <Transactions {...transactionsProps} />,
-                  icon: recentTransactionsImage,
-                  showRightSideOption: true,
-              },
-              {
-                  label: 'Limits',
-                  content: <Orders {...ordersProps} />,
-                  icon: openOrdersImage,
-                  showRightSideOption: true,
-              },
-              {
-                  label: 'Liquidity',
-                  content: <Ranges {...rangesProps} />,
-                  icon: rangePositionsImage,
-                  showRightSideOption: true,
-              },
-              {
-                  label: 'Leaderboard',
-                  content: <Leaderboard />,
-                  icon: leaderboard,
-                  showRightSideOption: false,
-              },
-              {
-                  label: 'Info',
-                  content: <TableInfo />,
-                  icon: infoSvg,
-                  showRightSideOption: false,
-                  //   onClick: handleChartHeightOnInfo,
-              },
-          ];
+    const tradeTabData = useMemo(() => {
+        if (isCandleSelected) {
+            return [
+                {
+                    label: 'Transactions',
+                    content: <Transactions {...transactionsProps} />,
+                    icon: recentTransactionsImage,
+                    showRightSideOption: true,
+                },
+            ];
+        } else {
+            return [
+                {
+                    label: 'Transactions',
+                    content: <Transactions {...transactionsProps} />,
+                    icon: recentTransactionsImage,
+                    showRightSideOption: true,
+                },
+                // {
+                //     label: 'Limits',
+                //     content: <Orders {...ordersProps} />,
+                //     icon: openOrdersImage,
+                //     showRightSideOption: true,
+                // },
+                // {
+                //     label: 'Liquidity',
+                //     content: <Ranges {...rangesProps} />,
+                //     icon: rangePositionsImage,
+                //     showRightSideOption: true,
+                // },
+                // {
+                //     label: 'Leaderboard',
+                //     content: <Leaderboard />,
+                //     icon: leaderboard,
+                //     showRightSideOption: false,
+                // },
+                // {
+                //     label: 'Info',
+                //     content: <TableInfo />,
+                //     icon: infoSvg,
+                //     showRightSideOption: false,
+                // },
+            ];
+        }
+    }, [isCandleSelected, transactionsProps, ordersProps, rangesProps]);
+
+
+    useEffect(() => {
+      
+        console.log('tradeTabData',{transactionsProps});
+        
+        
+    }, [transactionsProps])
+
+
+    useEffect(() => {
+      
+    
+        console.log('tradeTabData',{isCandleSelected});
+
+       
+    }, [isCandleSelected])
+    
+
+   
+
+    useEffect(() => {
+        console.log('tradeTabData',{filter,
+            changeState,
+            setSelectedDate,
+            isAccountView: false,});
+
+    
+    }, [filter,
+        changeState,
+        setSelectedDate,
+        ])
+    
+
+
+    useEffect(() => {
+      
+        console.log('tradeTabData useEffectts');
+        
+        
+    }, [])
+    
     const tradeTabDataMobile = isCandleSelected
         ? [
               {
@@ -246,7 +302,7 @@ function TradeTabs2(props: propsIF) {
             {clearButtonOrNull}
         </FlexContainer>
     );
-
+    
     return (
         <FlexContainer
             ref={tabComponentRef}

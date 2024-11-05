@@ -1,4 +1,5 @@
-import { memo, useContext, useEffect, useState } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { memo, useContext, useEffect, useMemo, useState } from 'react';
 import {
     LimitModalAction,
     LimitOrderIF,
@@ -14,9 +15,10 @@ import RangeActionModal from '../../RangeActionModal/RangeActionModal';
 import LimitActionModal from '../../LimitActionModal/LimitActionModal';
 import TransactionRow from './Transactions/TransactionsTable/TransactionRow';
 import TransactionDetailsModal from '../../Global/DetailModals/TransactionDetails/TransactionDetailsModal';
-import { getMoneynessRank } from '../../../ambient-utils/dataLayer';
+import { diffHashSig, getMoneynessRank } from '../../../ambient-utils/dataLayer';
 import OrderRow from './Orders/OrderTable/OrderRow';
 import OrderDetailsModal from '../../Global/DetailModals/OrderDetails/OrderDetailsModal/OrderDetailsModal';
+import { FlexContainer } from '../../../styled/Common';
 
 interface propsIF {
     type: 'Transaction' | 'Order' | 'Range';
@@ -112,6 +114,15 @@ function TableRows({
     // Determine active/selected record
     const [activeRecord, setActiveRecord] = useState<ActiveRecord>(undefined);
 
+
+    const localData = useMemo(() =>  data, [diffHashSig(data)])
+
+    useEffect(() => {
+      
+        console.log('tableRows useEffecttt');
+        
+    }, [])
+    
     useEffect(() => {
         if (isDetailsModalOpen || isActionModalOpen) {
             if (type === 'Range') {
@@ -191,17 +202,18 @@ function TableRows({
     const transactionContent = () => {
         return (
             <>
-                {(data as TransactionIF[]).map((tx, idx) => (
+                {(localData as TransactionIF[]).map((tx, idx) => (                    
                     <TransactionRow
                         key={idx}
                         idForDOM={`tx_row_${idx}`}
                         tx={tx}
-                        tableView={tableView}
-                        isAccountView={isAccountView}
-                        openDetailsModal={() => openTransactionModal(tx.txId)}
+                        tableView={'large'}
+                        isAccountView={false}
+                        openDetailsModal={() => console.log('55555')
+                        }
                     />
                 ))}
-                {isDetailsModalOpen && activeRecord && (
+                {/* {isDetailsModalOpen && activeRecord && (
                     <TransactionDetailsModal
                         tx={activeRecord as TransactionIF}
                         isBaseTokenMoneynessGreaterOrEqual={getBaseTokenMoneynessGreaterOrEqual(
@@ -210,10 +222,36 @@ function TableRows({
                         isAccountView={isAccountView}
                         onClose={closeTransactionModal}
                     />
-                )}
+                )} */}
             </>
         );
     };
+
+
+    useEffect(() => {
+        console.log({transactionContent});
+        
+    }, [transactionContent])
+    
+
+    useEffect(() => {
+      
+    console.log('******************0',{localData});
+    
+    }, [localData])
+    
+
+    useEffect(() => {
+      
+        console.log('Transaction getBaseTokenMoneynessGreaterOrEqual***********************',getBaseTokenMoneynessGreaterOrEqual);
+        
+    }, [getBaseTokenMoneynessGreaterOrEqual])
+    
+    useEffect(() => {
+      
+        console.log('openTransactionModal*************************',openTransactionModal);
+        
+    }, [openTransactionModal])
 
     const limitContent = () => {
         return (

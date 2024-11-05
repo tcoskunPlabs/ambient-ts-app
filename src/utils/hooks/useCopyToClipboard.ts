@@ -16,11 +16,19 @@ function useCopyToClipboard(): [CopiedValue, CopyFn] {
         // Try to save to clipboard then save it in the state if it worked
         try {
             if (typeof data === 'string') {
+                
                 await navigator.clipboard.writeText(data);
             } else if (data instanceof Blob) {
+                console.log('start');
+
+                // const element = document.querySelector('#transaction-table');                
+                // element.style.visibility = 'hidden';
                 await navigator.clipboard.write([
                     new ClipboardItem({ 'image/png': data }),
                 ]);
+
+                console.log('end');
+
             } else {
                 throw new Error('Unsupported copy data type');
             }

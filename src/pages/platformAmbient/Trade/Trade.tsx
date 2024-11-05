@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // START: Import React and Dongles
 import { Outlet } from 'react-router-dom';
@@ -341,7 +342,7 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
                                 </ChartContainer>
                             )}
                         </ResizableContainer>
-                        {!isChartFullScreen && !isFuta && (
+                        {/* {!isChartFullScreen && !isFuta && (
                             <FlexContainer
                                 ref={tradeTableRef}
                                 style={{ flex: 1 }}
@@ -349,7 +350,7 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
                             >
                                 <TradeTabs2 {...tradeTabsProps} />
                             </FlexContainer>
-                        )}
+                        )} */}
                     </FlexContainer>
                 </FlexContainer>
                 <FlexContainer
