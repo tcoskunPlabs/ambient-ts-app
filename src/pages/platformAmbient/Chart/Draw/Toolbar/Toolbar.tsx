@@ -33,10 +33,6 @@ import DeleteSvg from '../../../../../assets/images/icons/draw/DeleteSvg';
 import { BrandContext } from '../../../../../contexts/BrandContext';
 import { AppStateContext } from '../../../../../contexts/AppStateContext';
 
-/* interface ToolbarProps {
-  
-} */
-
 interface IconList {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     icon: any;
@@ -326,8 +322,7 @@ function ChartToolbar() {
             isMobile={mobileView}
             isSmallScreen={smallScreen}
             isFullScreen={isFullScreen}
-            marginTopValue={chartContainerOptions.top - 57}
-            height={chartContainerOptions.height - xAxisHeightPixel}
+            // height={chartContainerOptions.height - xAxisHeightPixel}
             id='toolbar_container'
             ref={toolbarRef}
             backgroundColor={

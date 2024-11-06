@@ -6,18 +6,15 @@ const ToolbarContainer = styled.div<{
     isFullScreen: boolean;
     isSmallScreen: boolean;
     backgroundColor: string;
-    marginTopValue: number;
-    height: number;
+    // height: number;
 }>`
-    ${({ isActive, marginTopValue, isMobile, isFullScreen }) => {
-        const marginTop = isMobile ? '' : `${marginTopValue}px`;
+    ${({ isActive, isFullScreen }) => {
         const marginLeft = isFullScreen ? 16 : 0;
         if (isActive) {
             return `
             width: 38px;
             padding-left:5px;
             margin-left:${marginLeft}px;
-            margin-top: ${marginTop};
             &::-webkit-scrollbar {
                 width: 0;
                 display: none;
@@ -32,21 +29,17 @@ const ToolbarContainer = styled.div<{
             return `
             width: 9px;
             margin-left:${marginLeft + 5}px;
-
             margin-left:5px;
-            margin-top: ${marginTop};
             `;
         }
     }}
 
     background: ${({ backgroundColor }) => backgroundColor};
-    height: ${({ height }) => height + 'px'};
     left: 0;
     display: flex;
-    position: absolute;
-
-    grid-column: 2;
-    grid-row: 3;
+    grid-row-start: 1;
+    grid-row-end: 4;
+    grid-column:1;
     transition: all 600ms ease-in-out;
     z-index: 6;
     scrollbar-color: auto;
@@ -64,7 +57,6 @@ const ScrollableDiv = styled.div<{ height: string; isHover: boolean }>`
     `;
         }
     }}
-    height: ${({ height }) => height};
 
     &::-webkit-scrollbar {
         width: 0;

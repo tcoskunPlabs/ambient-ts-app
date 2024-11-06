@@ -127,6 +127,7 @@ import ChartSettings from '../../Chart/ChartSettings/ChartSettings';
 import { BrandContext } from '../../../contexts/BrandContext';
 import CandleLineChart from './LineChart/LineChart';
 import { LiquidityDataLocal } from '../Trade/TradeCharts/TradeCharts';
+// import ChartToolbar from './Draw/Toolbar/Toolbar';
 
 interface propsIF {
     isTokenABase: boolean;
@@ -6037,7 +6038,6 @@ export default function Chart(props: propsIF) {
                 gridRowStart: 1,
                 gridRowEnd: 3,
                 visibility: isCompletedFetchData ? 'hidden' : 'visible',
-                paddingLeft: toolbarWidth + 'px',
             }}
         >
             <d3fc-group
@@ -6045,10 +6045,13 @@ export default function Chart(props: propsIF) {
                 auto-resize
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr auto',
+                    gridTemplateColumns: toolbarWidth+'px 1fr auto',
                     gridTemplateRows: '1fr 0.1fr auto auto auto',
                 }}
             >
+
+                {/* <ChartToolbar /> */}
+
                 {platformName !== 'futa' || showFutaCandles ? (
                     <CandleChart
                         chartItemStates={props.chartItemStates}
@@ -6277,7 +6280,7 @@ export default function Chart(props: propsIF) {
                     </>
                 )}
 
-                <div className='xAxis'>
+                <div className='xAxis' style={{gridColumnStart:2}}>
                     <hr />
 
                     <XAxisCanvas

@@ -38,7 +38,6 @@ import {
 import { Direction } from 're-resizable/lib/resizer';
 import { TradeDataContext } from '../../../contexts/TradeDataContext';
 import { PoolContext } from '../../../contexts/PoolContext';
-import ChartToolbar from '../Chart/Draw/Toolbar/Toolbar';
 import PointsBanner from './PointsBanner';
 
 import { AppStateContext } from '../../../contexts/AppStateContext';
@@ -70,7 +69,6 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
         setChartHeight,
         canvasRef,
         tradeTableState,
-        isChartHeightMinimum,
         isCandleDataNull,
         setIsChartHeightMinimum,
     } = useContext(ChartContext);
@@ -368,7 +366,6 @@ function Trade(props: { futaActiveTab?: string | undefined }) {
                         }}
                     />
                 </FlexContainer>
-                {!isChartHeightMinimum && <ChartToolbar />}
             </MainSection>
         </>
     );

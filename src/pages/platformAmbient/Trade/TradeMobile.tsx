@@ -25,7 +25,6 @@ import { FlexContainer } from '../../../styled/Common';
 import TimeFrame from './TradeCharts/TradeChartsComponents/TimeFrame';
 import { LuSettings } from 'react-icons/lu';
 import TableInfo from '../../../components/Trade/TableInfo/TableInfo';
-import ChartToolbar from '../Chart/Draw/Toolbar/Toolbar';
 import TradeCharts from './TradeCharts/TradeCharts';
 import TradeTabs2 from '../../../components/Trade/TradeTabs/TradeTabs2';
 import { useSimulatedIsPoolInitialized } from '../../../App/hooks/useSimulatedIsPoolInitialized';
@@ -203,7 +202,6 @@ export default function TradeMobile(props: propsIF) {
             label: 'Chart',
             data: (
                 <>
-                    {!isChartHeightMinimum && <ChartToolbar />}
                     {isPoolInitialized && !isCandleDataNull && (
                         <TradeCharts {...tradeChartsProps} />
                     )}
