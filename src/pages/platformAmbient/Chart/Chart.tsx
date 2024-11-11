@@ -596,64 +596,6 @@ export default function Chart(props: propsIF) {
             period,
         ).sort((a, b) => b.time - a.time);
 
-        if (
-            poolPriceWithoutDenom &&
-            data &&
-            data.length > 0 &&
-            isShowLatestCandle
-        ) {
-            const closePriceWithDenom =
-                data[0].invPriceCloseExclMEVDecimalCorrected;
-            const poolPriceWithDenom = 1 / poolPriceWithoutDenom;
-
-            const fakeDataOpenWithDenom = closePriceWithDenom;
-
-            const fakeDataCloseWithDenom = poolPriceWithDenom;
-
-            const closePrice = data[0].priceCloseExclMEVDecimalCorrected;
-
-            const fakeDataOpen = closePrice;
-
-            const fakeDataClose = poolPriceWithoutDenom;
-
-            const placeHolderCandle = {
-                time: data[0].time + period,
-                invMinPriceExclMEVDecimalCorrected: fakeDataOpenWithDenom,
-                maxPriceExclMEVDecimalCorrected: fakeDataOpen,
-                invMaxPriceExclMEVDecimalCorrected: fakeDataCloseWithDenom,
-                minPriceExclMEVDecimalCorrected: fakeDataClose,
-                invPriceOpenExclMEVDecimalCorrected: fakeDataOpenWithDenom,
-                priceOpenExclMEVDecimalCorrected: fakeDataOpen,
-                invPriceCloseExclMEVDecimalCorrected: fakeDataCloseWithDenom,
-                priceCloseExclMEVDecimalCorrected: fakeDataClose,
-                period: period,
-                tvlData: {
-                    time: data[0].time,
-                    tvl: data[0].tvlData.tvl,
-                },
-                volumeUSD: 0,
-                averageLiquidityFee: data[0].averageLiquidityFee,
-                minPriceDecimalCorrected: fakeDataClose,
-                maxPriceDecimalCorrected: 0,
-                priceOpenDecimalCorrected: fakeDataOpen,
-                priceCloseDecimalCorrected: fakeDataClose,
-                invMinPriceDecimalCorrected: fakeDataCloseWithDenom,
-                invMaxPriceDecimalCorrected: 0,
-                invPriceOpenDecimalCorrected: fakeDataOpenWithDenom,
-                invPriceCloseDecimalCorrected: fakeDataCloseWithDenom,
-                isCrocData: false,
-                isFakeData: true,
-                isShowData: true,
-            };
-
-            // added candle for pool price market price match
-            if (!data[0].isFakeData) {
-                data.unshift(placeHolderCandle);
-            } else {
-                data[0] = placeHolderCandle;
-            }
-        }
-
         calculateDiscontinuityRange(data);
         return calculateVisibleCandles(
             scaleData,
@@ -664,7 +606,6 @@ export default function Chart(props: propsIF) {
     }, [
         diffHashSigChart(unparsedData.candles),
         poolPriceWithoutDenom,
-        isShowLatestCandle,
         isCondensedModeEnabled,
         diffHashSigScaleData(scaleData, 'x'),
     ]);
@@ -6065,6 +6006,7 @@ export default function Chart(props: propsIF) {
                         visibleDateForCandle={visibleDateForCandle}
                         chartThemeColors={chartThemeColors}
                         showFutaCandles={showFutaCandles}
+                        isShowLatestCandle={isShowLatestCandle}
                     />
                 ) : (
                     <CandleLineChart

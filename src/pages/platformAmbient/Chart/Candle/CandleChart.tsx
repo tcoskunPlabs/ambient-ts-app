@@ -10,12 +10,14 @@ import { IS_LOCAL_ENV } from '../../../../ambient-utils/constants';
 import {
     diffHashSigScaleData,
     diffHashSig,
+    diffHashSigChart,
 } from '../../../../ambient-utils/dataLayer';
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
 import { CandleDataIF } from '../../../../ambient-utils/types';
 import { ChartContext, ChartThemeIF } from '../../../../contexts/ChartContext';
 import { defaultCandleBandwith } from '../ChartUtils/chartConstants';
+import { PoolContext } from '../../../../contexts';
 
 interface candlePropsIF {
     chartItemStates: chartItemStates;
@@ -33,6 +35,7 @@ interface candlePropsIF {
     visibleDateForCandle: number;
     chartThemeColors: ChartThemeIF | undefined;
     showFutaCandles: boolean;
+    isShowLatestCandle: boolean;
 }
 
 export default function CandleChart(props: candlePropsIF) {
@@ -51,7 +54,10 @@ export default function CandleChart(props: candlePropsIF) {
         visibleDateForCandle,
         chartThemeColors,
         showFutaCandles,
+        isShowLatestCandle,
     } = props;
+
+    const { poolPriceDisplay } = useContext(PoolContext);
     const d3CanvasCandle = useRef<HTMLCanvasElement | null>(null);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,6 +67,56 @@ export default function CandleChart(props: candlePropsIF) {
     const crocCandleBorderLightColor = '#CDC1FF';
     const crocCandleDarkColor = '#24243e';
     const crocCandleBorderDarkColor = '#7371FC';
+
+    const fakeCandleData = useMemo(() => {
+        if (poolPriceDisplay && data && data.length > 0 && isShowLatestCandle) {
+            const closePriceWithDenom =
+                data[0].invPriceCloseExclMEVDecimalCorrected;
+            const poolPriceWithDenom = 1 / poolPriceDisplay;
+
+            const fakeDataOpenWithDenom = closePriceWithDenom;
+
+            const fakeDataCloseWithDenom = poolPriceWithDenom;
+
+            const closePrice = data[0].priceCloseExclMEVDecimalCorrected;
+
+            const fakeDataOpen = closePrice;
+
+            const fakeDataClose = poolPriceDisplay;
+
+            const placeHolderCandle = {
+                time: data[0].time + period,
+                invMinPriceExclMEVDecimalCorrected: fakeDataOpenWithDenom,
+                maxPriceExclMEVDecimalCorrected: fakeDataOpen,
+                invMaxPriceExclMEVDecimalCorrected: fakeDataCloseWithDenom,
+                minPriceExclMEVDecimalCorrected: fakeDataClose,
+                invPriceOpenExclMEVDecimalCorrected: fakeDataOpenWithDenom,
+                priceOpenExclMEVDecimalCorrected: fakeDataOpen,
+                invPriceCloseExclMEVDecimalCorrected: fakeDataCloseWithDenom,
+                priceCloseExclMEVDecimalCorrected: fakeDataClose,
+                period: period,
+                tvlData: {
+                    time: data[0].time,
+                    tvl: data[0].tvlData.tvl,
+                },
+                volumeUSD: 0,
+                averageLiquidityFee: data[0].averageLiquidityFee,
+                minPriceDecimalCorrected: fakeDataClose,
+                maxPriceDecimalCorrected: 0,
+                priceOpenDecimalCorrected: fakeDataOpen,
+                priceCloseDecimalCorrected: fakeDataClose,
+                invMinPriceDecimalCorrected: fakeDataCloseWithDenom,
+                invMaxPriceDecimalCorrected: 0,
+                invPriceOpenDecimalCorrected: fakeDataOpenWithDenom,
+                invPriceCloseDecimalCorrected: fakeDataCloseWithDenom,
+                isCrocData: false,
+                isFakeData: true,
+                isShowData: true,
+            };
+
+            return placeHolderCandle;
+        }
+    }, [diffHashSigChart(data), poolPriceDisplay, isShowLatestCandle]);
 
     const bandwidth = useMemo(() => {
         if (candlestick) {
@@ -102,6 +158,7 @@ export default function CandleChart(props: candlePropsIF) {
         diffHashSigScaleData(scaleData),
         diffHashSig(chartThemeColors),
         diffHashSig(showFutaCandles),
+        fakeCandleData,
     ]);
 
     useEffect(() => {
@@ -209,7 +266,7 @@ export default function CandleChart(props: candlePropsIF) {
                 .on('draw', () => {
                     setCanvasResolution(canvas);
                     if (data !== undefined) {
-                        candlestick(data);
+                        candlestick([...data, fakeCandleData]);
                     }
                 })
                 .on('measure', (event: CustomEvent) => {
@@ -220,7 +277,7 @@ export default function CandleChart(props: candlePropsIF) {
 
             renderCanvasArray([d3CanvasCandle]);
         }
-    }, [data, candlestick]);
+    }, [data, candlestick, fakeCandleData]);
 
     useEffect(() => {
         setBandwidth(bandwidth);
