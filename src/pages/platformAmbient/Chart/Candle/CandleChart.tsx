@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useContext, useEffect, useRef, useState, useMemo } from 'react';
 import {
     CandleDataChart,
@@ -5,6 +6,7 @@ import {
     renderCanvasArray,
     scaleData,
     setCanvasResolution,
+    timeGapsValue,
 } from '../ChartUtils/chartUtils';
 import { IS_LOCAL_ENV } from '../../../../ambient-utils/constants';
 import {
@@ -33,6 +35,7 @@ interface candlePropsIF {
     visibleDateForCandle: number;
     chartThemeColors: ChartThemeIF | undefined;
     showFutaCandles: boolean;
+    timeGaps: timeGapsValue[];
 }
 
 export default function CandleChart(props: candlePropsIF) {
@@ -51,6 +54,7 @@ export default function CandleChart(props: candlePropsIF) {
         visibleDateForCandle,
         chartThemeColors,
         showFutaCandles,
+        timeGaps,
     } = props;
     const d3CanvasCandle = useRef<HTMLCanvasElement | null>(null);
 
@@ -80,21 +84,74 @@ export default function CandleChart(props: candlePropsIF) {
                 const domainLeft = scaleData?.xScale.domain()[0];
                 const domainRight = scaleData?.xScale.domain()[1];
 
-                const count = data.filter(
+                const updateCount = data.filter(
                     (i: CandleDataChart) =>
-                        i.time <= lastCandleData.time - period &&
-                        i.time >= prevlastCandleTime,
+                        i.time*1000 <= lastCandleData.time *1000 &&
+                        i.time*1000 > domainLeft,
                 ).length;
 
-                setPrevLastCandleTime(lastCandleData.time - period);
 
-                scaleData?.xScale.domain([
-                    domainLeft + count * period * 1000,
-                    domainRight + count * period * 1000,
-                ]);
+                const oldCount = data.filter(
+                    (i: CandleDataChart) =>
+                        i.time*1000 <= prevlastCandleTime *1000 &&
+                        i.time*1000 > domainLeft,
+                ).length;
+
+
+                console.log('updateCount-oldCount',updateCount,oldCount,updateCount-oldCount);
+                
+
+                // setPrevLastCandleTime(lastCandleData.time);
+
+                // console.log(
+                //     { count },
+                //     new Date(lastCandleData.time * 1000),
+                //     new Date(prevlastCandleTime * 1000),
+                // );
+                // console.log(
+                //     'countt',
+                //     new Date(domainLeft + count * period * 1000),
+                //     new Date(domainRight + count * period * 1000),
+                // );
+                // let newLeft = domainLeft + count * period * 1000;
+                // let newRight = domainRight + count * period * 1000;
+                // const findGap = timeGaps.find(
+                //     (i) => i.range[0] <= newLeft && i.range[1] >= newLeft,
+                // );
+
+
+
+                // if (findGap) {
+                //     console.log(
+                //         'findGappp',
+                //         new Date(newLeft),
+                //         new Date(findGap?.range[1]),
+                //     );
+                //     const diff =  data.filter(
+                //         (i: CandleDataChart) =>
+                //             i.time*1000 <= findGap.range[1] &&
+                //             i.time*1000 > domainLeft,
+                //     ).length;
+
+                //     console.log({diff});
+                    
+                //     newLeft = findGap.range[1];
+                //     newRight = newRight + diff * period * 1000;
+                // }
+
+                // console.log({newLeft,newRight}, new Date(newLeft),new Date(newRight));
+                
+                // scaleData?.xScale.domain([newLeft, domainRight]);
             }
         }
     }, [tradeTableState, lastCandleData?.time, showFutaCandles]);
+
+
+    useEffect(() => {
+       console.log('x dommmm',new Date(scaleData?.xScale.domain()[0]),new Date(scaleData?.xScale.domain()[1]));
+       
+    }, [diffHashSigScaleData(scaleData,'x')])
+    
 
     useEffect(() => {
         renderCanvasArray([d3CanvasCandle]);

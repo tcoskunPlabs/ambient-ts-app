@@ -20,7 +20,6 @@ export function filterCandleWithTransaction(
             let isShowData = false;
 
             if (
-                //                index === 0 ||
                 index ===
                 array.length - 1
             ) {

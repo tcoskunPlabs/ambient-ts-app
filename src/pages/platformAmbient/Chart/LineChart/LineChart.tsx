@@ -62,7 +62,7 @@ export default function CandleLineChart(props: LineChartIF) {
                         i.time <= lastCandleData.time - period &&
                         i.time >= prevlastCandleTime,
                 ).length;
-                setPrevLastCandleTime(lastCandleData.time - period);
+                setPrevLastCandleTime(lastCandleData.time);
 
                 scaleData?.xScale.domain([
                     domainLeft + count * period * 1000,

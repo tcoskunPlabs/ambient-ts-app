@@ -81,7 +81,7 @@ function TradeCandleStickChart(props: propsIF) {
 
     const {
         activeNetwork: { gridSize, poolIndex, chainId },
-        isUserIdle20min,
+        // isUserIdle20min,
     } = useContext(AppStateContext);
     const {
         candleData,
@@ -1115,13 +1115,13 @@ function TradeCandleStickChart(props: propsIF) {
         </div>
     );
 
-    const skeletonChart = (
-        <div
-            id='skeleton'
-            className='skeleton'
-            style={{ width: '100%', height: '100%' }}
-        />
-    );
+    // const skeletonChart = (
+    //     <div
+    //         id='skeleton'
+    //         className='skeleton'
+    //         style={{ width: '100%', height: '100%' }}
+    //     />
+    // );
     return (
         <>
             <div
@@ -1162,7 +1162,7 @@ function TradeCandleStickChart(props: propsIF) {
                         </div>
                     </>
                 )}
-                {isOpenChart && !isUserIdle20min && (
+                {isOpenChart /* && !isUserIdle20min  */&& (
                     <>
                         <ChartTooltip
                             currentData={currentData}
@@ -1211,9 +1211,9 @@ function TradeCandleStickChart(props: propsIF) {
                     </>
                 )}
 
-                {!(!isOpenChart || isCompletedFetchData) &&
+                {/* {!(!isOpenChart || isCompletedFetchData) &&
                     isUserIdle20min &&
-                    skeletonChart}
+                    skeletonChart} */}
             </div>
         </>
     );

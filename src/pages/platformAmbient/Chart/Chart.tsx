@@ -1000,6 +1000,7 @@ export default function Chart(props: propsIF) {
         diffHashSig(timeGaps),
         diffHashSigScaleData(scaleData, 'x'),
         isCondensedModeEnabled,
+        prevlastCandleTime,
     ]);
 
     useEffect(() => {
@@ -2644,7 +2645,7 @@ export default function Chart(props: propsIF) {
             const diff =
                 (localInitialDisplayCandleCount * period * 1000) / liqBuffer;
 
-            setPrevLastCandleTime(snappedTime / 1000);
+            setPrevLastCandleTime(lastCandleData.time);
 
             if (scaleData) {
                 scaleData.xScale.discontinuityProvider(
@@ -6065,6 +6066,7 @@ export default function Chart(props: propsIF) {
                         visibleDateForCandle={visibleDateForCandle}
                         chartThemeColors={chartThemeColors}
                         showFutaCandles={showFutaCandles}
+                        timeGaps={timeGaps}
                     />
                 ) : (
                     <CandleLineChart
