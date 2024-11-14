@@ -260,7 +260,6 @@ export default function Chart(props: propsIF) {
     } = useContext(CandleContext);
     const { pool, poolPriceDisplay: poolPriceWithoutDenom } =
         useContext(PoolContext);
-    const { advancedMode, setIsLinesSwitched } = useContext(RangeContext);
 
     const { advancedMode, setIsLinesSwitched } = useContext(RangeContext);
     const [isUpdatingShape, setIsUpdatingShape] = useState(false);
