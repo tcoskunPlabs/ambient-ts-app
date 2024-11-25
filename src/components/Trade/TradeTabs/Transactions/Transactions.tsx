@@ -229,25 +229,40 @@ function Transactions(props: propsIF) {
 
     useEffect(() => {
         // clear fetched transactions when switching pools
-        if (!isAccountView && showAllData && transactionsByPool.changes.length === 0) {
+        if (
+            !isAccountView &&
+            showAllData &&
+            transactionsByPool.changes.length === 0
+        ) {
+            setFetchedTransactions({
+                dataReceived: true,
+                changes: [],
+            });
+        } else if (
+            !isAccountView &&
+            !showAllData &&
+            userAddressRef.current &&
+            userTransactionsByPool.changes.length === 0
+        ) {
+            setFetchedTransactions({
+                dataReceived: true,
+                changes: [],
+            });
+        } else if (
+            isAccountView &&
+            (accountAddressRef.current || userAddressRef.current) &&
+            activeAccountTransactionData?.length === 0
+        ) {
             setFetchedTransactions({
                 dataReceived: true,
                 changes: [],
             });
         }
-        else if(!isAccountView && !showAllData && userAddressRef.current && userTransactionsByPool.changes.length === 0){
-            setFetchedTransactions({
-                dataReceived: true,
-                changes: [],
-            });
-        }
-        else if(isAccountView && (accountAddressRef.current || userAddressRef.current) && activeAccountTransactionData?.length === 0){
-            setFetchedTransactions({
-                dataReceived: true,
-                changes: [],
-            });
-        }
-    }, [transactionsByPool.changes, userTransactionsByPool.changes, activeAccountTransactionData]);
+    }, [
+        transactionsByPool.changes,
+        userTransactionsByPool.changes,
+        activeAccountTransactionData,
+    ]);
 
     // const [showInfiniteScroll, setShowInfiniteScroll] = useState<boolean>(!isAccountView && showAllData);
     // useEffect(() => {
@@ -256,27 +271,9 @@ function Transactions(props: propsIF) {
 
     // ----------------------------------------------------------------------------------------------
 
-    const transactionData = useMemo<TransactionIF[]>(
-        () =>
-            isAccountView
-                ? // ? activeAccountTransactionData || []
-                  fetchedTransactions.changes
-                : !showAllData
-                  ? fetchedTransactions.changes
-                  : fetchedTransactions.changes,
-        [
-            activeAccountTransactionData,
-            userTransactionsByPool,
-            transactionsByPool,
-            showAllData,
-            fetchedTransactions,
-            isAccountView,
-        ],
-    );
-
     const txDataToDisplay: TransactionIF[] = isCandleSelected
         ? candleTransactionData
-        : transactionData;
+        : fetchedTransactions.changes;
 
     const [
         sortBy,
@@ -373,18 +370,13 @@ function Transactions(props: propsIF) {
     }, [pagesVisible[0]]);
 
     const oldestTxTime = useMemo(() => {
-        const dataToFilter = transactionData;
+        const dataToFilter = fetchedTransactions.changes;
         return dataToFilter.length > 0
             ? dataToFilter.reduce((min, transaction) => {
                   return transaction.txTime < min ? transaction.txTime : min;
               }, dataToFilter[0].txTime)
             : 0;
-    }, [
-        transactionData,
-        fetchedTransactions.changes,
-        showAllData,
-        isAccountView,
-    ]);
+    }, [fetchedTransactions.changes, showAllData, isAccountView]);
 
     const oldestTxTimeRef = useRef<number>(oldestTxTime);
     oldestTxTimeRef.current = oldestTxTime;
@@ -443,17 +435,21 @@ function Transactions(props: propsIF) {
 
     // TODO: Use these as media width constants
     const isSmallScreen: boolean = useMediaQuery('(max-width: 768px)');
+    const isTabletScreen = useMediaQuery(
+        '(min-width: 768px) and (max-width: 1200px)',
+    );
     const isLargeScreen: boolean = useMediaQuery('(min-width: 1600px)');
 
-    const tableView: 'small' | 'medium' | 'large' = isSmallScreen
-        ? 'small'
-        : (!isSmallScreen && !isLargeScreen) ||
-            (isAccountView &&
-                isLargeScreen &&
-                isSidebarOpen &&
-                fullLayoutActive === false)
-          ? 'medium'
-          : 'large';
+    const tableView: 'small' | 'medium' | 'large' =
+        isSmallScreen || isTabletScreen
+            ? 'small'
+            : (!isSmallScreen && !isLargeScreen) ||
+                (isAccountView &&
+                    isLargeScreen &&
+                    isSidebarOpen &&
+                    fullLayoutActive === false)
+              ? 'medium'
+              : 'large';
 
     const getCandleData = (): Promise<void> | undefined =>
         crocEnv &&

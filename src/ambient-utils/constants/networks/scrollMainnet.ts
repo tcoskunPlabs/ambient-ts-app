@@ -1,52 +1,51 @@
+import { bigIntToFloat } from '@crocswap-libs/sdk';
 import { lookupChain } from '@crocswap-libs/sdk/dist/context';
+import { Provider } from 'ethers';
+import { NetworkIF } from '../../types/NetworkIF';
 import {
     scrollETH,
-    scrollScroll,
+    scrollSCR,
     scrollUSDC,
     scrollUSDT,
-    scrollWBTC,
-    scrollWrsETH,
+    scrollWstETH,
 } from '../defaultTokens';
-import { NetworkIF } from '../../types/NetworkIF';
-import { TopPool } from './TopPool';
-import { Provider } from 'ethers';
 import { GCGO_SCROLL_URL } from '../gcgo';
-import { bigIntToFloat } from '@crocswap-libs/sdk';
+import { TopPool } from './TopPool';
 
 export const SCROLL_RPC_URL =
     import.meta.env.VITE_SCROLL_RPC_URL !== undefined
         ? import.meta.env.VITE_SCROLL_RPC_URL
         : 'https://rpc.scroll.io';
 
-const chain = {
-    chainId: 534352,
+const chainIdHex = '0x82750';
+const chainSpecFromSDK = lookupChain(chainIdHex);
+
+const chainSpecForWalletConnector = {
+    chainId: Number(chainIdHex),
     name: 'Scroll',
     currency: 'ETH',
-    rpcUrl: 'https://rpc.scroll.io/',
-    explorerUrl: 'https://scrollscan.com',
+    rpcUrl: SCROLL_RPC_URL,
+    explorerUrl: 'https://scrollscan.com/',
 };
 
-const chainSpec = lookupChain('0x82750');
-
 export const scrollMainnet: NetworkIF = {
-    chainId: '0x82750',
+    chainId: chainIdHex,
+    chainSpec: chainSpecFromSDK,
     graphCacheUrl: GCGO_SCROLL_URL,
     evmRpcUrl: SCROLL_RPC_URL,
-    chain: chain,
-    marketData: '0x82750',
+    chainSpecForWalletConnector: chainSpecForWalletConnector,
     defaultPair: [scrollETH, scrollUSDC],
-    poolIndex: chainSpec.poolIndex,
-    gridSize: chainSpec.gridSize,
-    blockExplorer: chainSpec.blockExplorer,
-    displayName: chainSpec.displayName,
+    poolIndex: chainSpecFromSDK.poolIndex,
+    gridSize: chainSpecFromSDK.gridSize,
+    blockExplorer: chainSpecForWalletConnector.explorerUrl,
+    displayName: chainSpecForWalletConnector.name,
     topPools: [
-        new TopPool(scrollETH, scrollUSDC, chainSpec.poolIndex),
-        new TopPool(scrollScroll, scrollETH, chainSpec.poolIndex),
-        new TopPool(scrollETH, scrollWBTC, chainSpec.poolIndex),
-        new TopPool(scrollETH, scrollUSDT, chainSpec.poolIndex),
-        new TopPool(scrollWrsETH, scrollETH, chainSpec.poolIndex),
+        new TopPool(scrollETH, scrollUSDC, chainSpecFromSDK.poolIndex),
+        new TopPool(scrollSCR, scrollETH, chainSpecFromSDK.poolIndex),
+        new TopPool(scrollWstETH, scrollETH, chainSpecFromSDK.poolIndex),
+        new TopPool(scrollETH, scrollUSDT, chainSpecFromSDK.poolIndex),
+        new TopPool(scrollUSDC, scrollUSDT, chainSpecFromSDK.poolIndex),
     ],
-    chainSpec: chainSpec,
     getGasPriceInGwei: async (provider?: Provider) => {
         if (!provider) return 0;
         return (

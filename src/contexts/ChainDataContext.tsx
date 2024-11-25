@@ -1,52 +1,49 @@
-import React, {
+import moment from 'moment';
+import {
     createContext,
-    SetStateAction,
     Dispatch,
+    ReactNode,
+    SetStateAction,
+    useContext,
     useEffect,
     useState,
-    useContext,
-    ReactNode,
 } from 'react';
 import useWebSocket from 'react-use-websocket';
 import {
+    expandTokenBalances,
+    fetchBlastUserXpData,
+    fetchBlockNumber,
+    fetchUserXpData,
+    IDexTokenBalances,
+    RpcNodeStatus,
+} from '../ambient-utils/api';
+import { fetchNFT } from '../ambient-utils/api/fetchNft';
+import {
     BLOCK_POLLING_RPC_URL,
-    IS_LOCAL_ENV,
-    MAINNET_RPC_URL,
-    SCROLL_RPC_URL,
-    SEPOLIA_RPC_URL,
-    SHOULD_NON_CANDLE_SUBSCRIPTIONS_RECONNECT,
-    ZERO_ADDRESS,
     hiddenTokens,
+    IS_LOCAL_ENV,
+    SHOULD_NON_CANDLE_SUBSCRIPTIONS_RECONNECT,
     supportedNetworks,
+    vaultSupportedNetworkIds,
+    ZERO_ADDRESS,
 } from '../ambient-utils/constants';
 import { isJsonString } from '../ambient-utils/dataLayer';
 import { SinglePoolDataIF, TokenIF } from '../ambient-utils/types';
+import { AppStateContext } from './AppStateContext';
 import { CachedDataContext } from './CachedDataContext';
 import { CrocEnvContext } from './CrocEnvContext';
+import { ReceiptContext } from './ReceiptContext';
+import {
+    NftDataIF,
+    NftListByChain,
+    TokenBalanceContext,
+} from './TokenBalanceContext';
 import { TokenContext } from './TokenContext';
 import {
     BlastUserXpDataIF,
     UserDataContext,
     UserXpDataIF,
 } from './UserDataContext';
-import {
-    NftDataIF,
-    NftListByChain,
-    TokenBalanceContext,
-} from './TokenBalanceContext';
-import {
-    expandTokenBalances,
-    fetchBlastUserXpData,
-    fetchBlockNumber,
-    fetchUserXpData,
-    RpcNodeStatus,
-    IDexTokenBalances,
-} from '../ambient-utils/api';
-import { BLAST_RPC_URL } from '../ambient-utils/constants/networks/blastNetwork';
-import { AppStateContext } from './AppStateContext';
-import moment from 'moment';
-import { fetchNFT } from '../ambient-utils/api/fetchNft';
-import { ReceiptContext } from './ReceiptContext';
 
 export interface ChainDataContextIF {
     gasPriceInGwei: number | undefined;
@@ -57,8 +54,10 @@ export interface ChainDataContextIF {
     connectedUserXp: UserXpDataIF;
     connectedUserBlastXp: BlastUserXpDataIF;
     isActiveNetworkBlast: boolean;
+    isActiveNetworkPlume: boolean;
     isActiveNetworkScroll: boolean;
     isActiveNetworkMainnet: boolean;
+    isVaultSupportedOnNetwork: boolean;
     isActiveNetworkL2: boolean;
     nativeTokenUsdPrice: number | undefined;
     allPoolStats: SinglePoolDataIF[] | undefined;
@@ -114,6 +113,9 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
 
     const isActiveNetworkScroll = ['0x82750', '0x8274f'].includes(chainId);
     const isActiveNetworkMainnet = ['0x1'].includes(chainId);
+    const isActiveNetworkPlume = ['0x18230'].includes(chainId);
+    const isVaultSupportedOnNetwork =
+        vaultSupportedNetworkIds.includes(chainId);
 
     const blockPollingUrl = BLOCK_POLLING_RPC_URL
         ? BLOCK_POLLING_RPC_URL
@@ -153,17 +155,8 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
     }, [gasPricePollingCacheTime]);
 
     async function pollBlockNum(): Promise<void> {
-        const nodeUrl = ['0x1'].includes(chainId)
-            ? MAINNET_RPC_URL
-            : ['0xaa36a7'].includes(chainId)
-              ? SEPOLIA_RPC_URL
-              : ['0x13e31'].includes(chainId) // use blast env variable for blast network
-                ? BLAST_RPC_URL
-                : ['0x82750'].includes(chainId) // use scroll env variable for scroll network
-                  ? SCROLL_RPC_URL
-                  : blockPollingUrl;
         try {
-            const lastBlockNumber = await fetchBlockNumber(nodeUrl);
+            const lastBlockNumber = await fetchBlockNumber(blockPollingUrl);
             if (lastBlockNumber > 0) {
                 setLastBlockNumber(lastBlockNumber);
                 setRpcNodeStatus('active');
@@ -214,8 +207,10 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
     }
 
     useEffect(() => {
-        updateAllPoolStats();
-    }, [chainId, poolStatsPollingCacheTime]);
+        if (chainId && graphCacheUrl) {
+            updateAllPoolStats();
+        }
+    }, [chainId, graphCacheUrl, poolStatsPollingCacheTime]);
 
     /* This will not work with RPCs that don't support web socket subscriptions. In
      * particular Infura does not support websockets on Arbitrum endpoints. */
@@ -393,7 +388,8 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                 isUserConnected &&
                 userAddress &&
                 chainId &&
-                lastBlockNumber
+                everyFiveMinutes &&
+                (await crocEnv.context).chain.chainId === chainId
             ) {
                 try {
                     const combinedBalances: TokenIF[] = [];
@@ -404,7 +400,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                             address: userAddress,
                             chain: chainId,
                             crocEnv: crocEnv,
-                            _refreshTime: lastBlockNumber,
+                            _refreshTime: everyFiveMinutes,
                         });
 
                     combinedBalances.push(...AmbientListWalletBalances);
@@ -415,7 +411,7 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
                         chain: chainId,
                         crocEnv: crocEnv,
                         graphCacheUrl: graphCacheUrl,
-                        _refreshTime: lastBlockNumber,
+                        _refreshTime: everyFiveMinutes,
                     });
 
                     if (dexBalancesFromCache !== undefined) {
@@ -593,8 +589,10 @@ export const ChainDataContextProvider = (props: { children: ReactNode }) => {
         connectedUserBlastXp,
         setGasPriceinGwei,
         isActiveNetworkBlast,
+        isActiveNetworkPlume,
         isActiveNetworkScroll,
         isActiveNetworkMainnet,
+        isVaultSupportedOnNetwork,
         isActiveNetworkL2,
         allPoolStats,
         nativeTokenUsdPrice,

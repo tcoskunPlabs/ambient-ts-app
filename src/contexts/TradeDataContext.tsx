@@ -1,3 +1,4 @@
+import { sortBaseQuoteTokens } from '@crocswap-libs/sdk';
 import {
     createContext,
     Dispatch,
@@ -8,8 +9,6 @@ import {
     useMemo,
     useState,
 } from 'react';
-import { TokenIF } from '../ambient-utils/types';
-import { sortBaseQuoteTokens } from '@crocswap-libs/sdk';
 import { getDefaultPairForChain, mainnetETH } from '../ambient-utils/constants';
 import {
     isBtcPair,
@@ -17,8 +16,9 @@ import {
     isStablePair,
     translateTokenSymbol,
 } from '../ambient-utils/dataLayer';
-import { TokenContext } from './TokenContext';
+import { TokenIF } from '../ambient-utils/types';
 import { AppStateContext } from './AppStateContext';
+import { TokenContext } from './TokenContext';
 
 export interface TradeDataContextIF {
     tokenA: TokenIF;
@@ -58,6 +58,8 @@ export interface TradeDataContextIF {
     ) => number;
     noGoZoneBoundaries: number[];
     setNoGoZoneBoundaries: Dispatch<SetStateAction<number[]>>;
+    blackListedTimeParams: Map<string, Set<number>>;
+    addToBlackList: (tokenPair: string, timeParam: number) => void;
 }
 
 export const TradeDataContext = createContext<TradeDataContextIF>(
@@ -86,11 +88,19 @@ export const TradeDataContextProvider = (props: { children: ReactNode }) => {
     const tokensMatchingA =
         savedTokenASymbol === 'ETH'
             ? [dfltTokenA]
-            : tokens.getTokensByNameOrSymbol(savedTokenASymbol || '', true);
+            : tokens.getTokensByNameOrSymbol(
+                  savedTokenASymbol || '',
+                  chainId,
+                  true,
+              );
     const tokensMatchingB =
         savedTokenBSymbol === 'ETH'
             ? [dfltTokenA]
-            : tokens.getTokensByNameOrSymbol(savedTokenBSymbol || '', true);
+            : tokens.getTokensByNameOrSymbol(
+                  savedTokenBSymbol || '',
+                  chainId,
+                  true,
+              );
 
     const firstTokenMatchingA = tokensMatchingA[0] || undefined;
     const firstTokenMatchingB = tokensMatchingB[0] || undefined;
@@ -123,6 +133,10 @@ export const TradeDataContextProvider = (props: { children: ReactNode }) => {
               ? dfltTokenA
               : dfltTokenB,
     );
+
+    const [blackListedTimeParams, setBlackListedTimeParams] = useState<
+        Map<string, Set<number>>
+    >(new Map());
 
     useEffect(() => {
         // update tokenA and tokenB when chain changes
@@ -250,6 +264,17 @@ export const TradeDataContextProvider = (props: { children: ReactNode }) => {
         return defaultWidth;
     }, [baseToken.address + quoteToken.address + chainId]);
 
+    const addToBlackList = (tokenPair: string, timeParam: number) => {
+        setBlackListedTimeParams((prev) => {
+            if (prev.has(tokenPair)) {
+                prev.get(tokenPair)?.add(timeParam);
+            } else {
+                prev.set(tokenPair, new Set([timeParam]));
+            }
+            return prev;
+        });
+    };
+
     const tradeDataContext = {
         tokenA,
         tokenB,
@@ -283,6 +308,8 @@ export const TradeDataContextProvider = (props: { children: ReactNode }) => {
         getDefaultRangeWidthForTokenPair,
         noGoZoneBoundaries,
         setNoGoZoneBoundaries,
+        blackListedTimeParams,
+        addToBlackList,
     };
 
     return (

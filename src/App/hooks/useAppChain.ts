@@ -1,14 +1,23 @@
+import { useSwitchNetwork, useWeb3ModalAccount } from '@web3modal/ethers/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useWeb3ModalAccount, useSwitchNetwork } from '@web3modal/ethers/react';
 import {
-    getDefaultChainId,
-    validateChainId,
+    blast,
+    blastSepolia,
+    ethereumMainnet,
+    ethereumSepolia,
+    plumeSepolia,
+    scrollMainnet,
+    scrollSepolia,
+    supportedNetworks,
+} from '../../ambient-utils/constants';
+import {
     chainNumToString,
     checkEoaHexAddress,
+    getDefaultChainId,
+    validateChainId,
 } from '../../ambient-utils/dataLayer';
-import { useLinkGen, linkGenMethodsIF } from '../../utils/hooks/useLinkGen';
 import { NetworkIF } from '../../ambient-utils/types';
-import { supportedNetworks } from '../../ambient-utils/constants';
+import { linkGenMethodsIF, useLinkGen } from '../../utils/hooks/useLinkGen';
 
 export const useAppChain = (): {
     activeNetwork: NetworkIF;
@@ -151,18 +160,40 @@ export const useAppChain = (): {
                                 isPathUserXpOrLeaderboard ||
                                 isPathOnExplore
                             ) {
-                                if (
-                                    activeNetwork.chainId !=
-                                    incomingChainFromWallet
-                                ) {
-                                    window.location.reload();
-                                }
+                                // escape the `else` block at the end
+                                null;
                             } else {
                                 linkGenCurrent.navigate();
                             }
                         }
+                        // wallet authenticated, different chain in active app
                         if (activeNetwork.chainId != incomingChainFromWallet) {
-                            window.location.reload();
+                            let nextNetwork: NetworkIF | undefined;
+                            if (incomingChainFromWallet === '0x1') {
+                                nextNetwork = ethereumMainnet;
+                            } else if (incomingChainFromWallet === '0x13e31') {
+                                nextNetwork = blast;
+                            } else if (
+                                incomingChainFromWallet === '0xa0c71fd'
+                            ) {
+                                nextNetwork = blastSepolia;
+                            } else if (incomingChainFromWallet === '0xaa36a7') {
+                                nextNetwork = ethereumSepolia;
+                            } else if (incomingChainFromWallet === '0x82750') {
+                                nextNetwork = scrollMainnet;
+                            } else if (incomingChainFromWallet === '0x8274f') {
+                                nextNetwork = scrollSepolia;
+                            } else if (incomingChainFromWallet === '0x18230') {
+                                nextNetwork = plumeSepolia;
+                            }
+                            if (nextNetwork) {
+                                setActiveNetwork(nextNetwork);
+                            } else {
+                                console.warn(
+                                    'Chain ID from authenticated wallet not recognized. App will stay on the current chain. Current chain is: ',
+                                    activeNetwork,
+                                );
+                            }
                         } else {
                             setIgnoreFirst(false);
                         }
@@ -210,13 +241,16 @@ export const useAppChain = (): {
     // ... else in this file responds to changes in the browser environment
     function chooseNetwork(network: NetworkIF): void {
         localStorage.setItem(CHAIN_LS_KEY, network.chainId);
-        const { pathname } = window.location;
-
         setActiveNetwork(network);
+
+        const { pathname } = window.location;
         const isPathENS = pathname.slice(1)?.includes('.eth');
         const isPathHexEoaAddress = checkEoaHexAddress(pathname);
         const isPathUserAddress = isPathENS || isPathHexEoaAddress;
         const isPathUserXpOrLeaderboard = pathname.includes('/xp');
+        const shouldStayOnCurrentExactPath =
+            isPathUserAddress || isPathUserXpOrLeaderboard;
+
         if (
             linkGenCurrent.currentPage === 'initpool' ||
             linkGenCurrent.currentPage === 'reposition'
@@ -226,16 +260,11 @@ export const useAppChain = (): {
             linkGenSwap.navigate(`chain=${network.chainId}`);
         } else if (pathname.includes('chain')) {
             linkGenCurrent.navigate(`chain=${network.chainId}`);
-        } else if (isPathUserAddress || isPathUserXpOrLeaderboard) {
-            // this one is specific to user account pages
-            // !IMPORTANT:  not this one
-            window.location.reload();
+        } else if (shouldStayOnCurrentExactPath) {
+            // do not navigate away from current path
         } else {
             linkGenCurrent.navigate();
         }
-        // this one seems to be necessary for chain switching, when disabled
-        // ... the app appears to switch chains but doesn't get any pool data
-        // window.location.reload();
     }
 
     return {

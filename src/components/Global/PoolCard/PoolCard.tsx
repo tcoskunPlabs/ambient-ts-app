@@ -1,20 +1,21 @@
-import styles from './PoolCard.module.css';
-import { Link } from 'react-router-dom';
-import useFetchPoolStats from '../../../App/hooks/useFetchPoolStats';
-import TokenIcon from '../TokenIcon/TokenIcon';
+import { useContext, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     getFormattedNumber,
-    isETHPair,
     isBtcPair,
-    isStableToken,
+    isDefaultDenomTokenExcludedFromUsdConversion,
+    isETHPair,
+    isUsdStableToken,
     isWbtcToken,
     uriToHttp,
 } from '../../../ambient-utils/dataLayer';
 import { PoolIF } from '../../../ambient-utils/types';
-import { linkGenMethodsIF, useLinkGen } from '../../../utils/hooks/useLinkGen';
-import { useContext, useState } from 'react';
-import { TradeDataContext } from '../../../contexts/TradeDataContext';
+import useFetchPoolStats from '../../../App/hooks/useFetchPoolStats';
 import { AppStateContext } from '../../../contexts';
+import { TradeDataContext } from '../../../contexts/TradeDataContext';
+import { linkGenMethodsIF, useLinkGen } from '../../../utils/hooks/useLinkGen';
+import TokenIcon from '../TokenIcon/TokenIcon';
+import styles from './PoolCard.module.css';
 
 interface propsIF {
     pool: PoolIF;
@@ -23,6 +24,8 @@ interface propsIF {
 
 export default function PoolCard(props: propsIF) {
     const { pool, spotPrice } = props;
+
+    const navigate = useNavigate();
 
     const {
         activeNetwork: { chainId },
@@ -45,13 +48,19 @@ export default function PoolCard(props: propsIF) {
         quotePrice,
     } = poolData;
 
-    const denomTokenIsStableToken = shouldInvertDisplay
-        ? isStableToken(pool.quote.address)
-        : isStableToken(pool.base.address);
+    const denomTokenIsUsdStableToken = shouldInvertDisplay
+        ? isUsdStableToken(pool.quote.address)
+        : isUsdStableToken(pool.base.address);
 
     const denomTokenIsWBTCToken = shouldInvertDisplay
         ? isWbtcToken(pool.quote.address)
         : isWbtcToken(pool.base.address);
+
+    const excludeFromUsdConversion =
+        isDefaultDenomTokenExcludedFromUsdConversion(
+            pool.base.address,
+            pool.quote.address,
+        );
 
     const isEthStakedEthPair = isETHPair(pool.base.address, pool.quote.address);
     const isPoolBtcPair = isBtcPair(pool.base.address, pool.quote.address);
@@ -67,8 +76,11 @@ export default function PoolCard(props: propsIF) {
         <div className={styles.price}>
             {poolPrice === undefined || spotPrice === undefined
                 ? '…'
-                : isHovered || denomTokenIsStableToken
-                  ? denomTokenIsWBTCToken || isEthStakedEthPair || isPoolBtcPair
+                : isHovered || denomTokenIsUsdStableToken
+                  ? denomTokenIsWBTCToken ||
+                    isEthStakedEthPair ||
+                    isPoolBtcPair ||
+                    excludeFromUsdConversion
                       ? `${
                             usdPrice
                                 ? getFormattedNumber({
@@ -78,7 +90,10 @@ export default function PoolCard(props: propsIF) {
                                 : '…'
                         }`
                       : poolPrice
-                  : denomTokenIsWBTCToken || isEthStakedEthPair || isPoolBtcPair
+                  : denomTokenIsWBTCToken ||
+                      isEthStakedEthPair ||
+                      isPoolBtcPair ||
+                      excludeFromUsdConversion
                     ? poolPrice
                     : `${
                           usdPrice
@@ -144,6 +159,9 @@ export default function PoolCard(props: propsIF) {
             aria-label={ariaDescription}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onMouseDown={() => {
+                navigate(poolLink);
+            }}
         >
             <div className={styles.main_container}>
                 <div className={styles.row} style={{ padding: '4px' }}>

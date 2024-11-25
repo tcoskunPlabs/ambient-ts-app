@@ -1,12 +1,12 @@
 import { brand } from './networks';
-export * from './networks';
 export * from './blacklist';
 export * from './defaultTokens';
+export * from './gasEstimates';
 export * from './gcgo';
+export * from './networks';
 export * from './slippage';
 export * from './tokenListURIs';
 export * from './tokenUnicodeCharMap';
-export * from './gasEstimates';
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 // allow a local environment variable to be defined in [app_repo]/.env.local to set a name for dev environment
@@ -29,6 +29,10 @@ export const ANALYTICS_URL =
 export const PAIR_LOOKUP_URL =
     import.meta.env.VITE_PAIR_LOOKUP_URL ||
     'https://croc-smart.liquidity.tools/pair-lookup?';
+
+export const VAULTS_API_URL =
+    import.meta.env.VITE_VAULTS_API_URL ||
+    'https://protocol-service-api.tempestfinance.xyz/api/v1';
 
 export const HISTORICAL_CANDLES_URL =
     import.meta.env.VITE_HISTORICAL_CANDLES_URL || 'https://ambindexer.net';
@@ -66,26 +70,6 @@ export const BLOCK_POLLING_RPC_URL =
         ? import.meta.env.VITE_BLOCK_POLLING_RPC_URL
         : '';
 
-export const MAINNET_RPC_URL =
-    import.meta.env.VITE_MAINNET_RPC_URL !== undefined
-        ? import.meta.env.VITE_MAINNET_RPC_URL
-        : 'https://eth.llamarpc.com';
-
-export const BLAST_RPC_URL =
-    import.meta.env.VITE_BLAST_RPC_URL !== undefined
-        ? import.meta.env.VITE_BLAST_RPC_URL
-        : 'https://rpc.blast.io';
-
-export const SCROLL_RPC_URL =
-    import.meta.env.VITE_SCROLL_RPC_URL !== undefined
-        ? import.meta.env.VITE_SCROLL_RPC_URL
-        : 'https://rpc.scroll.io';
-
-export const SEPOLIA_RPC_URL =
-    import.meta.env.VITE_SEPOLIA_RPC_URL !== undefined
-        ? import.meta.env.VITE_SEPOLIA_RPC_URL
-        : 'https://ethereum-sepolia-rpc.publicnode.com';
-
 export const ALCHEMY_API_KEY =
     import.meta.env.VITE_ALCHEMY_API_KEY !== undefined
         ? import.meta.env.VITE_ALCHEMY_API_KEY
@@ -115,6 +99,7 @@ export const OVERRIDE_CANDLE_POOL_ID = 36000;
 export const LS_KEY_CHART_SETTINGS = 'chart_settings';
 export const LS_KEY_SUBCHART_SETTINGS = 'subchart_settings';
 export const LS_KEY_ORDER_HISTORY_SETTINGS = 'order_history_settings';
+export const LS_KEY_CHAIN_ID = 'CHAIN_ID';
 export const LS_KEY_HIDE_EMPTY_POSITIONS_ON_ACCOUNT =
     'hide_empty_positions_on_account';
 

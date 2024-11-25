@@ -1,42 +1,47 @@
+import isValidProp from '@emotion/is-prop-valid';
+import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import './index.css';
+import { StyleSheetManager } from 'styled-components';
 import App from './App/App';
 import './i18n/config';
-import { StyleSheetManager } from 'styled-components';
-import isValidProp from '@emotion/is-prop-valid';
-import { createWeb3Modal, defaultConfig } from '@web3modal/ethers/react';
+import './index.css';
 
-import { GlobalContexts } from './contexts/GlobalContexts';
 import {
     brand,
     GLOBAL_MODAL_PORTAL_ID,
+    LS_KEY_CHAIN_ID,
     supportedNetworks,
     WALLETCONNECT_PROJECT_ID,
 } from './ambient-utils/constants';
-import scrollLogo from './assets/images/networks/scroll_logo.webp';
 import blastLogo from './assets/images/networks/blast_logo.png';
-import blastSepoliaLogo from './assets/images/networks/blast_sepolia_logo.webp';
-import scrollSepoliaLogo from './assets/images/networks/scroll_sepolia_logo.webp';
-import sepoliaLogo from './assets/images/networks/sepolia_logo.webp';
 import ethLogo from './assets/images/networks/ethereum_logo.svg';
+import scrollLogo from './assets/images/networks/scroll_logo.webp';
+import { GlobalContexts } from './contexts/GlobalContexts';
+// import plumeLogo from './assets/images/networks/plume_mainnet_logo.webp';
+import sepoliaLogo from './assets/images/networks/sepolia_logo.webp';
+// import plumeSepoliaLogo from './assets/images/networks/plume_sepolia_network_logo.webp';
+import { getLocalStorageItem } from './ambient-utils/dataLayer';
+import blastSepoliaLogo from './assets/images/networks/blast_sepolia_logo.webp';
+import plumeSepoliaLogo from './assets/images/networks/plume_mainnet_logo_small.webp';
+import scrollSepoliaLogo from './assets/images/networks/scroll_sepolia_logo.webp';
 
-/* Perform a single forcible reload when the page first loads. Without this, there
- * are issues with Metamask and Chrome preloading. This shortcircuits preloading, at the
- * cost of higher load times, especially when pre-loading isn't happening. See:
- * https://community.metamask.io/t/google-chrome-page-preload-causes-weirdness-with-metamask/24042
- *
- * Still happening as of May 2024 using Metamask v11.15.4 on Chrome 124. */
-const doReload =
-    JSON.parse(localStorage.getItem('ambiAppReloadTrigger') || 'true') &&
-    navigator.userAgent.includes('Chrome');
-if (doReload) {
-    localStorage.setItem('ambiAppReloadTrigger', 'false');
-    location.reload();
-} else {
-    localStorage.setItem('ambiAppReloadTrigger', 'true');
-}
+// /* Perform a single forcible reload when the page first loads. Without this, there
+//  * are issues with Metamask and Chrome preloading. This shortcircuits preloading, at the
+//  * cost of higher load times, especially when pre-loading isn't happening. See:
+//  * https://community.metamask.io/t/google-chrome-page-preload-causes-weirdness-with-metamask/24042
+//  *
+//  * Still happening as of May 2024 using Metamask v11.15.4 on Chrome 124. */
+// const doReload =
+//     JSON.parse(localStorage.getItem('ambiAppReloadTrigger') || 'true') &&
+//     navigator.userAgent.includes('Chrome');
+// if (doReload) {
+//     localStorage.setItem('ambiAppReloadTrigger', 'false');
+//     location.reload();
+// } else {
+//     localStorage.setItem('ambiAppReloadTrigger', 'true');
+// }
 
 const metadata = {
     name: 'Ambient Finance',
@@ -60,7 +65,9 @@ const ethersConfig = defaultConfig({
 
 const modal = createWeb3Modal({
     ethersConfig,
-    chains: Object.values(supportedNetworks).map((network) => network.chain),
+    chains: Object.values(supportedNetworks).map(
+        (network) => network.chainSpecForWalletConnector,
+    ),
     projectId: WALLETCONNECT_PROJECT_ID as string,
     chainImages: {
         1: ethLogo,
@@ -69,6 +76,7 @@ const modal = createWeb3Modal({
         534351: scrollSepoliaLogo,
         534352: scrollLogo,
         11155111: sepoliaLogo,
+        98864: plumeSepoliaLogo,
     },
     termsConditionsUrl: '/terms',
     privacyPolicyUrl: '/privacy',
@@ -87,19 +95,56 @@ const modal = createWeb3Modal({
     ],
 });
 
-modal.subscribeEvents((event) => {
+modal.subscribeEvents(async (event) => {
     const networkIds = Object.values(supportedNetworks).map(
-        (network) => network.chain.chainId,
+        (network) => network.chainSpecForWalletConnector.chainId,
     );
+
+    if (event.data.event === 'CONNECT_SUCCESS') {
+        const currentChainId = modal.getState().selectedNetworkId as number;
+        const desiredChainId = parseInt(
+            getLocalStorageItem(LS_KEY_CHAIN_ID) || '534352',
+        );
+
+        if (currentChainId !== desiredChainId) {
+            try {
+                await modal.switchNetwork(desiredChainId); // Pass the number directly
+
+                // Wait for the switch to complete
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+
+                const newChainId = modal.getState().selectedNetworkId as number;
+
+                if (newChainId !== desiredChainId) {
+                    try {
+                        await modal.switchNetwork(desiredChainId);
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 1000),
+                        );
+                        const finalChainId = modal.getState()
+                            .selectedNetworkId as number;
+                        if (finalChainId !== desiredChainId) {
+                            modal.disconnect();
+                        }
+                    } catch (retryError) {
+                        console.error('Retry failed:', retryError);
+                        modal.disconnect();
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to switch network:', error);
+                modal.disconnect();
+            }
+        }
+    }
+
     if (
         event.data.event === 'MODAL_CLOSE' &&
         event.data.properties.connected === true
     ) {
-        if (networkIds.includes(modal.getState().selectedNetworkId)) {
-            // prevents the 'unknown account #0' bug
-            window.location.reload();
-        } else {
-            // prevents user's wallet from remaining connected to an unsupported network
+        if (
+            !networkIds.includes(modal.getState().selectedNetworkId as number)
+        ) {
             modal.disconnect();
         }
     }

@@ -461,7 +461,7 @@ export const scrollWeETH: TokenIF = {
         'https://tokenlogo.xyz/assets/token/0x7e7d4467112689329f7e06571ed0e8cbad4910ee.svg',
 };
 
-export const scrollScroll: TokenIF = {
+export const scrollSCR: TokenIF = {
     name: 'Scroll',
     address: '0xd29687c813d741e2f938f4ac377128810e217b1b',
     symbol: 'SCR',
@@ -534,6 +534,24 @@ export const scrollWrsETH: TokenIF = {
     decimals: 18,
     chainId: 534352,
     logoURI: 'https://s2.coinmarketcap.com/static/img/coins/64x64/29242.png',
+};
+
+export const scrollRswETH: TokenIF = {
+    name: 'Restaked Swell ETH',
+    address: '0x89f17aB70cAFB1468D633056161573efEfeA0713',
+    symbol: 'rswETH',
+    decimals: 18,
+    chainId: 534352,
+    logoURI: 'https://etherscan.io/token/images/rsweth_32.png?=v3',
+};
+
+export const scrollRsETH: TokenIF = {
+    name: 'KelpDao Restaked ETH',
+    address: '0x65421ba909200b81640d98b979d07487c9781b66',
+    symbol: 'rsETH',
+    decimals: 18,
+    chainId: 534352,
+    logoURI: '',
 };
 
 export const scrollSTONE: TokenIF = {
@@ -720,6 +738,34 @@ export const scrollSepoliaUSDC: TokenIF = {
         'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
 };
 
+export const plumeSepoliaETH: TokenIF = {
+    name: 'Native Ether',
+    address: '0x0000000000000000000000000000000000000000',
+    symbol: 'ETH',
+    decimals: 18,
+    chainId: 98864,
+    logoURI:
+        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+};
+
+export const plumeSepoliaUSD: TokenIF = {
+    name: 'Plume USD',
+    address: '0xe644F07B1316f28a7F134998e021eA9f7135F351',
+    symbol: 'pUSD',
+    decimals: 6,
+    chainId: 98864,
+    logoURI: '',
+};
+
+export const plumeSepoliaNEV: TokenIF = {
+    name: 'Nest Egg Vault',
+    address: '0x659619AEdf381c3739B0375082C2d61eC1fD8835',
+    symbol: 'NEV',
+    decimals: 6,
+    chainId: 98864,
+    logoURI: '',
+};
+
 export const defaultTokens: TokenIF[] = [
     mainnetETH,
     mainnetUSDC,
@@ -780,13 +826,15 @@ export const defaultTokens: TokenIF[] = [
     scrollWrappedETH,
     scrollWstETH,
     scrollWeETH,
-    scrollScroll,
+    scrollSCR,
     scrollSCROLLY,
     scrollSTG,
     scrollSCRIBES,
     scrollSKY,
     scrollSOL,
     scrollWrsETH,
+    scrollRswETH,
+    scrollRsETH,
     scrollSTONE,
     scrollUniETH,
     sepoliaETH,
@@ -796,4 +844,7 @@ export const defaultTokens: TokenIF[] = [
     scrollSepoliaUSDC,
     scrollSepoliaWBTC,
     scrollsUSDe,
+    plumeSepoliaETH,
+    plumeSepoliaUSD,
+    plumeSepoliaNEV,
 ];
