@@ -266,7 +266,9 @@ export default function CandleChart(props: candlePropsIF) {
                 .on('draw', () => {
                     setCanvasResolution(canvas);
                     if (data !== undefined) {
-                        candlestick([...data, fakeCandleData]);
+                        candlestick(
+                            fakeCandleData ? [...data, fakeCandleData] : data,
+                        );
                     }
                 })
                 .on('measure', (event: CustomEvent) => {
