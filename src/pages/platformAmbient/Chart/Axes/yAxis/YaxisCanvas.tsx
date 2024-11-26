@@ -419,7 +419,7 @@ function YAxisCanvas(props: yAxisIF) {
                     isTradeDollarizationEnabled,
                 );
             }
-            if (location.pathname.includes('/limit')) {
+            if (location.pathname.includes('/limit') && limit !== 0) {
                 const { isSameLocation, sameLocationData } =
                     sameLocationLimit();
 

@@ -205,9 +205,11 @@ export default function LimitLineChart(props: propsIF) {
             .select('canvas')
             .style(
                 'display',
-                location.pathname.includes('/limit') ? 'inline' : 'none',
+                location.pathname.includes('/limit') && limit !== 0
+                    ? 'inline'
+                    : 'none',
             );
-    }, [location, location.pathname, period]);
+    }, [location, location.pathname, period, limit === 0]);
 
     useEffect(() => {
         setLimitLineValue();
