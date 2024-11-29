@@ -21,7 +21,6 @@ export async function fetchCandleSeriesHybrid(
     crocEnv: CrocEnv,
     cachedFetchTokenPrice: TokenPriceFn,
     cachedQuerySpotPrice: SpotPriceFn,
-    signal?: AbortSignal,
 ): Promise<CandlesByPoolAndDurationIF | undefined> {
     const candles = await fetchCandleSeriesCroc(
         isFetchEnabled,
@@ -36,7 +35,6 @@ export async function fetchCandleSeriesHybrid(
         crocEnv,
         cachedFetchTokenPrice,
         cachedQuerySpotPrice,
-        signal,
     );
 
     if (!candles) {
@@ -68,7 +66,6 @@ export async function fetchCandleSeriesCroc(
     crocEnv: CrocEnv,
     cachedFetchTokenPrice: TokenPriceFn,
     cachedQuerySpotPrice: SpotPriceFn,
-    signal?: AbortSignal,
 ): Promise<CandlesByPoolAndDurationIF | undefined> {
     if (!isFetchEnabled) {
         return undefined;
@@ -95,7 +92,7 @@ export async function fetchCandleSeriesCroc(
         chainId: chainId,
     });
 
-    return fetch(candleSeriesEndpoint + '?' + reqOptions, { signal })
+    return fetch(candleSeriesEndpoint + '?' + reqOptions)
         .then((response) => response?.json())
         .then(async (json) => {
             if (!json?.data) {

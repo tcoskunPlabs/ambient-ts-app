@@ -12,7 +12,10 @@ import './TradeCandleStickChart.css';
 
 import * as d3 from 'd3';
 import * as d3fc from 'd3fc';
-import { getPinnedPriceValuesFromTicks } from '../../../../ambient-utils/dataLayer';
+import {
+    diffHashSig,
+    getPinnedPriceValuesFromTicks,
+} from '../../../../ambient-utils/dataLayer';
 import {
     CandleDataIF,
     CandleDomainIF,
@@ -87,6 +90,7 @@ function TradeCandleStickChart(props: propsIF) {
 
     const {
         candleData,
+        setCandleData,
         isFetchingCandle,
         setCandleScale,
         candleScale,
@@ -836,6 +840,7 @@ function TradeCandleStickChart(props: propsIF) {
                             }
                         }
 
+                        setCandleData(undefined);
                         setCandleScale((prev: CandleScaleIF) => {
                             return {
                                 isFetchForTimeframe: !prev.isFetchForTimeframe,
@@ -887,7 +892,7 @@ function TradeCandleStickChart(props: propsIF) {
     const resetChart = () => {
         if (scaleData && unparsedCandleData) {
             resetXScale(scaleData.xScale);
-
+            setCandleData(undefined);
             setCandleScale((prev: CandleScaleIF) => {
                 return {
                     isFetchForTimeframe: !prev.isFetchForTimeframe,
@@ -967,6 +972,9 @@ function TradeCandleStickChart(props: propsIF) {
                     unparsedCandleData,
                     period,
                 ).filter((i) => i.isShowData && i.time * 1000 < maxDom);
+
+                console.log('candles******', candles.length);
+
                 const minTime = firstCandleDate * 1000;
 
                 const checkDomainData = candles.filter(
@@ -1013,6 +1021,13 @@ function TradeCandleStickChart(props: propsIF) {
                         return dom;
                     });
                 } else {
+                    console.log('unparsedCandleData bura mii');
+                    console.log(
+                        fetchCountForEnoughData === maxRequestCountForCondensed,
+                        period !== 86400,
+                        candles.length < 100,
+                    );
+
                     if (
                         fetchCountForEnoughData ===
                             maxRequestCountForCondensed &&
@@ -1021,6 +1036,11 @@ function TradeCandleStickChart(props: propsIF) {
                     ) {
                         setIsCondensedModeEnabled(false);
                     } else {
+                        console.log(
+                            'candleDomains.isResetRequest',
+                            !candleDomains.isResetRequest,
+                        );
+
                         if (!candleDomains.isResetRequest) {
                             setFetchCountForEnoughData(
                                 maxRequestCountForCondensed,
@@ -1074,6 +1094,34 @@ function TradeCandleStickChart(props: propsIF) {
             style={{ width: '100%', height: '100%' }}
         />
     );
+
+    useEffect(() => {
+        console.log(period, candleData?.duration);
+
+        console.log(
+            'sebep',
+            { unparsedCandleData, isCompletedFetchData },
+            !isLoading,
+            candleData !== undefined,
+            isPoolInitialized !== undefined,
+            prevPeriod === period,
+            scaleData,
+            period === candleData?.duration,
+            !isFetchingCandle,
+            !isFetchingEnoughData,
+        );
+    }, [
+        diffHashSig(unparsedCandleData),
+        !isLoading,
+        candleData !== undefined,
+        isPoolInitialized !== undefined,
+        prevPeriod === period,
+        scaleData,
+        period === candleData?.duration,
+        !isFetchingCandle,
+        !isFetchingEnoughData,
+    ]);
+
     return (
         <>
             <div

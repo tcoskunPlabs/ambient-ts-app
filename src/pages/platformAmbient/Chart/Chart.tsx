@@ -1023,6 +1023,13 @@ export default function Chart(props: propsIF) {
                           timeOfEndCandle > scaleData?.xScale.domain()[0]
                         : false;
 
+                    console.log(
+                        'IsCompletedFetchData',
+                        percentPixel < 0.75,
+                        isCondensedModeEnabled,
+                        !isIncludeTimeOfEndCanlde,
+                    );
+
                     if (
                         percentPixel < 0.75 &&
                         isCondensedModeEnabled &&
@@ -2690,6 +2697,8 @@ export default function Chart(props: propsIF) {
     function fetchCandleForResetOrLatest(isReset = false) {
         const nowDate = Date.now();
         if (isReset) {
+            console.log('IsCompletedFetchData IF');
+
             const candleDomain = {
                 lastCandleDate: nowDate,
                 domainBoundry: nowDate - 200 * 1000 * period,
@@ -2699,6 +2708,8 @@ export default function Chart(props: propsIF) {
 
             setCandleDomains(candleDomain);
         } else {
+            console.log('IsCompletedFetchData ELSE');
+
             if ((reset || latest) && scaleData) {
                 const lastCandleDataTime =
                     lastCandleData?.time * 1000 - period * 1000;
