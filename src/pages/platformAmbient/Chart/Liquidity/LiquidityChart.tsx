@@ -22,6 +22,7 @@ import {
     getXandYLocationForChart,
     lineValue,
     liquidityChartData,
+    LiquidityHoverData,
     renderCanvasArray,
     renderChart,
     scaleData,
@@ -30,11 +31,14 @@ import {
 import {
     createAreaSeries,
     decorateForLiquidityArea,
+    getAskPriceValue,
+    getBidPriceValue,
 } from './LiquiditySeries/AreaSeries';
 import {
     createLineSeries,
     decorateForLiquidityLine,
 } from './LiquiditySeries/LineSeries';
+import { LiquidityRangeIF } from '../../../../ambient-utils/types';
 
 interface liquidityPropsIF {
     liqMode: string;
@@ -111,15 +115,8 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
     const [currentPriceData] = useState([{ value: -1 }]);
     const [liqTooltipSelectedLiqBar, setLiqTooltipSelectedLiqBar] = useState<
-        LiquidityDataLocal | undefined
-    >({
-        activeLiq: 0,
-        liqPrices: 0,
-        deltaAverageUSD: 0,
-        cumAverageUSD: 0,
-        upperBound: 0,
-        lowerBound: 0,
-    });
+        LiquidityRangeIF | undefined
+    >(undefined);
 
     const [singlePosition, setSinglePosition] = useState<
         undefined | 'ask' | 'bid'
@@ -169,8 +166,34 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         liquidityData?.topBoundary,
     ]);
 
+    const hoverAskData = useMemo(
+        () =>
+            liqDataAsk?.map((item) => {
+                return {
+                    activeLiq: liquidityData.liquidityScale(item.activeLiq),
+                    liqPrices: isDenomBase
+                        ? item.lowerBoundInvPriceDecimalCorrected
+                        : item.upperBoundPriceDecimalCorrected,
+                };
+            }),
+        [liqDataAsk],
+    );
+
+    const hoverBidData = useMemo(
+        () =>
+            liqDataBid?.map((item) => {
+                return {
+                    activeLiq: liquidityData.liquidityScale(item.activeLiq),
+                    liqPrices: isDenomBase
+                        ? item.upperBoundInvPriceDecimalCorrected
+                        : item.lowerBoundPriceDecimalCorrected,
+                };
+            }),
+        [liqDataBid],
+    );
+
     const findLiqNearest = (
-        liqDataAll: LiquidityDataLocal[],
+        liqDataAll: LiquidityHoverData[],
     ): nearestLiquidity => {
         if (scaleData !== undefined) {
             const point = scaleData?.yScale.domain()[0];
@@ -214,11 +237,15 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         return { min: undefined, max: undefined };
     };
 
+    useEffect(() => {
+        console.log({ liquidityData });
+    }, [liquidityData]);
+
     const liqMaxActiveLiq = useMemo<number | undefined>(() => {
         if (scaleData && liquidityDepthScale && liquidityScale) {
             const allData =
                 liqMode === 'curve'
-                    ? liqDataBid.concat(liqDataAsk)
+                    ? hoverAskData.concat(hoverBidData)
                     : liqDataDepthBid.concat(liqDataDepthAsk);
 
             if (!allData || allData.length === 0) return;
@@ -228,7 +255,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
             if (min !== undefined) {
                 let filteredAllData = allData.filter(
-                    (item: LiquidityDataLocal) =>
+                    (item: LiquidityHoverData) =>
                         min <= item.liqPrices &&
                         item.liqPrices <= scaleData?.yScale.domain()[1],
                 );
@@ -238,13 +265,13 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     filteredAllData.length === 0
                 ) {
                     filteredAllData = allData.filter(
-                        (item: LiquidityDataLocal) => min <= item.liqPrices,
+                        (item: LiquidityHoverData) => min <= item.liqPrices,
                     );
                 }
 
                 const liqMaxActiveLiq = d3.max(
                     filteredAllData,
-                    function (d: LiquidityDataLocal) {
+                    function (d: LiquidityHoverData) {
                         return d.activeLiq;
                     },
                 );
@@ -276,12 +303,14 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
     useEffect(() => {
         const filteredAsk = liqDataAsk.filter(
-            (i) => i.liqPrices < poolPriceDisplay,
+            (i) => getAskPriceValue(i, isDenomBase) < poolPriceDisplay,
         );
 
         const filteredBid = liqDataBid.filter(
-            (i) => i.liqPrices > poolPriceDisplay,
+            (i) => getBidPriceValue(i, isDenomBase) > poolPriceDisplay,
         );
+
+        console.log({ filteredAsk, filteredBid });
 
         if (filteredBid.length === 0) {
             setSinglePosition('ask');
@@ -298,7 +327,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
     // Auto scale fo liq Curve
     useEffect(() => {
         if (liquidityScale) {
-            const mergedLiqData = liqDataBid.concat(liqDataAsk);
+            const mergedLiqData = hoverAskData.concat(hoverBidData);
 
             try {
                 if (mergedLiqData && mergedLiqData.length === 0) return;
@@ -308,15 +337,15 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
                 if (min !== undefined && max !== undefined) {
                     const visibleDomain = mergedLiqData.filter(
-                        (liqData: LiquidityDataLocal) =>
+                        (liqData: LiquidityHoverData) =>
                             liqData?.liqPrices >= min &&
                             liqData?.liqPrices <= max,
                     );
                     const maxLiq = d3.max(
                         visibleDomain,
-                        (d: LiquidityDataLocal) => d.activeLiq,
+                        (d: LiquidityHoverData) => d.activeLiq,
                     );
-                    if (maxLiq && parseFloat(maxLiq) !== 1 && liquidityScale) {
+                    if (maxLiq && maxLiq !== 1 && liquidityScale) {
                         liquidityScale.domain([0, maxLiq]);
                     }
 
@@ -579,22 +608,18 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     ? liquidityDepthScale.invert(offsetX)
                     : liquidityScale.invert(offsetX);
 
-            const bidMinBoudnary = d3.min(
-                liqDataBid,
-                (d: LiquidityDataLocal) => d.liqPrices,
+            const bidMinBoudnary = d3.min(liqDataBid, (d: LiquidityRangeIF) =>
+                getBidPriceValue(d, isDenomBase),
             );
-            const bidMaxBoudnary = d3.max(
-                liqDataBid,
-                (d: LiquidityDataLocal) => d.liqPrices,
+            const bidMaxBoudnary = d3.max(liqDataBid, (d: LiquidityRangeIF) =>
+                getBidPriceValue(d, isDenomBase),
             );
 
-            const askMinBoudnary = d3.min(
-                liqDataAsk,
-                (d: LiquidityDataLocal) => d.liqPrices,
+            const askMinBoudnary = d3.min(liqDataAsk, (d: LiquidityRangeIF) =>
+                getAskPriceValue(d, isDenomBase),
             );
-            const askMaxBoudnary = d3.max(
-                liqDataAsk,
-                (d: LiquidityDataLocal) => d.liqPrices,
+            const askMaxBoudnary = d3.max(liqDataAsk, (d: LiquidityRangeIF) =>
+                getAskPriceValue(d, isDenomBase),
             );
 
             if (liqMaxActiveLiq && currentDataX <= liqMaxActiveLiq) {
@@ -639,7 +664,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
         const allData =
             liqMode === 'curve'
-                ? liqDataBid.concat(liqDataAsk)
+                ? hoverAskData.concat(hoverBidData)
                 : liqDataDepthBid.concat(liqDataDepthAsk);
         if (
             liqBidSeries &&
@@ -862,13 +887,16 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         ) {
             const liqTextData = { totalValue: 0 };
 
-            if (liqTooltipSelectedLiqBar?.liqPrices != null) {
+            if (liqTooltipSelectedLiqBar != null) {
                 if (liquidityMouseMoveActive === 'ask') {
                     liquidityData?.liqAskData.map(
-                        (liqData: LiquidityDataLocal) => {
+                        (liqData: LiquidityRangeIF) => {
                             if (
-                                liqData?.liqPrices >
-                                liqTooltipSelectedLiqBar?.liqPrices
+                                getAskPriceValue(liqData, isDenomBase) >
+                                getAskPriceValue(
+                                    liqTooltipSelectedLiqBar,
+                                    isDenomBase,
+                                )
                             ) {
                                 liqTextData.totalValue =
                                     liqTextData.totalValue +
@@ -878,10 +906,13 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     );
                 } else {
                     liquidityData?.liqBidData.map(
-                        (liqData: LiquidityDataLocal) => {
+                        (liqData: LiquidityRangeIF) => {
                             if (
-                                liqData?.liqPrices <
-                                liqTooltipSelectedLiqBar.liqPrices
+                                getBidPriceValue(liqData, isDenomBase) <
+                                getBidPriceValue(
+                                    liqTooltipSelectedLiqBar,
+                                    isDenomBase,
+                                )
                             ) {
                                 liqTextData.totalValue =
                                     liqTextData.totalValue +
@@ -900,18 +931,22 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                       ? liqTooltipSelectedLiqBar?.lowerBound
                       : liqTooltipSelectedLiqBar?.upperBound;
 
-            const percentage = parseFloat(
-                (Math.abs(pinnedTick - currentPoolPriceTick) / 100).toString(),
-            ).toFixed(1);
+            if (pinnedTick) {
+                const percentage = parseFloat(
+                    (
+                        Math.abs(pinnedTick - currentPoolPriceTick) / 100
+                    ).toString(),
+                ).toFixed(1);
 
-            liqTooltip.html(
-                '<p>' +
-                    percentage +
-                    '%</p>' +
-                    '<p> $' +
-                    formatAmountWithoutDigit(liqTextData.totalValue, 0) +
-                    ' </p>',
-            );
+                liqTooltip.html(
+                    '<p>' +
+                        percentage +
+                        '%</p>' +
+                        '<p> $' +
+                        formatAmountWithoutDigit(liqTextData.totalValue, 0) +
+                        ' </p>',
+                );
+            }
         }
     }, [
         liqTooltipSelectedLiqBar,
@@ -944,28 +979,39 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             const filtered =
                 liquidityData?.liqBidData.length > 1
                     ? liquidityData?.liqBidData.filter(
-                          (d: LiquidityDataLocal) => d.liqPrices != null,
+                          (d: LiquidityRangeIF) =>
+                              getBidPriceValue(d, isDenomBase) != null,
                       )
                     : liquidityData?.liqBidData;
 
             const mousePosition = scaleData?.yScale.invert(offsetY);
 
             let closest = filtered.find(
-                (item: LiquidityDataLocal) =>
-                    item.liqPrices ===
-                    d3.min(filtered, (d: LiquidityDataLocal) => d.liqPrices),
+                (item: LiquidityRangeIF) =>
+                    getBidPriceValue(item, isDenomBase) ===
+                    d3.min(filtered, (d: LiquidityRangeIF) =>
+                        getBidPriceValue(d, isDenomBase),
+                    ),
             );
 
-            filtered.map((data: LiquidityDataLocal) => {
-                if (
-                    mousePosition > data.liqPrices &&
-                    data.liqPrices > closest?.liqPrices
-                ) {
-                    closest = data;
-                }
-            });
-
             if (closest) {
+                liqDataBid.map((data: LiquidityRangeIF) => {
+                    if (closest) {
+                        const liqPrice = getBidPriceValue(data, isDenomBase);
+                        const closestLiqPrice = getBidPriceValue(
+                            closest,
+                            isDenomBase,
+                        );
+
+                        if (
+                            mousePosition > liqPrice &&
+                            liqPrice > closestLiqPrice
+                        ) {
+                            closest = data;
+                        }
+                    }
+                });
+
                 setLiqTooltipSelectedLiqBar(() => {
                     return closest;
                 });
@@ -1013,24 +1059,35 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             const filtered =
                 liquidityData?.liqAskData.length > 1
                     ? liquidityData?.liqAskData.filter(
-                          (d: LiquidityDataLocal) => d.liqPrices != null,
+                          (d: LiquidityRangeIF) =>
+                              getAskPriceValue(d, isDenomBase) != null,
                       )
                     : liquidityData?.liqAskData;
 
             const mousePosition = scaleData?.yScale.invert(offsetY);
-
-            let closest = filtered.find(
-                (item: LiquidityDataLocal) =>
-                    item.liqPrices ===
-                    d3.max(filtered, (d: LiquidityDataLocal) => d.liqPrices),
+            const maxAskPriceValue = d3.max(liqDataAsk, (d: LiquidityRangeIF) =>
+                getAskPriceValue(d, isDenomBase),
             );
+
+            let closest = filtered.find((item: LiquidityRangeIF) => {
+                return getAskPriceValue(item, isDenomBase) === maxAskPriceValue;
+            });
+
             if (closest !== undefined) {
-                filtered.map((data: LiquidityDataLocal) => {
-                    if (
-                        mousePosition < data.liqPrices &&
-                        data.liqPrices < closest?.liqPrices
-                    ) {
-                        closest = data;
+                filtered.map((data: LiquidityRangeIF) => {
+                    if (closest) {
+                        const liqPrice = getAskPriceValue(data, isDenomBase);
+                        const closestLiqPrice = getAskPriceValue(
+                            closest,
+                            isDenomBase,
+                        );
+
+                        if (
+                            mousePosition < liqPrice &&
+                            liqPrice < closestLiqPrice
+                        ) {
+                            closest = data;
+                        }
                     }
                 });
                 setLiqTooltipSelectedLiqBar(() => {

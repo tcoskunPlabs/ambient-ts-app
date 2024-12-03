@@ -39,6 +39,7 @@ import {
     CandleDomainIF,
     CandleScaleIF,
     CandlesByPoolAndDurationIF,
+    LiquidityRangeIF,
     TransactionIF,
 } from '../../../ambient-utils/types';
 import Divider from '../../../components/Global/Divider/Divider';
@@ -60,7 +61,6 @@ import { updatesIF } from '../../../utils/hooks/useUrlParams';
 import { formatDollarAmountAxis } from '../../../utils/numbers';
 import ChartSettings from '../../Chart/ChartSettings/ChartSettings';
 import { filterCandleWithTransaction } from '../../Chart/ChartUtils/discontinuityScaleUtils';
-import { LiquidityDataLocal } from '../Trade/TradeCharts/TradeCharts';
 import XAxisCanvas from './Axes/xAxis/XaxisCanvas';
 import YAxisCanvas from './Axes/yAxis/YaxisCanvas';
 import CandleChart from './Candle/CandleChart';
@@ -126,6 +126,7 @@ import OrderHistoryTooltip from './OrderHistoryCh/OrderHistoryTooltip';
 import RangeLinesChart from './RangeLine/RangeLinesChart';
 import TvlChart from './Tvl/TvlChart';
 import VolumeBarCanvas from './Volume/VolumeBarCanvas';
+import { getBidPriceValue } from './Liquidity/LiquiditySeries/AreaSeries';
 
 interface propsIF {
     isTokenABase: boolean;
@@ -1378,23 +1379,6 @@ export default function Chart(props: propsIF) {
                                     if (domain) {
                                         setYaxisDomain(domain[0], domain[1]);
                                     }
-
-                                    if (advancedMode && liquidityData) {
-                                        const liqAllBidPrices =
-                                            liquidityData?.liqBidData.map(
-                                                (
-                                                    liqPrices: LiquidityDataLocal,
-                                                ) => liqPrices.liqPrices,
-                                            );
-                                        const liqBidDeviation =
-                                            standardDeviation(liqAllBidPrices);
-
-                                        fillLiqAdvanced(
-                                            liqBidDeviation,
-                                            scaleData,
-                                            liquidityData,
-                                        );
-                                    }
                                 }
 
                                 clickedForLine = true;
@@ -1640,7 +1624,8 @@ export default function Chart(props: propsIF) {
                     location.pathname.includes('reposition')
                 ) {
                     const liqAllBidPrices = liquidityData?.liqBidData.map(
-                        (liqData: LiquidityDataLocal) => liqData.liqPrices,
+                        (liqData: LiquidityRangeIF) =>
+                            getBidPriceValue(liqData, isDenomBase),
                     );
                     // enlarges data to the end of the domain
                     const liqBidDeviation = standardDeviation(liqAllBidPrices);
@@ -1743,7 +1728,8 @@ export default function Chart(props: propsIF) {
             denomInBase === boundaries
         ) {
             const liqAllBidPrices = liquidityData?.liqBidData.map(
-                (liqData: LiquidityDataLocal) => liqData.liqPrices,
+                (liqData: LiquidityRangeIF) =>
+                    getBidPriceValue(liqData, isDenomBase),
             );
             const liqBidDeviation = standardDeviation(liqAllBidPrices);
 

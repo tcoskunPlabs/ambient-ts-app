@@ -92,15 +92,22 @@ export interface CandleDataChart extends CandleDataIF {
     isShowData: boolean;
 }
 export type liquidityChartData = {
-    liqAskData: LiquidityDataLocal[];
-    liqBidData: LiquidityDataLocal[];
+    liqAskData: LiquidityRangeIF[];
+    liqBidData: LiquidityRangeIF[];
     depthLiqBidData: LiquidityDataLocal[];
     depthLiqAskData: LiquidityDataLocal[];
     topBoundary: number;
     lowBoundary: number;
     liqTransitionPointforCurve: number;
     liqTransitionPointforDepth: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    liquidityScale: any;
 };
+
+export interface LiquidityHoverData {
+    activeLiq: number;
+    liqPrices: number;
+}
 
 export type scaleData = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
