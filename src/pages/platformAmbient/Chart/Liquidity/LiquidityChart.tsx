@@ -30,6 +30,7 @@ import {
 } from '../ChartUtils/chartUtils';
 import {
     createAreaSeries,
+    createAreaSeriesLiquidity,
     decorateForLiquidityArea,
     getAskPriceValue,
     getBidPriceValue,
@@ -166,6 +167,9 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         liquidityData?.topBoundary,
     ]);
 
+    // const { liquidityData: unparsedLiquidityData } =
+    // useContext(GraphDataContext);
+
     const hoverAskData = useMemo(
         () =>
             liqDataAsk?.map((item) => {
@@ -237,48 +241,44 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         return { min: undefined, max: undefined };
     };
 
-    useEffect(() => {
-        console.log({ liquidityData });
-    }, [liquidityData]);
-
     const liqMaxActiveLiq = useMemo<number | undefined>(() => {
-        if (scaleData && liquidityDepthScale && liquidityScale) {
-            const allData =
-                liqMode === 'curve'
-                    ? hoverAskData.concat(hoverBidData)
-                    : liqDataDepthBid.concat(liqDataDepthAsk);
+        // if (scaleData && liquidityDepthScale && liquidityScale) {
+        //     const allData =
+        //         liqMode === 'curve'
+        //             ? hoverAskData.concat(hoverBidData)
+        //             : liqDataDepthBid.concat(liqDataDepthAsk);
 
-            if (!allData || allData.length === 0) return;
-            const { min }: { min: number | undefined } = findLiqNearest(
-                allData,
-            ) as nearestLiquidity;
+        //     if (!allData || allData.length === 0) return;
+        //     const { min }: { min: number | undefined } = findLiqNearest(
+        //         allData,
+        //     ) as nearestLiquidity;
 
-            if (min !== undefined) {
-                let filteredAllData = allData.filter(
-                    (item: LiquidityHoverData) =>
-                        min <= item.liqPrices &&
-                        item.liqPrices <= scaleData?.yScale.domain()[1],
-                );
+        //     if (min !== undefined) {
+        //         let filteredAllData = allData.filter(
+        //             (item: LiquidityHoverData) =>
+        //                 min <= item.liqPrices &&
+        //                 item.liqPrices <= scaleData?.yScale.domain()[1],
+        //         );
 
-                if (
-                    filteredAllData === undefined ||
-                    filteredAllData.length === 0
-                ) {
-                    filteredAllData = allData.filter(
-                        (item: LiquidityHoverData) => min <= item.liqPrices,
-                    );
-                }
+        //         if (
+        //             filteredAllData === undefined ||
+        //             filteredAllData.length === 0
+        //         ) {
+        //             filteredAllData = allData.filter(
+        //                 (item: LiquidityHoverData) => min <= item.liqPrices,
+        //             );
+        //         }
 
-                const liqMaxActiveLiq = d3.max(
-                    filteredAllData,
-                    function (d: LiquidityHoverData) {
-                        return d.activeLiq;
-                    },
-                );
+        //         const liqMaxActiveLiq = d3.max(
+        //             filteredAllData,
+        //             function (d: LiquidityHoverData) {
+        //                 return d.activeLiq;
+        //             },
+        //         );
 
-                return liqMaxActiveLiq;
-            }
-        }
+        //         return liqMaxActiveLiq;
+        //     }
+        // }
         return undefined;
     }, [
         liqDataBid,
@@ -370,17 +370,27 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             liquidityScale !== undefined &&
             liquidityDepthScale !== undefined
         ) {
-            const d3CanvasLiqAskChart = createAreaSeries(
+            const d3CanvasLiqAskChart = createAreaSeriesLiquidity(
+                liquidityData.liquidityScale,
                 liquidityScale,
-                scaleData?.yScale,
+                scaleData.yScale,
+                'ask',
+                !isDenomBase,
                 d3.curveBasis,
+                'curve',
+                chartThemeColors,
             );
             setLiqAskSeries(() => d3CanvasLiqAskChart);
 
-            const d3CanvasLiqBidChart = createAreaSeries(
+            const d3CanvasLiqBidChart = createAreaSeriesLiquidity(
+                liquidityData.liquidityScale,
                 liquidityScale,
-                scaleData?.yScale,
+                scaleData.yScale,
+                'bid',
+                !isDenomBase,
                 d3.curveBasis,
+                'curve',
+                chartThemeColors,
             );
             setLiqBidSeries(() => d3CanvasLiqBidChart);
 
@@ -441,9 +451,9 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
     useEffect(() => {
         if (liqBidSeries && chartThemeColors && liqAskSeries) {
-            decorateForLiquidityArea(liqBidSeries, chartThemeColors, true);
+            decorateForLiquidityArea(liqBidSeries, chartThemeColors, false);
 
-            decorateForLiquidityArea(liqAskSeries, chartThemeColors, false);
+            decorateForLiquidityArea(liqAskSeries, chartThemeColors, true);
 
             decorateForLiquidityLine(lineLiqBidSeries, chartThemeColors, 'bid');
 
@@ -664,8 +674,99 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
         const allData =
             liqMode === 'curve'
-                ? hoverAskData.concat(hoverBidData)
-                : liqDataDepthBid.concat(liqDataDepthAsk);
+                ? liqDataBid.concat(liqDataAsk)
+                : /*  [
+                      {
+                          lowerBound: 32688,
+                          lowerBoundPrice: 26.27549014188483,
+                          lowerBoundInvPrice: 0.03805828148590596,
+                          lowerBoundPriceDecimalCorrected: 26.27549014188483,
+                          lowerBoundInvPriceDecimalCorrected: 0.03805828148590596,
+                          upperBound: 32697.046139732178,
+                          upperBoundPrice: 26.299268882172,
+                          upperBoundInvPrice: 0.03802387071976322,
+                          upperBoundPriceDecimalCorrected: 26.299268882172,
+                          upperBoundInvPriceDecimalCorrected: 0.03802387071976322,
+                          activeLiq: 111339038785285820000,
+                          cumBidLiq: 111339038785285820000,
+                          cumAskLiq: 0,
+                          deltaBase: 258185993966401340,
+                          deltaQuote: 9821672040593678,
+                          deltaAverageUSD: 1009.3693123763067,
+                          cumDeltaBase: 258185993966401340,
+                          cumDeltaAsk: 0,
+                          cumDeltaQuote: 9821672040593678,
+                          cumAverageUSD: 1009.3693123763067,
+                      },
+                      {
+                          lowerBound: 32697.046139732178,
+                          lowerBoundPrice: 26.299268882172,
+                          lowerBoundInvPrice: 0.03802387071976322,
+                          lowerBoundPriceDecimalCorrected: 26.299268882172,
+                          lowerBoundInvPriceDecimalCorrected: 0.03802387071976322,
+                          upperBound: 34704,
+                          upperBoundPrice: 32.14402197024416,
+                          upperBoundInvPrice: 0.03110998371410098,
+                          upperBoundPriceDecimalCorrected: 32.14402197024416,
+                          upperBoundInvPriceDecimalCorrected: 0.03110998371410098,
+                          activeLiq: 111339038785285820000,
+                          cumBidLiq: 0,
+                          cumAskLiq: 111339038785285820000,
+                          deltaBase: -60266546058429360000,
+                          deltaQuote: -2072785474232840200,
+                          deltaAverageUSD: 224397.19508219385,
+                          cumDeltaBase: -60266546058429360000,
+                          cumDeltaAsk: 0,
+                          cumDeltaQuote: -2072785474232840200,
+                          cumAverageUSD: 224397.19508219385,
+                      },
+                      {
+                          lowerBound: 32697.046139732178,
+                          lowerBoundPrice: 26.299268882172,
+                          lowerBoundInvPrice: 0.03802387071976322,
+                          lowerBoundPriceDecimalCorrected: 65.78722146657232,
+                          lowerBoundInvPriceDecimalCorrected: 0.03802387071976322,
+                          upperBound: 34704,
+                          upperBoundPrice: 32.14402197024416,
+                          upperBoundInvPrice: 0.03110998371410098,
+                          upperBoundPriceDecimalCorrected: 32.14402197024416,
+                          upperBoundInvPriceDecimalCorrected: 0.03110998371410098,
+                          activeLiq: 111339038785285820000,
+                          cumBidLiq: 0,
+                          cumAskLiq: 111339038785285820000,
+                          deltaBase: -60266546058429360000,
+                          deltaQuote: -2072785474232840200,
+                          deltaAverageUSD: 224397.19508219385,
+                          cumDeltaBase: -60266546058429360000,
+                          cumDeltaAsk: 0,
+                          cumDeltaQuote: -2072785474232840200,
+                          cumAverageUSD: 224397.19508219385,
+                          isFakeData: true,
+                      },
+                 /*      {
+                          lowerBound: null,
+                          lowerBoundPrice: 0,
+                          lowerBoundInvPrice: null,
+                          lowerBoundPriceDecimalCorrected: 0,
+                          lowerBoundInvPriceDecimalCorrected: null,
+                          upperBound: 32688,
+                          upperBoundPrice: 26.27549014188483,
+                          upperBoundInvPrice: 0.03805828148590596,
+                          upperBoundPriceDecimalCorrected: 26.27549014188483,
+                          upperBoundInvPriceDecimalCorrected: 0.03805828148590596,
+                          activeLiq: 0,
+                          cumBidLiq: 111339038785285820000,
+                          cumAskLiq: 0,
+                          deltaBase: 0,
+                          deltaQuote: null,
+                          deltaAverageUSD: null,
+                          cumDeltaBase: 258185993966401340,
+                          cumDeltaAsk: 0,
+                          cumDeltaQuote: null,
+                          cumAverageUSD: null,
+                      }, 
+                  ] */
+                  liqDataDepthBid.concat(liqDataDepthAsk);
         if (
             liqBidSeries &&
             liqAskSeries &&
@@ -679,78 +780,50 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 .on('draw', () => {
                     setCanvasResolution(canvas);
 
-                    if (singlePosition === undefined) {
-                        if (liqMode === 'curve') {
-                            clipCanvas(
-                                scaleData?.yScale(poolPriceDisplay),
-                                0,
-                                canvas,
-                            );
+                    if (liqMode === 'curve') {
+                        clipCanvas(
+                            scaleData?.yScale(poolPriceDisplay),
+                            0,
+                            canvas,
+                        );
 
-                            liqBidSeries(allData.slice().reverse());
+                        liqAskSeries(allData);
 
-                            ctx?.restore();
+                        ctx?.restore();
 
-                            clipCanvas(
-                                scaleData?.yScale(0),
-                                scaleData?.yScale(poolPriceDisplay),
-                                canvas,
-                            );
+                        clipCanvas(
+                            scaleData?.yScale(0),
+                            scaleData?.yScale(poolPriceDisplay),
+                            canvas,
+                        );
 
-                            liqAskSeries(allData);
-                            ctx?.restore();
+                        liqBidSeries(allData.slice().reverse());
+                        ctx?.restore();
 
-                            drawCurveLines(canvas);
-                        }
-                        if (liqMode === 'depth') {
-                            clipCanvas(
-                                scaleData?.yScale(poolPriceDisplay),
-                                0,
-                                canvas,
-                            );
+                        drawCurveLines(canvas);
+                    }
+                    if (liqMode === 'depth') {
+                        clipCanvas(
+                            scaleData?.yScale(poolPriceDisplay),
+                            0,
+                            canvas,
+                        );
 
-                            liqDepthBidSeries(allData.slice().reverse());
+                        liqDepthBidSeries(liqDataBid);
 
-                            ctx?.restore();
+                        ctx?.restore();
 
-                            clipCanvas(
-                                scaleData?.yScale(0),
-                                scaleData?.yScale(poolPriceDisplay),
-                                canvas,
-                            );
+                        clipCanvas(
+                            scaleData?.yScale(0),
+                            scaleData?.yScale(poolPriceDisplay),
+                            canvas,
+                        );
 
-                            liqDepthAskSeries(liqDataDepthAsk);
+                        liqDepthAskSeries(liqDataDepthAsk);
 
-                            ctx?.restore();
+                        ctx?.restore();
 
-                            drawDepthLines(canvas);
-                        }
-                    } else {
-                        if (singlePosition === 'ask') {
-                            liqAskSeries(
-                                [
-                                    ...allData,
-                                    {
-                                        activeLiq: allData[0].activeLiq,
-                                        liqPrices: scaleData.yScale.domain()[1],
-                                    },
-                                ].sort((a, b) => a.liqPrices - b.liqPrices),
-                            );
-                        } else {
-                            liqBidSeries(
-                                [
-                                    ...allData,
-                                    {
-                                        activeLiq: allData[0].activeLiq,
-                                        liqPrices: scaleData.yScale.domain()[1],
-                                    },
-                                    {
-                                        activeLiq: allData[0].activeLiq,
-                                        liqPrices: scaleData.yScale.domain()[0],
-                                    },
-                                ].sort((a, b) => b.liqPrices - a.liqPrices),
-                            );
-                        }
+                        drawDepthLines(canvas);
                     }
                 })
                 .on('measure', (event: CustomEvent) => {

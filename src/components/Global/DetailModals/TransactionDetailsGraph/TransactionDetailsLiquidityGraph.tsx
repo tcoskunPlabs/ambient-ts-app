@@ -183,6 +183,9 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
                         const liqLowerPrices = isDenomBase
                             ? element.upperBoundPriceDecimalCorrected
                             : element.lowerBoundInvPriceDecimalCorrected;
+
+                        // console.log('GRAPH',{liqUpperPrices,liqLowerPrices});
+
                         if (
                             Math.abs(liqUpperPrices) !== Infinity &&
                             Math.abs(liqLowerPrices) !== Infinity
@@ -196,6 +199,8 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
                             }
                         }
                     });
+
+                    console.log('GRAPHH', { liqAsk, liqBid });
 
                     liqBid.sort(
                         (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
@@ -442,6 +447,11 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
                     if (liqBidSeries) {
                         liqBidSeries(liquidityData.liquidityDataBid);
                     }
+
+                    console.log(
+                        'liquidityData.liquidityDataBid',
+                        liquidityData.liquidityDataAsk,
+                    );
 
                     drawCurveHighlighted(canvas);
                 })

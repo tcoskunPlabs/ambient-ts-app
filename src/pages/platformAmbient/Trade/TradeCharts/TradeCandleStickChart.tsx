@@ -371,6 +371,14 @@ function TradeCandleStickChart(props: propsIF) {
                 unparsedLiquidityData.ranges,
             );
 
+            const bidData = unparsedLiquidityData.ranges.filter(
+                (data) => data.cumBidLiq > 0 && data.cumAskLiq === 0,
+            );
+
+            const askData = unparsedLiquidityData.ranges.filter(
+                (data) => data.cumAskLiq > 0 && data.cumBidLiq === 0,
+            );
+
             unparsedLiquidityData.ranges.map((data: any) => {
                 const liqUpperPrices = isDenomBase
                     ? data.upperBoundInvPriceDecimalCorrected
@@ -380,50 +388,54 @@ function TradeCandleStickChart(props: propsIF) {
                     ? data.lowerBoundInvPriceDecimalCorrected
                     : data.upperBoundPriceDecimalCorrected;
 
-                if (
-                    Math.abs(liqUpperPrices) !== Infinity &&
-                    Math.abs(liqLowerPrices) !== Infinity
-                ) {
-                    if (liqLowerPrices <= poolPriceDisplay) {
-                        liqAskData.push(data);
-                    } else {
-                        if (liqUpperPrices < poolPriceDisplay * 15)
-                            liqBidData.push(data);
-                    }
-                }
+                // console.log({liqUpperPrices,liqLowerPrices});
 
-                if (liqBidData.length > 1 && liqAskData.length > 1) {
-                    const extent = d3.extent(
-                        liqAskData,
-                        (d: LiquidityRangeIF) => {
-                            return isDenomBase
-                                ? d.upperBoundPriceDecimalCorrected
-                                : d.lowerBoundInvPriceDecimalCorrected;
-                        },
-                    );
+                // if (
+                //     Math.abs(liqUpperPrices) !== Infinity &&
+                //     Math.abs(liqLowerPrices) !== Infinity
+                // ) {
+                //     if (liqLowerPrices <= poolPriceDisplay) {
+                //         liqAskData.push(data);
+                //     } else {
+                //         if (liqUpperPrices < poolPriceDisplay * 15)
+                //             liqBidData.push(data);
+                //     }
+                // }
 
-                    const maxAskData = extent[1];
-                    const maxAskObject = liqAskData.find(
-                        (d: LiquidityRangeIF) => {
-                            return (
-                                (isDenomBase
-                                    ? d.upperBoundPriceDecimalCorrected
-                                    : d.lowerBoundInvPriceDecimalCorrected) ===
-                                maxAskData
-                            );
-                        },
-                    );
+                // console.log({liqAskData,liqBidData});
 
-                    if (maxAskObject)
-                        liqBidData.push({
-                            ...liqBidData[0],
-                            activeLiq: maxAskObject.activeLiq,
-                            upperBoundInvPriceDecimalCorrected:
-                                maxAskObject.lowerBoundInvPriceDecimalCorrected,
-                            lowerBoundPriceDecimalCorrected:
-                                maxAskObject.upperBoundPriceDecimalCorrected,
-                        });
-                }
+                // if (liqBidData.length > 1 && liqAskData.length > 1) {
+                //     const extent = d3.extent(
+                //         liqAskData,
+                //         (d: LiquidityRangeIF) => {
+                //             return isDenomBase
+                //                 ? d.upperBoundPriceDecimalCorrected
+                //                 : d.lowerBoundInvPriceDecimalCorrected;
+                //         },
+                //     );
+
+                //     const maxAskData = extent[1];
+                //     const maxAskObject = liqAskData.find(
+                //         (d: LiquidityRangeIF) => {
+                //             return (
+                //                 (isDenomBase
+                //                     ? d.upperBoundPriceDecimalCorrected
+                //                     : d.lowerBoundInvPriceDecimalCorrected) ===
+                //                 maxAskData
+                //             );
+                //         },
+                //     );
+
+                //     if (maxAskObject)
+                //         liqBidData.push({
+                //             ...liqBidData[0],
+                //             activeLiq: maxAskObject.activeLiq,
+                //             upperBoundInvPriceDecimalCorrected:
+                //                 maxAskObject.lowerBoundInvPriceDecimalCorrected,
+                //             lowerBoundPriceDecimalCorrected:
+                //                 maxAskObject.upperBoundPriceDecimalCorrected,
+                //         });
+                // }
 
                 if (!isDenomBase) {
                     if (
@@ -564,9 +576,11 @@ function TradeCandleStickChart(props: propsIF) {
             depthLiqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             depthLiqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
 
+            console.log({ askData, bidData });
+
             return {
-                liqAskData: liqAskData,
-                liqBidData: liqBidData,
+                liqAskData: askData,
+                liqBidData: bidData,
                 depthLiqBidData: depthLiqBidData,
                 depthLiqAskData: depthLiqAskData,
                 topBoundary: topBoundary,

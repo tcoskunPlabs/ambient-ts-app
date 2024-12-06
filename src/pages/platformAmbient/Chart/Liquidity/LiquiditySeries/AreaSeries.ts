@@ -134,14 +134,10 @@ export function createAreaSeriesLiquidity(
         })
         .crossValue((d: LiquidityRangeIF) => {
             if (liqType === 'bid') {
-                return !isDenomBase
-                    ? d.upperBoundInvPriceDecimalCorrected
-                    : d.lowerBoundPriceDecimalCorrected;
+                return d.lowerBoundPriceDecimalCorrected;
             }
             if (liqType === 'ask') {
-                return !isDenomBase
-                    ? d.lowerBoundInvPriceDecimalCorrected
-                    : d.upperBoundPriceDecimalCorrected;
+                return d.upperBoundPriceDecimalCorrected;
             }
         })
         .xScale(xScale)
