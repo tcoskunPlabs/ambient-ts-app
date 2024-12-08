@@ -365,11 +365,14 @@ function TradeCandleStickChart(props: propsIF) {
                 ])
                 .range([30, 550]);
 
-            const liquidityLastStatus = unparsedLiquidityData.ranges.reduce(
-                (max, liq) => {
+            const liquidityLastStatusForBid =
+                unparsedLiquidityData.ranges.reduce((max, liq) => {
                     return liq.upperBound > max.upperBound ? liq : max;
-                },
-            );
+                });
+
+            const upperLiquidityLastStatus = isDenomBase
+                ? liquidityLastStatusForBid.lowerBoundInvPriceDecimalCorrected
+                : liquidityLastStatusForBid.lowerBoundPriceDecimalCorrected;
 
             unparsedLiquidityData.ranges.map((data: any) => {
                 const liqUpperPrices = isDenomBase
@@ -388,7 +391,12 @@ function TradeCandleStickChart(props: propsIF) {
 
                 const isAsk = data.cumBidLiq > 0 && data.cumAskLiq === 0;
 
-                if ((isBid && !isDenomBase) || (isAsk && isDenomBase)) {
+                if (
+                    ((isBid && !isDenomBase) || (isAsk && isDenomBase)) &&
+                    Math.abs(upperPrice) !== Infinity &&
+                    upperPrice < poolPriceDisplay * 15 &&
+                    upperPrice <= upperLiquidityLastStatus
+                ) {
                     liqBidData.push({
                         activeLiq: liquidityScale(data.activeLiq),
                         liqPrices: upperPrice,
@@ -514,31 +522,11 @@ function TradeCandleStickChart(props: propsIF) {
                     (a: any, b: any) => b.liqPrices - a.liqPrices,
                 );
 
-                liqBidData.push({
-                    activeLiq: liqBidData.find(
-                        (liqData) => liqData.liqPrices < limitBoundary,
-                    )?.activeLiq,
-                    liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
                 depthLiqBidData.push({
                     activeLiq: depthLiqBidData.find(
                         (liqData) => liqData.liqPrices < limitBoundary,
                     )?.activeLiq,
                     liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                liqAskData.push({
-                    activeLiq: liqAskData[liqAskData.length - 1].activeLiq,
-                    liqPrices: 0,
                     deltaAverageUSD: 0,
                     cumAverageUSD: 0,
                     upperBound: 0,
@@ -561,8 +549,8 @@ function TradeCandleStickChart(props: propsIF) {
                 liqBidData.push({
                     activeLiq: liquidityScale(liqBidData[0].activeLiq),
                     liqPrices: isDenomBase
-                        ? liquidityLastStatus.lowerBoundInvPriceDecimalCorrected
-                        : liquidityLastStatus.lowerBoundPriceDecimalCorrected,
+                        ? liquidityLastStatusForBid.lowerBoundInvPriceDecimalCorrected
+                        : liquidityLastStatusForBid.lowerBoundPriceDecimalCorrected,
                     deltaAverageUSD: liqBidData[0].deltaAverageUSD
                         ? liqBidData[0].deltaAverageUSD
                         : 0,
@@ -581,7 +569,7 @@ function TradeCandleStickChart(props: propsIF) {
                 liqAskData.push({
                     activeLiq: liquidityScale(liqAskData[0].activeLiq),
                     liqPrices:
-                        liquidityLastStatus.lowerBoundInvPriceDecimalCorrected,
+                        liquidityLastStatusForBid.lowerBoundInvPriceDecimalCorrected,
                     deltaAverageUSD: liqAskData[0].deltaAverageUSD
                         ? liqAskData[0].deltaAverageUSD
                         : 0,
@@ -613,6 +601,9 @@ function TradeCandleStickChart(props: propsIF) {
                 lowBoundary: lowBoundary,
                 liqTransitionPointforCurve: poolPriceDisplay,
                 liqTransitionPointforDepth: poolPriceDisplay,
+                isAmbientPosition:
+                    liquidityLastStatusForBid.activeLiq ===
+                    liquidityLastStatusForBid.cumBidLiq,
             };
         } else {
             return undefined;

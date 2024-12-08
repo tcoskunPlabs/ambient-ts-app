@@ -100,6 +100,7 @@ export type liquidityChartData = {
     lowBoundary: number;
     liqTransitionPointforCurve: number;
     liqTransitionPointforDepth: number;
+    isAmbientPosition: boolean;
 };
 
 export type scaleData = {
