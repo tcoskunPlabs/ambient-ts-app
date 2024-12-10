@@ -402,7 +402,7 @@ export default function Chart(props: propsIF) {
 
     const [market, setMarket] = useState<number>(0);
 
-    const [boundaries, setBoundaries] = useState<boolean>();
+    // const [boundaries, setBoundaries] = useState<boolean>();
     const [isShapeEdited, setIsShapeEdited] = useState<boolean>();
 
     const [isLineDrag, setIsLineDrag] = useState(false);
@@ -1639,14 +1639,13 @@ export default function Chart(props: propsIF) {
                     location.pathname.includes('pool') ||
                     location.pathname.includes('reposition')
                 ) {
-                    const liqAllBidPrices = liquidityData?.liqBidData.map(
-                        (liqData: LiquidityDataLocal) => liqData.liqPrices,
-                    );
+                    // const liqAllBidPrices = liquidityData?.liqBidData.map(
+                    //     (liqData: LiquidityDataLocal) => liqData.liqPrices,
+                    // );
                     // enlarges data to the end of the domain
-                    const liqBidDeviation = standardDeviation(liqAllBidPrices);
-
+                    // const liqBidDeviation = standardDeviation(liqAllBidPrices);
                     // liq for advance mod is drawn forever
-                    fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
+                    // fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
                 }
             }
         }
@@ -1735,28 +1734,28 @@ export default function Chart(props: propsIF) {
         chartTriggeredBy,
     ]);
 
-    useEffect(() => {
-        if (
-            advancedMode &&
-            scaleData &&
-            liquidityData &&
-            denomInBase === boundaries
-        ) {
-            const liqAllBidPrices = liquidityData?.liqBidData.map(
-                (liqData: LiquidityDataLocal) => liqData.liqPrices,
-            );
-            const liqBidDeviation = standardDeviation(liqAllBidPrices);
+    // useEffect(() => {
+    //     if (
+    //         advancedMode &&
+    //         scaleData &&
+    //         liquidityData &&
+    //         denomInBase === boundaries
+    //     ) {
+    //         const liqAllBidPrices = liquidityData?.liqBidData.map(
+    //             (liqData: LiquidityDataLocal) => liqData.liqPrices,
+    //         );
+    //         const liqBidDeviation = standardDeviation(liqAllBidPrices);
 
-            fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
-        } else {
-            setBoundaries(denomInBase);
-        }
-    }, [
-        advancedMode,
-        ranges,
-        liquidityData?.liqBidData,
-        diffHashSigScaleData(scaleData, 'y'),
-    ]);
+    //         fillLiqAdvanced(liqBidDeviation, scaleData, liquidityData);
+    //     } else {
+    //         setBoundaries(denomInBase);
+    //     }
+    // }, [
+    //     advancedMode,
+    //     ranges,
+    //     liquidityData?.liqBidData,
+    //     diffHashSigScaleData(scaleData, 'y'),
+    // ]);
 
     // *** LIMIT ***
     /**

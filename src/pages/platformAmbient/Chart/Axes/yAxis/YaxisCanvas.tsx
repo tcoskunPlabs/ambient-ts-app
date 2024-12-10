@@ -20,10 +20,10 @@ import {
     formatAmountChartData,
     formatPoolPriceAxis,
 } from '../../../../../utils/numbers';
-import { LiquidityDataLocal } from '../../../Trade/TradeCharts/TradeCharts';
+// import { LiquidityDataLocal } from '../../../Trade/TradeCharts/TradeCharts';
 import {
     crosshair,
-    fillLiqAdvanced,
+    // fillLiqAdvanced,
     getXandYLocationForChart,
     lineValue,
     liquidityChartData,
@@ -32,7 +32,7 @@ import {
     scaleData,
     selectedDrawnData,
     setCanvasResolution,
-    standardDeviation,
+    // standardDeviation,
 } from '../../ChartUtils/chartUtils';
 import useDollarPrice from '../../ChartUtils/getDollarPrice';
 import { createRectLabel } from './YaxisUtils';
@@ -783,19 +783,18 @@ function YAxisCanvas(props: yAxisIF) {
                         }
                     });
                     if (advancedMode && liquidityData) {
-                        const liqAllBidPrices = liquidityData?.liqBidData.map(
-                            (liqData: LiquidityDataLocal) => liqData.liqPrices,
-                        );
-                        const liqBidDeviation =
-                            standardDeviation(liqAllBidPrices);
-
-                        if (scaleData) {
-                            fillLiqAdvanced(
-                                liqBidDeviation,
-                                scaleData,
-                                liquidityData,
-                            );
-                        }
+                        // const liqAllBidPrices = liquidityData?.liqBidData.map(
+                        //     (liqData: LiquidityDataLocal) => liqData.liqPrices,
+                        // );
+                        // const liqBidDeviation =
+                        //     standardDeviation(liqAllBidPrices);
+                        // if (scaleData) {
+                        //     fillLiqAdvanced(
+                        //         liqBidDeviation,
+                        //         scaleData,
+                        //         liquidityData,
+                        //     );
+                        // }
                     }
 
                     setRescale(() => {
