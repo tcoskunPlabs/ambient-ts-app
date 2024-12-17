@@ -26,6 +26,7 @@ import { AppStateContext } from './AppStateContext';
 import { CachedDataContext } from './CachedDataContext';
 import { ChartContext } from './ChartContext';
 import { CrocEnvContext } from './CrocEnvContext';
+import { PoolContext } from './PoolContext';
 import { TradeTokenContext } from './TradeTokenContext';
 import { UserDataContext } from './UserDataContext';
 
@@ -73,6 +74,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
     } = useContext(AppStateContext);
     const { crocEnv } = useContext(CrocEnvContext);
 
+    const { poolPriceDisplay } = useContext(PoolContext);
     const { isUserConnected } = useContext(UserDataContext);
     const {
         baseToken: { address: baseTokenAddress },
@@ -284,7 +286,8 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
             isUserOnline &&
             baseTokenAddress &&
             quoteTokenAddress &&
-            crocEnv
+            crocEnv &&
+            poolPriceDisplay
         ) {
             setIsZoomRequestCanceled({ value: true });
 
@@ -317,6 +320,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                 crocEnv,
                 cachedFetchTokenPrice,
                 cachedQuerySpotPrice,
+                poolPriceDisplay,
             )
                 .then((candles) => {
                     setCandleData(candles);
@@ -392,7 +396,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
         numDurations: number,
         minTimeMemo: number,
     ) => {
-        if (!crocEnv || !candleTimeLocal) {
+        if (!crocEnv || !candleTimeLocal || !poolPriceDisplay) {
             return;
         }
 
@@ -425,6 +429,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
             crocEnv,
             cachedFetchTokenPrice,
             cachedQuerySpotPrice,
+            poolPriceDisplay,
             signal,
         )
             .then((incrCandles) => {

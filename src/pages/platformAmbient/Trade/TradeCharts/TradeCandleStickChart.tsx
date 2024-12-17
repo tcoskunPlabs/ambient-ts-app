@@ -610,6 +610,10 @@ function TradeCandleStickChart(props: propsIF) {
         }
     }, [tokenPair]);
 
+    useEffect(() => {
+        console.log({ unparsedCandleData });
+    }, [unparsedCandleData]);
+
     // Liq Scale
     useEffect(() => {
         if (liquidityData !== undefined) {

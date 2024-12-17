@@ -21,6 +21,7 @@ export async function fetchCandleSeriesHybrid(
     crocEnv: CrocEnv,
     cachedFetchTokenPrice: TokenPriceFn,
     cachedQuerySpotPrice: SpotPriceFn,
+    poolPriceDisplay: number,
     signal?: AbortSignal,
 ): Promise<CandlesByPoolAndDurationIF | undefined> {
     const candles = await fetchCandleSeriesCroc(
@@ -36,6 +37,7 @@ export async function fetchCandleSeriesHybrid(
         crocEnv,
         cachedFetchTokenPrice,
         cachedQuerySpotPrice,
+        poolPriceDisplay,
         signal,
     );
 
@@ -68,6 +70,7 @@ export async function fetchCandleSeriesCroc(
     crocEnv: CrocEnv,
     cachedFetchTokenPrice: TokenPriceFn,
     cachedQuerySpotPrice: SpotPriceFn,
+    poolPriceDisplay: number,
     signal?: AbortSignal,
 ): Promise<CandlesByPoolAndDurationIF | undefined> {
     if (!isFetchEnabled) {
@@ -110,6 +113,7 @@ export async function fetchCandleSeriesCroc(
                 crocEnv,
                 cachedFetchTokenPrice,
                 cachedQuerySpotPrice,
+                poolPriceDisplay,
             );
 
             return {
@@ -160,6 +164,7 @@ async function expandPoolStatsCandle(
     crocEnv: CrocEnv,
     cachedFetchTokenPrice: TokenPriceFn,
     cachedQuerySpotPrice: SpotPriceFn,
+    poolPriceDisplay: number,
 ): Promise<CandleDataIF[]> {
     const baseDecimals = await crocEnv.token(base).decimals;
     const quoteDecimals = await crocEnv.token(quote).decimals;
@@ -199,6 +204,7 @@ async function expandPoolStatsCandle(
         quoteDecimals,
         basePrice,
         quotePrice,
+        poolPriceDisplay,
     ).reverse();
 }
 
@@ -208,17 +214,21 @@ function decorateCandleData(
     quoteDecimals: number,
     basePrice: number,
     quotePrice: number,
+    poolPriceDisplay: number,
 ): CandleDataIF[] {
     const PRE_BURN_TIME = 1686176723; // Based on mainnet deployment
 
     return payload
-        .filter((p) => p.priceOpen > 0 && p.time > PRE_BURN_TIME)
+        .filter((p) => p.time > PRE_BURN_TIME)
         .map((p) => {
             const baseDecMult = 1 / Math.pow(10, baseDecimals);
             const quoteDecMult = 1 / Math.pow(10, quoteDecimals);
             const baseUsdMult = baseDecMult * basePrice;
             const quoteUsdMult = quoteDecMult * quotePrice;
             const priceDecMult = baseDecMult / quoteDecMult;
+
+            const openPrice = p.priceOpen ? p.priceOpen : poolPriceDisplay;
+            const closePrice = p.priceClose ? p.priceClose : poolPriceDisplay;
 
             return {
                 time: p.time,
@@ -235,25 +245,24 @@ function decorateCandleData(
                 averageLiquidityFee: (p.feeRateOpen + p.feeRateClose) / 2.0,
                 minPriceDecimalCorrected: p.minPrice * priceDecMult,
                 maxPriceDecimalCorrected: p.maxPrice * priceDecMult,
-                priceOpenDecimalCorrected: p.priceOpen * priceDecMult,
-                priceCloseDecimalCorrected: p.priceClose * priceDecMult,
+                priceOpenDecimalCorrected: openPrice * priceDecMult,
+                priceCloseDecimalCorrected: closePrice * priceDecMult,
                 invMinPriceDecimalCorrected: 1 / (p.minPrice * priceDecMult),
                 invMaxPriceDecimalCorrected: 1 / (p.maxPrice * priceDecMult),
-                invPriceOpenDecimalCorrected: 1 / (p.priceOpen * priceDecMult),
-                invPriceCloseDecimalCorrected:
-                    1 / (p.priceClose * priceDecMult),
+                invPriceOpenDecimalCorrected: 1 / (openPrice * priceDecMult),
+                invPriceCloseDecimalCorrected: 1 / (closePrice * priceDecMult),
                 minPriceExclMEVDecimalCorrected: p.minPrice * priceDecMult,
                 maxPriceExclMEVDecimalCorrected: p.maxPrice * priceDecMult,
-                priceOpenExclMEVDecimalCorrected: p.priceOpen * priceDecMult,
-                priceCloseExclMEVDecimalCorrected: p.priceClose * priceDecMult,
+                priceOpenExclMEVDecimalCorrected: openPrice * priceDecMult,
+                priceCloseExclMEVDecimalCorrected: closePrice * priceDecMult,
                 invMinPriceExclMEVDecimalCorrected:
                     1 / (p.minPrice * priceDecMult),
                 invMaxPriceExclMEVDecimalCorrected:
                     1 / (p.maxPrice * priceDecMult),
                 invPriceOpenExclMEVDecimalCorrected:
-                    1 / (p.priceOpen * priceDecMult),
+                    1 / (openPrice * priceDecMult),
                 invPriceCloseExclMEVDecimalCorrected:
-                    1 / (p.priceClose * priceDecMult),
+                    1 / (closePrice * priceDecMult),
             };
         });
 }
