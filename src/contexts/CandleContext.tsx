@@ -227,7 +227,6 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
         isPoolInitialized,
         chainId,
         poolPriceDisplay === 0,
-        isUserConnected,
     ]);
 
     // only works when the period changes
@@ -504,7 +503,7 @@ export const CandleContextProvider = (props: { children: React.ReactNode }) => {
                 }
             }
         })();
-    }, [numDurationsNeeded, minTimeMemo, crocEnv, chainId]);
+    }, [numDurationsNeeded, minTimeMemo, chainId]);
 
     useEffect(() => {
         if (abortController.abortController && isZoomRequestCanceled.value) {
