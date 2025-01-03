@@ -253,9 +253,11 @@ function TradeCandleStickChart(props: propsIF) {
     }, [isFetchingEnoughData]);
 
     const sumActiveLiq = unparsedLiquidityData
-        ? unparsedLiquidityData.ranges.reduce((sum, range) => {
-              return sum + (range.activeLiq || 0);
-          }, 0)
+        ? unparsedLiquidityData.ranges.askRanges
+              .concat(unparsedLiquidityData.ranges.bidRanges)
+              .reduce((sum, range) => {
+                  return sum + (range.activeLiq || 0);
+              }, 0)
         : 0;
 
     // Parse liquidity data
@@ -290,15 +292,19 @@ function TradeCandleStickChart(props: propsIF) {
                 gridSize,
             );
 
+            const allData = unparsedLiquidityData.ranges.askRanges.concat(
+                unparsedLiquidityData.ranges.bidRanges,
+            );
+
             const limitBoundary = parseFloat(
                 rangeBoundary.pinnedMaxPriceDisplay,
             );
 
-            const barThreshold =
-                poolPriceDisplay !== undefined ? poolPriceDisplay : 0;
+            // const barThreshold =
+            //     poolPriceDisplay !== undefined ? poolPriceDisplay : 0;
 
             const domainLeft = Math.min(
-                ...unparsedLiquidityData.ranges
+                ...allData
                     .filter((item) => item.activeLiq > 0)
                     .map((o: any) => {
                         return o.activeLiq !== undefined
@@ -307,248 +313,240 @@ function TradeCandleStickChart(props: propsIF) {
                     }),
             );
             const domainRight = Math.max(
-                ...unparsedLiquidityData.ranges.map((o: any) => {
+                ...allData.map((o: any) => {
                     return o.activeLiq !== undefined ? o.activeLiq : 0;
                 }),
             );
 
             const depthBidLeft = Math.min(
-                ...unparsedLiquidityData.ranges.map((o: any) => {
-                    return o.cumBidLiq !== undefined && o.cumBidLiq !== 0
-                        ? o.cumBidLiq
-                        : Infinity;
-                }),
-            );
-
-            const depthBidRight = Math.max(
-                ...unparsedLiquidityData.ranges.map((o: any) => {
-                    return o.cumBidLiq !== undefined && o.cumBidLiq !== 0
-                        ? o.cumBidLiq
-                        : 0;
+                ...allData.map((o: any) => {
+                    return o.cumBidLiq;
                 }),
             );
 
             const depthAskLeft = Math.min(
-                ...unparsedLiquidityData.ranges.map((o: any) => {
-                    return o.cumAskLiq !== undefined && o.cumAskLiq !== 0
-                        ? o.cumAskLiq
-                        : Infinity;
+                ...allData.map((o: any) => {
+                    return o.cumAskLiq;
+                }),
+            );
+
+            const depthBidRight = Math.max(
+                ...allData.map((o: any) => {
+                    return o.cumBidLiq;
                 }),
             );
 
             const depthAskRight = Math.max(
-                ...unparsedLiquidityData.ranges.map((o: any) => {
-                    const price = isDenomBase
-                        ? o.upperBoundInvPriceDecimalCorrected
-                        : o.upperBoundPriceDecimalCorrected;
-                    if (price > barThreshold / 10 && price < limitBoundary) {
-                        return o.cumAskLiq !== undefined && o.cumAskLiq !== 0
-                            ? o.cumAskLiq
-                            : 0;
-                    }
-                    return 0;
+                ...allData.map((o: any) => {
+                    return o.cumAskLiq;
                 }),
             );
 
+            const maxDom = Math.max(depthBidRight, depthAskRight);
+            const minDom = Math.min(
+                depthBidLeft,
+                depthAskLeft,
+            ); /*  < 0 ? 1 : Math.min(depthBidLeft,depthAskLeft) */
             const liquidityScale = d3
                 .scaleLog()
                 .domain([domainLeft, domainRight])
                 .range([30, 1000]);
 
             const depthLiquidityScale = d3
-                .scaleLog()
-                .domain([
-                    depthAskLeft < depthBidLeft ? depthAskLeft : depthBidLeft,
-                    depthBidRight > depthAskRight
-                        ? depthBidRight
-                        : depthAskRight,
-                ])
-                .range([30, 550]);
+                .scaleLinear()
+                .domain([minDom, maxDom])
+                .range([0, 550]);
 
-            unparsedLiquidityData.ranges.map((data: any) => {
+            console.log(
+                'unparsedLiquidityData.ranges.askRanges',
+                unparsedLiquidityData.ranges.askRanges,
+            );
+
+            unparsedLiquidityData.ranges.askRanges.map((i) => {
                 const liqUpperPrices = isDenomBase
-                    ? data.upperBoundInvPriceDecimalCorrected
-                    : data.lowerBoundPriceDecimalCorrected;
+                    ? i.upperBoundInvPriceDecimalCorrected
+                    : i.upperBoundPriceDecimalCorrected;
 
-                const liqLowerPrices = isDenomBase
-                    ? data.lowerBoundInvPriceDecimalCorrected
-                    : data.upperBoundPriceDecimalCorrected;
-
-                if (
-                    liqUpperPrices >= poolPriceDisplay &&
-                    liqUpperPrices < poolPriceDisplay * 10
-                ) {
+                if (liqUpperPrices < poolPriceDisplay * 10) {
                     liqBidData.push({
-                        activeLiq: liquidityScale(data.activeLiq),
+                        activeLiq: liquidityScale(i.activeLiq),
                         liqPrices: liqUpperPrices,
-                        deltaAverageUSD: data.deltaAverageUSD
-                            ? data.deltaAverageUSD
+                        deltaAverageUSD: i.deltaAverageUSD
+                            ? i.deltaAverageUSD
                             : 0,
-                        cumAverageUSD: data.cumAverageUSD
-                            ? data.cumAverageUSD
-                            : 0,
-                        upperBound:
-                            data.upperBound === '+inf'
-                                ? data.lowerBound
-                                : data.upperBound,
-                        lowerBound: data.lowerBound,
+                        cumAverageUSD: i.cumAverageUSD ? i.cumAverageUSD : 0,
+                        upperBound: i.upperBound,
+                        lowerBound: i.lowerBound,
                     });
-                } else {
-                    if (
-                        liqLowerPrices <= limitBoundary &&
-                        liqLowerPrices > poolPriceDisplay / 10
-                    ) {
-                        liqAskData.push({
-                            activeLiq: liquidityScale(data.activeLiq),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD
-                                ? data.deltaAverageUSD
-                                : 0,
-                            cumAverageUSD: data.cumAverageUSD
-                                ? data.cumAverageUSD
-                                : 0,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-                }
 
-                if (!isDenomBase) {
-                    if (
-                        data.cumAskLiq !== undefined &&
-                        data.cumAskLiq !== '0' &&
-                        liqUpperPrices !== '+inf' &&
-                        !Number.isNaN(depthLiquidityScale(data.cumAskLiq)) &&
-                        liqUpperPrices < poolPriceDisplay * 10
-                    ) {
+                    console.log(
+                        'depthLiquidityScale(i.cumAskLiq)',
+                        depthLiquidityScale(i.cumAskLiq),
+                        i.cumAskLiq,
+                        depthLiquidityScale.domain(),
+                    );
+
+                    if (!isNaN(depthLiquidityScale(i.cumAskLiq))) {
                         depthLiqBidData.push({
-                            activeLiq: depthLiquidityScale(data.cumAskLiq),
+                            activeLiq: depthLiquidityScale(i.cumAskLiq),
                             liqPrices: liqUpperPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-
-                    if (
-                        data.cumBidLiq !== undefined &&
-                        !Number.isNaN(depthLiquidityScale(data.cumBidLiq)) &&
-                        liqLowerPrices > poolPriceDisplay / 10
-                    ) {
-                        depthLiqAskData.push({
-                            activeLiq: depthLiquidityScale(data.cumBidLiq),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-                } else {
-                    if (
-                        data.cumBidLiq !== undefined &&
-                        data.cumBidLiq !== '0' &&
-                        liqUpperPrices !== '+inf' &&
-                        liqUpperPrices < poolPriceDisplay * 10 &&
-                        !Number.isNaN(depthLiquidityScale(data.cumBidLiq))
-                    ) {
-                        depthLiqBidData.push({
-                            activeLiq: depthLiquidityScale(data.cumBidLiq),
-                            liqPrices: liqUpperPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-
-                    if (
-                        data.cumAskLiq !== undefined &&
-                        data.cumAskLiq !== '0' &&
-                        !Number.isNaN(depthLiquidityScale(data.cumAskLiq)) &&
-                        liqUpperPrices <= limitBoundary &&
-                        liqUpperPrices > poolPriceDisplay / 10
-                    ) {
-                        depthLiqAskData.push({
-                            activeLiq: depthLiquidityScale(data.cumAskLiq),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
+                            deltaAverageUSD: i.deltaAverageUSD,
+                            cumAverageUSD: i.cumAverageUSD,
+                            upperBound: i.upperBound,
+                            lowerBound: i.lowerBound,
                         });
                     }
                 }
             });
-            if (liqBidData.length > 1 && liqAskData.length > 1) {
-                liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
 
-                liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-                depthLiqBidData.sort(
-                    (a: any, b: any) => b.liqPrices - a.liqPrices,
-                );
-
-                liqBidData.push({
-                    activeLiq: liqBidData.find(
-                        (liqData) => liqData.liqPrices < limitBoundary,
-                    )?.activeLiq,
-                    liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                depthLiqBidData.push({
-                    activeLiq: depthLiqBidData.find(
-                        (liqData) => liqData.liqPrices < limitBoundary,
-                    )?.activeLiq,
-                    liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
+            unparsedLiquidityData.ranges.bidRanges.map((i) => {
+                const liqUpperPrices = isDenomBase
+                    ? i.lowerBoundInvPriceDecimalCorrected
+                    : i.lowerBoundPriceDecimalCorrected;
 
                 liqAskData.push({
-                    activeLiq: liqAskData[liqAskData.length - 1].activeLiq,
-                    liqPrices: 0,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
+                    activeLiq: liquidityScale(i.activeLiq),
+                    liqPrices: liqUpperPrices,
+                    deltaAverageUSD: i.deltaAverageUSD ? i.deltaAverageUSD : 0,
+                    cumAverageUSD: i.cumAverageUSD ? i.cumAverageUSD : 0,
+                    upperBound: i.upperBound,
+                    lowerBound: i.lowerBound,
                 });
 
                 depthLiqAskData.push({
-                    activeLiq:
-                        depthLiqAskData[
-                            !isDenomBase ? 0 : depthLiqAskData.length - 1
-                        ]?.activeLiq,
-                    liqPrices: 0,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
+                    activeLiq: depthLiquidityScale(i.cumBidLiq),
+                    liqPrices: liqUpperPrices,
+                    deltaAverageUSD: i.deltaAverageUSD,
+                    cumAverageUSD: i.cumAverageUSD,
+                    upperBound: i.upperBound,
+                    lowerBound: i.lowerBound,
                 });
-            }
+            });
+
+            // allData.map((data: any) => {
+            //     const liqUpperPrices = isDenomBase
+            //         ? data.upperBoundInvPriceDecimalCorrected
+            //         : data.lowerBoundPriceDecimalCorrected;
+
+            //     const liqLowerPrices = isDenomBase
+            //         ? data.lowerBoundInvPriceDecimalCorrected
+            //         : data.upperBoundPriceDecimalCorrected;
+
+            //     if (!isDenomBase) {
+            //         if (
+            //             data.cumAskLiq !== undefined &&
+            //             data.cumAskLiq !== '0' &&
+            //             liqUpperPrices !== '+inf' &&
+            //             !Number.isNaN(depthLiquidityScale(data.cumAskLiq)) &&
+            //             liqUpperPrices < poolPriceDisplay * 10
+            //         ) {
+            //             depthLiqBidData.push({
+            //                 activeLiq: depthLiquidityScale(data.cumAskLiq),
+            //                 liqPrices: liqUpperPrices,
+            //                 deltaAverageUSD: data.deltaAverageUSD,
+            //                 cumAverageUSD: data.cumAverageUSD,
+            //                 upperBound:
+            //                     data.upperBound === '+inf'
+            //                         ? data.lowerBound
+            //                         : data.upperBound,
+            //                 lowerBound: data.lowerBound,
+            //             });
+            //         }
+
+            //         if (
+            //             data.cumBidLiq !== undefined &&
+            //             !Number.isNaN(depthLiquidityScale(data.cumBidLiq)) &&
+            //             liqLowerPrices > poolPriceDisplay / 10
+            //         ) {
+            //             depthLiqAskData.push({
+            //                 activeLiq: depthLiquidityScale(data.cumBidLiq),
+            //                 liqPrices: liqLowerPrices,
+            //                 deltaAverageUSD: data.deltaAverageUSD,
+            //                 cumAverageUSD: data.cumAverageUSD,
+            //                 upperBound:
+            //                     data.upperBound === '+inf'
+            //                         ? data.lowerBound
+            //                         : data.upperBound,
+            //                 lowerBound: data.lowerBound,
+            //             });
+            //         }
+            //     } else {
+            //         if (
+            //             data.cumBidLiq !== undefined &&
+            //             data.cumBidLiq !== '0' &&
+            //             liqUpperPrices !== '+inf' &&
+            //             liqUpperPrices < poolPriceDisplay * 10 &&
+            //             !Number.isNaN(depthLiquidityScale(data.cumBidLiq))
+            //         ) {
+            //             depthLiqBidData.push({
+            //                 activeLiq: depthLiquidityScale(data.cumBidLiq),
+            //                 liqPrices: liqUpperPrices,
+            //                 deltaAverageUSD: data.deltaAverageUSD,
+            //                 cumAverageUSD: data.cumAverageUSD,
+            //                 upperBound:
+            //                     data.upperBound === '+inf'
+            //                         ? data.lowerBound
+            //                         : data.upperBound,
+            //                 lowerBound: data.lowerBound,
+            //             });
+            //         }
+
+            //         if (
+            //             data.cumAskLiq !== undefined &&
+            //             data.cumAskLiq !== '0' &&
+            //             !Number.isNaN(depthLiquidityScale(data.cumAskLiq)) &&
+            //             liqUpperPrices <= limitBoundary &&
+            //             liqUpperPrices > poolPriceDisplay / 10
+            //         ) {
+            //             depthLiqAskData.push({
+            //                 activeLiq: depthLiquidityScale(data.cumAskLiq),
+            //                 liqPrices: liqLowerPrices,
+            //                 deltaAverageUSD: data.deltaAverageUSD,
+            //                 cumAverageUSD: data.cumAverageUSD,
+            //                 upperBound:
+            //                     data.upperBound === '+inf'
+            //                         ? data.lowerBound
+            //                         : data.upperBound,
+            //                 lowerBound: data.lowerBound,
+            //             });
+            //         }
+            //     }
+            // });
+            // if (liqBidData.length > 1 && liqAskData.length > 1) {
+            //     liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
+
+            //     liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
+            //     depthLiqBidData.sort(
+            //         (a: any, b: any) => b.liqPrices - a.liqPrices,
+            //     );
+
+            //     depthLiqBidData.push({
+            //         activeLiq: depthLiqBidData.find(
+            //             (liqData) => liqData.liqPrices < limitBoundary,
+            //         )?.activeLiq,
+            //         liqPrices: limitBoundary,
+            //         deltaAverageUSD: 0,
+            //         cumAverageUSD: 0,
+            //         upperBound: 0,
+            //         lowerBound: 0,
+            //     });
+
+            //     depthLiqAskData.push({
+            //         activeLiq:
+            //             depthLiqAskData[
+            //                 !isDenomBase ? 0 : depthLiqAskData.length - 1
+            //             ]?.activeLiq,
+            //         liqPrices: 0,
+            //         deltaAverageUSD: 0,
+            //         cumAverageUSD: 0,
+            //         upperBound: 0,
+            //         lowerBound: 0,
+            //     });
+            // }
             topBoundary = limitBoundary;
             lowBoundary = parseFloat(rangeBoundary.pinnedMinPriceDisplay);
+
+            console.log({ depthLiqBidData, depthLiqAskData });
 
             liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
