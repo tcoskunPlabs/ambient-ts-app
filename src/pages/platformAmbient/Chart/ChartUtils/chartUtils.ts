@@ -583,3 +583,54 @@ export const getLast15Minutes = (period: number) => {
     }
     return times;
 };
+
+export function findSubscriptUnicodeIndex(
+    subscript: string,
+): number | undefined {
+    const subscriptUnicodeMap: { [key: string]: number }[] = [
+        { '₀': 0 },
+        { '₁': 1 },
+        { '₂': 2 },
+        { '₃': 3 },
+        { '₄': 4 },
+        { '₅': 5 },
+        { '₆': 6 },
+        { '₇': 7 },
+        { '₈': 8 },
+        { '₉': 9 },
+        { '₁₀': 10 },
+        { '₁₁': 11 },
+        { '₁₂': 12 },
+        { '₁₃': 13 },
+        { '₁₄': 14 },
+        { '₁₅': 15 },
+        { '₁₆': 16 },
+        { '₁₇': 17 },
+        { '₁₈': 18 },
+        { '₁₉': 19 },
+        { '₂₀': 20 },
+    ];
+
+    let subscriptUnicode = undefined;
+    subscriptUnicodeMap.forEach((element) => {
+        if (subscript.includes(Object.keys(element)[0])) {
+            subscriptUnicode = Object.values(element)[0];
+        }
+    });
+
+    return subscriptUnicode ? subscriptUnicode : undefined;
+}
+
+export const prepareChartTickLabel = (value: string) => {
+    const splitText = '0.0';
+    let tick = value.replace(',', '');
+    const tickSubString = findSubscriptUnicodeIndex(tick);
+    const isScientificTick = tickSubString !== undefined;
+
+    if (isScientificTick) {
+        const textScientificArray = tick.split(splitText);
+        tick = textScientificArray[1].slice(1, 4);
+    }
+
+    return { tick, tickSubString };
+};

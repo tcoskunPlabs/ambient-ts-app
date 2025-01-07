@@ -7,13 +7,13 @@ import { useMediaQuery } from '@material-ui/core';
 import moment from 'moment';
 import { fetchCandleSeriesCroc } from '../../../../ambient-utils/api';
 import { CACHE_UPDATE_FREQ_IN_MS } from '../../../../ambient-utils/constants';
-import { getFormattedNumber } from '../../../../ambient-utils/dataLayer';
 import { AppStateContext } from '../../../../contexts/AppStateContext';
 import { CachedDataContext } from '../../../../contexts/CachedDataContext';
 import { ChartContext } from '../../../../contexts/ChartContext';
 import { CrocEnvContext } from '../../../../contexts/CrocEnvContext';
 import { TradeDataContext } from '../../../../contexts/TradeDataContext';
 import {
+    findSubscriptUnicodeIndex,
     lineValue,
     renderCanvasArray,
     setCanvasResolution,
@@ -26,6 +26,7 @@ import {
 import Spinner from '../../Spinner/Spinner';
 import './TransactionDetailsGraph.css';
 import TransactionDetailsLiquidityGraph from './TransactionDetailsLiquidityGraph';
+import useDollarPrice from '../../../../pages/platformAmbient/Chart/ChartUtils/getDollarPrice';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface TransactionDetailsGraphIF {
@@ -81,6 +82,8 @@ export default function TransactionDetailsGraph(
     const d3Yaxis = useRef<HTMLCanvasElement | null>(null);
     const d3Xaxis = useRef<HTMLCanvasElement | null>(null);
     const graphMainDiv = useRef(null);
+
+    const getDollarPrice = useDollarPrice();
 
     const [scaleData, setScaleData] = useState<any>();
     const [lineSeries, setLineSeries] = useState<any>();
@@ -279,7 +282,7 @@ export default function TransactionDetailsGraph(
                         crocEnv,
                         cachedFetchTokenPrice,
                         cachedQuerySpotPrice,
-                        poolPriceDisplay,
+                        await poolPriceNonDisplay,
                     );
 
                     if (graphData) {
@@ -606,6 +609,29 @@ export default function TransactionDetailsGraph(
             }
         }
     }, [graphData, svgWidth]);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    function setYScaleDomain(
+        yScale: any,
+        minDomain: number,
+        maxDomain: number,
+    ) {
+        if (yScale) {
+            if (
+                minDomain === maxDomain ||
+                minDomain === poolPrice ||
+                maxDomain === poolPrice
+            ) {
+                const delta = minDomain / 8;
+                const tempMinDomain = minDomain - delta;
+                const tempMaxDomain = minDomain + delta;
+
+                yScale.domain([tempMinDomain, tempMaxDomain]);
+            } else {
+                yScale.domain([minDomain, maxDomain]);
+            }
+        }
+    }
 
     useEffect(() => {
         if (graphData !== undefined && period !== undefined) {
@@ -1108,47 +1134,46 @@ export default function TransactionDetailsGraph(
                 : formatAmountChartData;
 
             yScaleTicks.forEach((d: number) => {
+                const splitText = d > 0 ? '0.0' : '-0.0';
+
                 const digit = d.toString().split('.')[1]?.length;
 
-                const isScientific = d.toString().includes('e');
+                const value = getDollarPrice(d).formattedValue.replace(',', '');
+
+                const subString = findSubscriptUnicodeIndex(value);
+
+                const isScientific = subString !== undefined;
 
                 if (isScientific) {
-                    const splitNumber = d.toString().split('e');
-                    const subString =
-                        Math.abs(Number(splitNumber[1])) -
-                        (splitNumber.includes('.') ? 2 : 1);
-
-                    const scientificValue = getFormattedNumber({
-                        value: d,
-                        abbrevThreshold: 10000000, // use 'm', 'b' format > 10m
-                    });
-
-                    const textScientificArray = scientificValue.split('0.0');
-                    const textScientific = textScientificArray[1].slice(1, 4);
-
-                    const factor = Math.pow(10, 3 - textScientific.length);
-
+                    const textScientificArray = String(value).split(splitText);
+                    const textScientific = textScientificArray[1].slice(
+                        String(subString).length,
+                        4,
+                    );
+                    const startText = splitText;
                     const textHeight =
-                        context.measureText('0.0').actualBoundingBoxAscent +
-                        context.measureText('0.0').actualBoundingBoxDescent;
+                        context.measureText(startText).actualBoundingBoxAscent +
+                        context.measureText(startText).actualBoundingBoxDescent;
 
                     context.beginPath();
                     context.fillText(
-                        '0.0',
+                        startText,
                         X -
-                            context.measureText('0.0').width / 2 -
-                            context.measureText(subString).width / 2,
+                            context.measureText(startText).width / 2 -
+                            context.measureText(subString.toString()).width / 2,
                         yScale(d),
                     );
-
-                    context.fillText(subString, X, yScale(d) + textHeight / 3);
                     context.fillText(
-                        factor * Number(textScientific),
+                        subString.toString(),
+                        X,
+                        yScale(d) + textHeight / 3,
+                    );
+
+                    context.fillText(
+                        textScientific,
                         X +
-                            context.measureText(factor * Number(textScientific))
-                                .width /
-                                2 +
-                            context.measureText(subString).width / 2,
+                            context.measureText(textScientific).width / 2 +
+                            context.measureText(subString.toString()).width / 2,
                         yScale(d),
                     );
                 } else {

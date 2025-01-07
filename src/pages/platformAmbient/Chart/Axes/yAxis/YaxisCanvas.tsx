@@ -22,9 +22,11 @@ import {
 } from '../../../../../utils/numbers';
 import {
     crosshair,
+    findSubscriptUnicodeIndex,
     getXandYLocationForChart,
     lineValue,
     liquidityChartData,
+    prepareChartTickLabel,
     renderCanvasArray,
     renderSubchartCrCanvas,
     scaleData,
@@ -256,55 +258,6 @@ function YAxisCanvas(props: yAxisIF) {
         };
     };
 
-    function findSubscriptUnicodeIndex(subscript: string): number | undefined {
-        const subscriptUnicodeMap: { [key: string]: number }[] = [
-            { '₀': 0 },
-            { '₁': 1 },
-            { '₂': 2 },
-            { '₃': 3 },
-            { '₄': 4 },
-            { '₅': 5 },
-            { '₆': 6 },
-            { '₇': 7 },
-            { '₈': 8 },
-            { '₉': 9 },
-            { '₁₀': 10 },
-            { '₁₁': 11 },
-            { '₁₂': 12 },
-            { '₁₃': 13 },
-            { '₁₄': 14 },
-            { '₁₅': 15 },
-            { '₁₆': 16 },
-            { '₁₇': 17 },
-            { '₁₈': 18 },
-            { '₁₉': 19 },
-            { '₂₀': 20 },
-        ];
-
-        let subscriptUnicode = undefined;
-        subscriptUnicodeMap.forEach((element) => {
-            if (subscript.includes(Object.keys(element)[0])) {
-                subscriptUnicode = Object.values(element)[0];
-            }
-        });
-
-        return subscriptUnicode ? subscriptUnicode : undefined;
-    }
-
-    const prepareTickLabel = (value: number) => {
-        const splitText = '0.0';
-        let tick = getDollarPrice(value).formattedValue.replace(',', '');
-        const tickSubString = findSubscriptUnicodeIndex(tick);
-        const isScientificTick = tickSubString !== undefined;
-
-        if (isScientificTick) {
-            const textScientificArray = tick.split(splitText);
-            tick = textScientificArray[1].slice(1, 4);
-        }
-
-        return { tick, tickSubString };
-    };
-
     const drawYaxis = (
         context: CanvasRenderingContext2D,
         yScale: d3.ScaleLinear<number, number>,
@@ -359,7 +312,10 @@ function YAxisCanvas(props: yAxisIF) {
 
                 if (isScientific) {
                     const textScientificArray = String(value).split(splitText);
-                    const textScientific = textScientificArray[1].slice(1, 4);
+                    const textScientific = textScientificArray[1].slice(
+                        String(subString).length,
+                        4,
+                    );
                     const startText = isTradeDollarizationEnabled
                         ? '$' + splitText
                         : splitText;
@@ -398,8 +354,9 @@ function YAxisCanvas(props: yAxisIF) {
             });
 
             if (chartPoolPrice) {
-                const { tick, tickSubString } =
-                    prepareTickLabel(chartPoolPrice);
+                const { tick, tickSubString } = prepareChartTickLabel(
+                    getDollarPrice(chartPoolPrice).formattedValue,
+                );
 
                 createRectLabel(
                     context,
@@ -418,7 +375,9 @@ function YAxisCanvas(props: yAxisIF) {
                 const { isSameLocation, sameLocationData } =
                     sameLocationLimit();
 
-                const { tick, tickSubString } = prepareTickLabel(limit);
+                const { tick, tickSubString } = prepareChartTickLabel(
+                    getDollarPrice(limit).formattedValue,
+                );
 
                 if (checkLimitOrder) {
                     createRectLabel(
@@ -476,7 +435,9 @@ function YAxisCanvas(props: yAxisIF) {
                     !(low === 0 && high === 0)
                 ) {
                     const { tick: lowTick, tickSubString: lowTickSubString } =
-                        prepareTickLabel(low);
+                        prepareChartTickLabel(
+                            getDollarPrice(low).formattedValue,
+                        );
 
                     createRectLabel(
                         context,
@@ -495,7 +456,9 @@ function YAxisCanvas(props: yAxisIF) {
                     );
 
                     const { tick: highTick, tickSubString: highTickSubString } =
-                        prepareTickLabel(high);
+                        prepareChartTickLabel(
+                            getDollarPrice(high).formattedValue,
+                        );
 
                     createRectLabel(
                         context,
@@ -525,7 +488,9 @@ function YAxisCanvas(props: yAxisIF) {
                     const {
                         tick: shapePoint,
                         tickSubString: shapePointSubString,
-                    } = prepareTickLabel(shapeDataWithDenom);
+                    } = prepareChartTickLabel(
+                        getDollarPrice(shapeDataWithDenom).formattedValue,
+                    );
 
                     const secondPointInDenom =
                         shapeData.data[1].denomInBase === denomInBase
@@ -580,7 +545,9 @@ function YAxisCanvas(props: yAxisIF) {
             if (crosshairActive === 'chart' && !isUpdatingShape) {
                 const crosshairYValue = Number(crosshairData[0].y.toString());
                 const { tick: crosshairY, tickSubString: crSubString } =
-                    prepareTickLabel(crosshairYValue);
+                    prepareChartTickLabel(
+                        getDollarPrice(crosshairYValue).formattedValue,
+                    );
 
                 createRectLabel(
                     context,

@@ -132,14 +132,41 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
         }
     };
 
-    const drawCurveHighlighted = (canvas: HTMLCanvasElement) => {
+    const drawCurveHighlighted = (
+        canvas: HTMLCanvasElement,
+        allData: LiquidityRangeIF[],
+    ) => {
         if (transactionType === 'liqchange') {
             if (positionType !== 'ambient') {
                 clipHighlightedLines(canvas);
             }
 
-            lineAskSeries(liquidityData.liquidityDataAsk);
-            lineBidSeries(liquidityData.liquidityDataBid);
+            if (yScale) {
+                const ctx = canvas.getContext('2d');
+
+                clipCanvas(
+                    0,
+                    yScale(poolPriceDisplay),
+                    canvas.width,
+                    canvas.height,
+                    canvas,
+                );
+
+                lineAskSeries(allData);
+                ctx?.restore();
+
+                clipCanvas(
+                    yScale(poolPriceDisplay),
+                    0,
+                    canvas.width,
+                    yScale(poolPriceDisplay),
+                    canvas,
+                );
+
+                lineBidSeries(allData.slice().reverse());
+
+                ctx?.restore();
+            }
         }
     };
 
@@ -195,8 +222,8 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
 
                     liqAsk.sort(
                         (a: LiquidityRangeIF, b: LiquidityRangeIF) =>
-                            b.upperBoundInvPriceDecimalCorrected -
-                            a.upperBoundInvPriceDecimalCorrected,
+                            getAskPriceValue(b, isDenomBase) -
+                            getAskPriceValue(a, isDenomBase),
                     );
 
                     if (liqBid.length > 1 && liqAsk.length > 1) {
@@ -414,19 +441,41 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
             .select('canvas')
             .node() as HTMLCanvasElement;
         const ctx = canvas.getContext('2d');
-        if (liquidityScale) {
+
+        const allData = liquidityData.liquidityDataAsk.concat(
+            liquidityData.liquidityDataBid,
+        );
+
+        if (liquidityScale && yScale) {
             d3.select(d3CanvasLiq.current)
                 .on('draw', () => {
                     setCanvasResolution(canvas);
 
-                    if (liqAskSeries) {
-                        liqAskSeries(liquidityData.liquidityDataAsk);
-                    }
-                    if (liqBidSeries) {
-                        liqBidSeries(liquidityData.liquidityDataBid);
-                    }
+                    clipCanvas(
+                        0,
+                        yScale(poolPriceDisplay),
+                        canvas.width,
+                        canvas.height,
+                        canvas,
+                    );
 
-                    drawCurveHighlighted(canvas);
+                    liqAskSeries(allData);
+
+                    ctx?.restore();
+
+                    clipCanvas(
+                        yScale(poolPriceDisplay),
+                        0,
+                        canvas.width,
+                        yScale(poolPriceDisplay),
+                        canvas,
+                    );
+
+                    liqBidSeries(allData.slice().reverse());
+
+                    ctx?.restore();
+
+                    drawCurveHighlighted(canvas, allData);
                 })
                 .on('measure', (event: CustomEvent) => {
                     liquidityScale.range([
