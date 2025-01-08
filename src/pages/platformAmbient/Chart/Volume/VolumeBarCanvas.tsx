@@ -54,14 +54,10 @@ export default function VolumeBarCanvas(props: propsIF) {
         if (barSeries && chartThemeColors) {
             barSeries.decorate(
                 (context: CanvasRenderingContext2D, d: CandleDataIF) => {
-                    const isFuta = ['futa'].includes(platformName);
-                    const upColor = isFuta
-                        ? chartThemeColors.accent3?.copy()
-                        : chartThemeColors.upCandleBodyColor?.copy();
+                    const upColor = chartThemeColors.upCandleBodyColor?.copy();
 
-                    const downColor = isFuta
-                        ? chartThemeColors.accent2?.copy()
-                        : chartThemeColors.downCandleBorderColor?.copy();
+                    const downColor =
+                        chartThemeColors.downCandleBorderColor?.copy();
 
                     if (downColor) downColor.opacity = 0.5;
                     if (upColor)

@@ -266,11 +266,11 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
 
     const [defaultChartSettings] = useState<LocalChartSettingsIF>({
         chartColors: {
-            upCandleBodyColor: '--chart-positive',
-            downCandleBodyColor: '--chart-negative',
+            upCandleBodyColor: isFuta ? '--accent3' : '--chart-positive',
+            downCandleBodyColor: isFuta ? '--accent2' : '--chart-negative',
             selectedDateFillColor: '--accent2',
-            upCandleBorderColor: '--chart-positive',
-            downCandleBorderColor: '--chart-negative',
+            upCandleBorderColor: isFuta ? '--accent3' : '--chart-positive',
+            downCandleBorderColor: isFuta ? '--accent3' : '--chart-negative',
             liqAskColor: '--accent5',
             liqBidColor: '--accent1',
             selectedDateStrokeColor: '--accent2',

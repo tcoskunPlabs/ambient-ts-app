@@ -113,6 +113,8 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
         useContext(PoolContext);
 
     const { skin, platformName } = useContext(BrandContext);
+    const isFuta = ['futa'].includes(platformName);
+
     const {
         defaultChartSettings,
         setColorChangeTrigger,
@@ -162,6 +164,8 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
             ')';
 
         const replaceColor = d3.color(colorRgbaCode);
+
+        console.log({ replaceColor });
 
         if (replaceSelector && replaceColor) {
             chartThemeColors[replaceSelector] = replaceColor;
@@ -525,7 +529,7 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                                         </Icon>
                                     </StyledCheckbox>
                                     <ContextMenuContextText>
-                                        {['futa'].includes(platformName)
+                                        {isFuta
                                             ? item.selection.toUpperCase()
                                             : item.selection}
                                     </ContextMenuContextText>
@@ -538,7 +542,7 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                     {selectionContent.map((item, index) => (
                         <CheckList key={index}>
                             <ContextMenuContextText>
-                                {['futa'].includes(platformName)
+                                {isFuta
                                     ? item.selection.toUpperCase()
                                     : item.selection}
                             </ContextMenuContextText>
@@ -613,7 +617,7 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                             !item.exclude.includes(platformName) && (
                                 <ColorList key={index}>
                                     <ContextMenuContextText>
-                                        {['futa'].includes(platformName)
+                                        {isFuta
                                             ? item.selection.toUpperCase()
                                             : item.selection}
                                     </ContextMenuContextText>
@@ -755,40 +759,30 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                 <ContextMenuFooter>
                     <FooterButtons
                         backgroundColor={
-                            ['futa'].includes(platformName)
-                                ? 'var(--dark3)'
-                                : 'transparent'
+                            isFuta ? 'var(--dark3)' : 'transparent'
                         }
                         hoverColor={
-                            ['futa'].includes(platformName)
+                            isFuta
                                 ? 'var(--dark3)'
                                 : applyDefault
                                   ? 'transparent'
                                   : 'var(--accent1)'
                         }
-                        textColor={
-                            ['futa'].includes(platformName)
-                                ? 'var(--text2)'
-                                : 'var(--accent1)'
-                        }
+                        textColor={isFuta ? 'var(--text2)' : 'var(--accent1)'}
                         hoverTextColor={
-                            ['futa'].includes(platformName)
-                                ? 'var(--accent1)'
-                                : 'var(--text1)'
+                            isFuta ? 'var(--accent1)' : 'var(--text1)'
                         }
                         width={'auto'}
                         onClick={() =>
                             handleApplyChartThemeChanges(defaultChartSettings)
                         }
-                        isFuta={['futa'].includes(platformName)}
+                        isFuta={isFuta}
                     >
                         {applyDefault ? (
                             <Spinner size={14} bg='transparent' centered />
                         ) : (
                             <FooterContextText>
-                                {['futa'].includes(platformName)
-                                    ? 'DEFAULTS'
-                                    : 'Apply defaults'}
+                                {isFuta ? 'DEFAULTS' : 'Apply defaults'}
                             </FooterContextText>
                         )}
                     </FooterButtons>
@@ -802,33 +796,23 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                         >
                             <FooterButtons
                                 backgroundColor={
-                                    ['futa'].includes(platformName)
-                                        ? 'var(--dark3)'
-                                        : 'transparent'
+                                    isFuta ? 'var(--dark3)' : 'transparent'
                                 }
                                 hoverColor={
-                                    ['futa'].includes(platformName)
-                                        ? 'var(--dark3)'
-                                        : 'var(--accent1)'
+                                    isFuta ? 'var(--dark3)' : 'var(--accent1)'
                                 }
                                 textColor={
-                                    ['futa'].includes(platformName)
-                                        ? 'var(--text2)'
-                                        : 'var(--accent1)'
+                                    isFuta ? 'var(--text2)' : 'var(--accent1)'
                                 }
                                 hoverTextColor={
-                                    ['futa'].includes(platformName)
-                                        ? 'var(--accent1)'
-                                        : 'var(--text1)'
+                                    isFuta ? 'var(--accent1)' : 'var(--text1)'
                                 }
                                 width={'55px'}
                                 onClick={() => handleCancelChanges()}
-                                isFuta={['futa'].includes(platformName)}
+                                isFuta={isFuta}
                             >
                                 <FooterContextText>
-                                    {['futa'].includes(platformName)
-                                        ? 'APPLY'
-                                        : 'Cancel'}
+                                    {isFuta ? 'APPLY' : 'Cancel'}
                                 </FooterContextText>
                             </FooterButtons>
                         </div>
@@ -842,26 +826,22 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                         >
                             <FooterButtons
                                 backgroundColor={
-                                    ['futa'].includes(platformName)
+                                    isFuta
                                         ? 'var(--dark3)'
                                         : isSaving
                                           ? 'transparent'
                                           : 'var(--accent1)'
                                 }
                                 hoverColor={
-                                    ['futa'].includes(platformName)
-                                        ? 'var(--dark3)'
-                                        : 'transparent'
+                                    isFuta ? 'var(--dark3)' : 'transparent'
                                 }
                                 textColor={
-                                    ['futa'].includes(platformName)
-                                        ? 'var(--text2)'
-                                        : 'var(--text1)'
+                                    isFuta ? 'var(--text2)' : 'var(--text1)'
                                 }
                                 hoverTextColor={'var(--accent1)'}
                                 width={'45px'}
                                 onClick={() => handleSaveChanges()}
-                                isFuta={['futa'].includes(platformName)}
+                                isFuta={isFuta}
                             >
                                 {isSaving ? (
                                     <Spinner
@@ -871,9 +851,7 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                                     />
                                 ) : (
                                     <FooterContextText>
-                                        {['futa'].includes(platformName)
-                                            ? 'OK'
-                                            : 'Save'}
+                                        {isFuta ? 'OK' : 'Save'}
                                     </FooterContextText>
                                 )}
                             </FooterButtons>
