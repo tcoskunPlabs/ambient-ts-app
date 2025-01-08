@@ -54,16 +54,18 @@ export default function VolumeBarCanvas(props: propsIF) {
         if (barSeries && chartThemeColors) {
             barSeries.decorate(
                 (context: CanvasRenderingContext2D, d: CandleDataIF) => {
-                    const d3DarkStrokeColor =
-                        chartThemeColors.downCandleBorderColor?.copy();
-                    const d3LightStrokeColor =
-                        chartThemeColors.upCandleBorderColor?.copy();
+                    const isFuta = ['futa'].includes(platformName);
+                    const upColor = isFuta
+                        ? chartThemeColors.accent3?.copy()
+                        : chartThemeColors.upCandleBodyColor?.copy();
 
-                    if (d3DarkStrokeColor) d3DarkStrokeColor.opacity = 0.5;
-                    if (d3LightStrokeColor)
-                        d3LightStrokeColor.opacity = ['futa'].includes(
-                            platformName,
-                        )
+                    const downColor = isFuta
+                        ? chartThemeColors.accent2?.copy()
+                        : chartThemeColors.downCandleBorderColor?.copy();
+
+                    if (downColor) downColor.opacity = 0.5;
+                    if (upColor)
+                        upColor.opacity = ['futa'].includes(platformName)
                             ? 1
                             : 0.5;
 
@@ -80,13 +82,15 @@ export default function VolumeBarCanvas(props: propsIF) {
                             ? 'transparent'
                             : selectedDate !== undefined &&
                                 selectedDate === d.time * 1000
-                              ? '#E480FF'
+                              ? chartThemeColors.selectedDateColor
+                                  ? chartThemeColors.selectedDateColor.toString()
+                                  : '#E480FF'
                               : close > open
-                                ? d3LightStrokeColor
-                                    ? d3LightStrokeColor.toString()
+                                ? upColor
+                                    ? upColor.toString()
                                     : 'rgba(115,113,252, 0.5)'
-                                : d3DarkStrokeColor
-                                  ? d3DarkStrokeColor.toString()
+                                : downColor
+                                  ? downColor.toString()
                                   : 'rgba(205,193,255, 0.5)';
 
                     context.strokeStyle =
@@ -94,13 +98,15 @@ export default function VolumeBarCanvas(props: propsIF) {
                             ? 'transparent'
                             : selectedDate !== undefined &&
                                 selectedDate === d.time * 1000
-                              ? '#E480FF'
+                              ? chartThemeColors.selectedDateColor
+                                  ? chartThemeColors.selectedDateColor.toString()
+                                  : '#E480FF'
                               : close > open
-                                ? d3LightStrokeColor
-                                    ? d3LightStrokeColor.toString()
+                                ? upColor
+                                    ? upColor.toString()
                                     : 'rgba(115,113,252, 0.5)'
-                                : d3DarkStrokeColor
-                                  ? d3DarkStrokeColor.toString()
+                                : downColor
+                                  ? downColor.toString()
                                   : 'rgba(205,193,255, 0.5)';
 
                     if (d.time * 1000 > visibleDateForCandle) {

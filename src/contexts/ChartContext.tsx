@@ -143,6 +143,7 @@ export interface ChartThemeIF {
     selectedDateStrokeColor: d3.RGBColor | d3.HSLColor | null;
     text2: d3.RGBColor | d3.HSLColor | null;
     accent1: d3.RGBColor | d3.HSLColor | null;
+    accent2: d3.RGBColor | d3.HSLColor | null;
     accent3: d3.RGBColor | d3.HSLColor | null;
     dark1: d3.RGBColor | d3.HSLColor | null;
     textColor: string;
@@ -474,6 +475,7 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         const text2 = getCssVariable(skin.active, '--text2');
         const accent3 = getCssVariable(skin.active, '--accent3');
         const accent1 = getCssVariable(skin.active, '--accent1');
+        const accent2 = getCssVariable(skin.active, '--accent2');
         const dark1 = getCssVariable(skin.active, '--dark1');
 
         const chartThemeColors = {
@@ -490,6 +492,7 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
             selectedDateStrokeColor: selectedDateStrokeColor,
             text2: text2,
             accent1: accent1,
+            accent2: accent2,
             accent3: accent3,
             dark1: dark1,
             textColor: '',
