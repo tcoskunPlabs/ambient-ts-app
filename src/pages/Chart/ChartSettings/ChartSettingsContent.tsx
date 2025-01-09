@@ -16,6 +16,7 @@ import { LS_KEY_CHART_CONTEXT_SETTINGS } from '../../platformAmbient/Chart/Chart
 import {
     chartItemStates,
     getCssVariable,
+    renderChart,
 } from '../../platformAmbient/Chart/ChartUtils/chartUtils';
 import { ColorPickerTab } from '../../platformAmbient/Chart/Draw/FloatingToolbar/FloatingToolbarCss';
 import {
@@ -165,8 +166,6 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
 
         const replaceColor = d3.color(colorRgbaCode);
 
-        console.log({ replaceColor });
-
         if (replaceSelector && replaceColor) {
             chartThemeColors[replaceSelector] = replaceColor;
 
@@ -185,7 +184,7 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                 }
             });
 
-            // render();
+            renderChart();
         }
     };
 
@@ -812,7 +811,7 @@ export default function ChartSettingsContent(props: ContextMenuContentIF) {
                                 isFuta={isFuta}
                             >
                                 <FooterContextText>
-                                    {isFuta ? 'APPLY' : 'Cancel'}
+                                    {'Cancel'}
                                 </FooterContextText>
                             </FooterButtons>
                         </div>

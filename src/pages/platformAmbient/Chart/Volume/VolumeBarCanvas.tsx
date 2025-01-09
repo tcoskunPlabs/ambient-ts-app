@@ -6,6 +6,7 @@ import { CandleDataIF } from '../../../../ambient-utils/types';
 import { BrandContext } from '../../../../contexts/BrandContext';
 import { ChartThemeIF } from '../../../../contexts/ChartContext';
 import { scaleData, setCanvasResolution } from '../ChartUtils/chartUtils';
+import { diffHashSig } from '../../../../ambient-utils/dataLayer';
 
 interface propsIF {
     scaleData: scaleData | undefined;
@@ -56,10 +57,17 @@ export default function VolumeBarCanvas(props: propsIF) {
                 (context: CanvasRenderingContext2D, d: CandleDataIF) => {
                     const upColor = chartThemeColors.upCandleBodyColor?.copy();
 
-                    const downColor =
-                        chartThemeColors.downCandleBorderColor?.copy();
+                    const downColor = ['futa'].includes(platformName)
+                        ? chartThemeColors.downCandleBodyColor?.copy()
+                        : chartThemeColors.downCandleBorderColor?.copy();
 
-                    if (downColor) downColor.opacity = 0.5;
+                    const selectedDateColor =
+                        chartThemeColors.selectedDateColor?.toString();
+
+                    if (downColor)
+                        downColor.opacity = ['futa'].includes(platformName)
+                            ? 1
+                            : 0.5;
                     if (upColor)
                         upColor.opacity = ['futa'].includes(platformName)
                             ? 1
@@ -78,8 +86,8 @@ export default function VolumeBarCanvas(props: propsIF) {
                             ? 'transparent'
                             : selectedDate !== undefined &&
                                 selectedDate === d.time * 1000
-                              ? chartThemeColors.selectedDateColor
-                                  ? chartThemeColors.selectedDateColor.toString()
+                              ? selectedDateColor
+                                  ? selectedDateColor
                                   : '#E480FF'
                               : close > open
                                 ? upColor
@@ -116,7 +124,7 @@ export default function VolumeBarCanvas(props: propsIF) {
         barSeries,
         selectedDate,
         visibleDateForCandle,
-        chartThemeColors,
+        diffHashSig(chartThemeColors),
         denomInBase,
     ]);
 

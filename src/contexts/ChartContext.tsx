@@ -30,6 +30,7 @@ import {
 } from '../pages/platformAmbient/Chart/ChartUtils/useUndoRedo';
 import { BrandContext } from './BrandContext';
 import { TradeDataContext, TradeDataContextIF } from './TradeDataContext';
+import { PoolContext } from './PoolContext';
 
 type TradeTableState = 'Expanded' | 'Collapsed' | undefined;
 
@@ -175,7 +176,7 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
     const { skin, platformName } = useContext(BrandContext);
 
     const isFuta = ['futa'].includes(platformName);
-
+    const { isTradeDollarizationEnabled } = useContext(PoolContext);
     // 2:1 ratio of the window height subtracted by main header and token info header
     // 1:1 ratio, if the screen is less than 1000px in height
     const CHART_MAX_HEIGHT = window.innerHeight - 160;
@@ -276,7 +277,7 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
             selectedDateStrokeColor: '--accent2',
             textColor: '',
         },
-        isTradeDollarizationEnabled: false,
+        isTradeDollarizationEnabled: isTradeDollarizationEnabled,
         showVolume: true,
         showTvl: false,
         showFeeRate: false,
@@ -421,6 +422,52 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
             );
         }
     }, [isMagnetActive]);
+
+    useEffect(() => {
+        if (!localStorage.getItem(LS_KEY_CHART_CONTEXT_SETTINGS)) {
+            const defaultValue = {
+                ...defaultChartSettings,
+                chartColors: {
+                    upCandleBodyColor: getCssVariable(
+                        skin.active,
+                        isFuta ? '--accent3' : '--chart-positive',
+                    ),
+                    downCandleBodyColor: getCssVariable(
+                        skin.active,
+                        isFuta ? '--accent2' : '--chart-negative',
+                    ),
+                    selectedDateFillColor: getCssVariable(
+                        skin.active,
+                        '--accent2',
+                    ),
+                    upCandleBorderColor: getCssVariable(
+                        skin.active,
+                        isFuta ? '--accent3' : '--chart-positive',
+                    ),
+                    downCandleBorderColor: getCssVariable(
+                        skin.active,
+                        isFuta ? '--accent3' : '--chart-negative',
+                    ),
+                    liqAskColor: getCssVariable(skin.active, '--accent5'),
+                    liqBidColor: getCssVariable(skin.active, '--accent1'),
+                    selectedDateStrokeColor: getCssVariable(
+                        skin.active,
+                        '--accent2',
+                    ),
+                    text2: getCssVariable(skin.active, '--text2'),
+                    accent1: getCssVariable(skin.active, '--accent1'),
+                    accent2: getCssVariable(skin.active, '--accent2'),
+                    accent3: getCssVariable(skin.active, '--accent3'),
+                    dark1: getCssVariable(skin.active, '--dark1'),
+                    textColor: '',
+                },
+            };
+            localStorage.setItem(
+                LS_KEY_CHART_CONTEXT_SETTINGS,
+                JSON.stringify(defaultValue),
+            );
+        }
+    }, []);
 
     useEffect(() => {
         const parsedContextData = CHART_CONTEXT_SETTINGS_LOCAL_STORAGE

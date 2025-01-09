@@ -206,7 +206,7 @@ export default function CandleChart(props: candlePropsIF) {
         selectedDate,
         isDiscontinuityScaleEnabled,
         visibleDateForCandle,
-        chartThemeColors,
+        diffHashSig(chartThemeColors),
     ]);
 
     useEffect(() => {
