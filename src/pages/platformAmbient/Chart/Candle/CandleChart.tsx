@@ -150,6 +150,14 @@ export default function CandleChart(props: candlePropsIF) {
                         chartThemeColors.downCandleBorderColor?.toString();
                     const selectedDateColor =
                         chartThemeColors.selectedDateColor?.toString();
+
+                    console.log({
+                        upColor,
+                        upColorBorder,
+                        downColor,
+                        downColorBorder,
+                    });
+
                     const close = denomInBase
                         ? d.invPriceCloseExclMEVDecimalCorrected
                         : d.priceCloseExclMEVDecimalCorrected;

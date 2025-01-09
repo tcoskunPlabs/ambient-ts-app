@@ -423,30 +423,59 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         }
     }, [isMagnetActive]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function setColorWithOpacity(color: any) {
+        const rgbColor = d3.rgb(color.r, color.g, color.b);
+        rgbColor.opacity = color.opacity;
+
+        console.log(
+            '****************',
+            color,
+            { rgbColor, color },
+            d3.color(color),
+            d3.color(rgbColor),
+        );
+
+        return rgbColor;
+    }
+
     useEffect(() => {
-        if (!localStorage.getItem(LS_KEY_CHART_CONTEXT_SETTINGS)) {
+        let parsedContextData = undefined;
+
+        if (CHART_CONTEXT_SETTINGS_LOCAL_STORAGE) {
+            parsedContextData = JSON.parse(
+                CHART_CONTEXT_SETTINGS_LOCAL_STORAGE,
+            );
+        } else {
             const defaultValue = {
                 ...defaultChartSettings,
                 chartColors: {
-                    upCandleBodyColor: getCssVariable(
-                        skin.active,
-                        isFuta ? '--accent3' : '--chart-positive',
+                    upCandleBodyColor: setColorWithOpacity(
+                        getCssVariable(
+                            skin.active,
+                            isFuta ? '--accent3' : '--chart-positive',
+                        ),
                     ),
-                    downCandleBodyColor: getCssVariable(
-                        skin.active,
-                        isFuta ? '--accent2' : '--chart-negative',
+                    downCandleBodyColor: setColorWithOpacity(
+                        getCssVariable(
+                            skin.active,
+                            isFuta ? '--accent2' : '--chart-negative',
+                        ),
                     ),
-                    selectedDateFillColor: getCssVariable(
-                        skin.active,
-                        '--accent2',
+                    selectedDateFillColor: setColorWithOpacity(
+                        getCssVariable(skin.active, '--accent2'),
                     ),
-                    upCandleBorderColor: getCssVariable(
-                        skin.active,
-                        isFuta ? '--accent3' : '--chart-positive',
+                    upCandleBorderColor: setColorWithOpacity(
+                        getCssVariable(
+                            skin.active,
+                            isFuta ? '--accent3' : '--chart-positive',
+                        ),
                     ),
-                    downCandleBorderColor: getCssVariable(
-                        skin.active,
-                        isFuta ? '--accent3' : '--chart-negative',
+                    downCandleBorderColor: setColorWithOpacity(
+                        getCssVariable(
+                            skin.active,
+                            isFuta ? '--accent3' : '--chart-negative',
+                        ),
                     ),
                     liqAskColor: getCssVariable(skin.active, '--accent5'),
                     liqBidColor: getCssVariable(skin.active, '--accent1'),
@@ -462,62 +491,24 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
                     textColor: '',
                 },
             };
+
+            parsedContextData = defaultValue;
             localStorage.setItem(
                 LS_KEY_CHART_CONTEXT_SETTINGS,
                 JSON.stringify(defaultValue),
             );
         }
-    }, []);
-
-    useEffect(() => {
-        const parsedContextData = CHART_CONTEXT_SETTINGS_LOCAL_STORAGE
-            ? JSON.parse(CHART_CONTEXT_SETTINGS_LOCAL_STORAGE)
-            : undefined;
 
         const contextChartColors =
             parsedContextData && parsedContextData.chartColors
                 ? parsedContextData.chartColors
                 : undefined;
 
-        const upCandleBodyColor =
-            contextChartColors && contextChartColors.upCandleBodyColor
-                ? d3.color(contextChartColors.upCandleBodyColor)
-                : getCssVariable(skin.active, '--chart-positive');
-        const downCandleBodyColor =
-            contextChartColors && contextChartColors.downCandleBodyColor
-                ? d3.color(contextChartColors.downCandleBodyColor)
-                : getCssVariable(skin.active, '--dark2');
-        const selectedDateFillColor =
-            contextChartColors && contextChartColors.selectedDateFillColor
-                ? d3.color(contextChartColors.selectedDateFillColor)
-                : getCssVariable(skin.active, '--accent2');
-        const downCandleBorderColor =
-            contextChartColors && contextChartColors.downCandleBorderColor
-                ? d3.color(contextChartColors.downCandleBorderColor)
-                : getCssVariable(skin.active, '--chart-negative');
-        const upCandleBorderColor =
-            contextChartColors && contextChartColors.upCandleBorderColor
-                ? d3.color(contextChartColors.upCandleBorderColor)
-                : getCssVariable(skin.active, '--chart-positive');
-
-        const liqAskColor =
-            contextChartColors && contextChartColors.liqAskColor
-                ? d3.color(contextChartColors.liqAskColor)
-                : getCssVariable(skin.active, '--accent5');
-        const liqBidColor =
-            contextChartColors && contextChartColors.liqBidColor
-                ? d3.color(contextChartColors.liqBidColor)
-                : getCssVariable(skin.active, '--accent1');
-
-        const selectedDateStrokeColor =
-            contextChartColors && contextChartColors.selectedDateStrokeColor
-                ? d3.color(contextChartColors.selectedDateStrokeColor)
-                : getCssVariable(skin.active, '--accent2');
-
-        const drawngShapeDefaultColor =
-            contextChartColors && contextChartColors.drawngShapeDefaultColor
-                ? d3.color(contextChartColors.drawngShapeDefaultColor)
-                : getCssVariable(skin.active, '--accent1');
+        console.log(
+            { parsedContextData },
+            parsedContextData.downCandleBorderColor,
+        );
+        // console.log('contextChartColors.upCandleBodyColor',contextChartColors?.upCandleBodyColor,d3.color(contextChartColors.upCandleBodyColor));
 
         const text2 = getCssVariable(skin.active, '--text2');
         const accent3 = getCssVariable(skin.active, '--accent3');
@@ -526,17 +517,17 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
         const dark1 = getCssVariable(skin.active, '--dark1');
 
         const chartThemeColors = {
-            upCandleBodyColor: upCandleBodyColor,
-            downCandleBodyColor: downCandleBodyColor,
-            upCandleBorderColor: upCandleBorderColor,
-            downCandleBorderColor: downCandleBorderColor,
+            upCandleBodyColor: contextChartColors.upCandleBodyColor,
+            downCandleBodyColor: contextChartColors.downCandleBodyColor,
+            upCandleBorderColor: contextChartColors.upCandleBorderColor,
+            downCandleBorderColor: contextChartColors.downCandleBorderColor,
 
-            drawngShapeDefaultColor: drawngShapeDefaultColor,
+            drawngShapeDefaultColor: contextChartColors.drawngShapeDefaultColor,
 
-            selectedDateFillColor: selectedDateFillColor,
-            liqAskColor: liqAskColor,
-            liqBidColor: liqBidColor,
-            selectedDateStrokeColor: selectedDateStrokeColor,
+            selectedDateFillColor: contextChartColors.selectedDateFillColor,
+            liqAskColor: contextChartColors.liqAskColor,
+            liqBidColor: contextChartColors.liqBidColor,
+            selectedDateStrokeColor: contextChartColors.selectedDateStrokeColor,
             text2: text2,
             accent1: accent1,
             accent2: accent2,
@@ -544,6 +535,10 @@ export const ChartContextProvider = (props: { children: React.ReactNode }) => {
             dark1: dark1,
             textColor: '',
         };
+
+        console.log('*****************************chartThemeColors', {
+            chartThemeColors,
+        });
 
         setChartThemeColors(() => chartThemeColors);
     }, [skin.active]);
