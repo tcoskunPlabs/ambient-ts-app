@@ -84,11 +84,7 @@ function YAxisCanvas(props: yAxisIF) {
         scaleData,
         ranges,
         liqMode,
-        lineSellColor,
-        lineBuyColor,
         chartPoolPrice,
-        liqTransitionPointforCurve,
-        liqTransitionPointforDepth,
         isAmbientOrAdvanced,
         limit,
         checkLimitOrder,
@@ -107,7 +103,6 @@ function YAxisCanvas(props: yAxisIF) {
         setYaxisWidth,
         yAxisWidth,
         simpleRangeWidth,
-        poolPriceDisplay,
         isChartZoom,
         selectedDrawnShape,
         isUpdatingShape,
@@ -132,6 +127,11 @@ function YAxisCanvas(props: yAxisIF) {
     const getDollarPrice = useDollarPrice();
 
     const { platformName } = useContext(BrandContext);
+
+    const labelTextColor = '#F0F0F8';
+    const labelBackgroundColor = '#6A6A6D';
+    const poolPriceTextColor = '#0E0E14';
+    const poolPriceBackGroundColor = '#F0F0F8';
 
     useEffect(() => {
         if (scaleData) {
@@ -362,8 +362,8 @@ function YAxisCanvas(props: yAxisIF) {
                     context,
                     yScale(chartPoolPrice),
                     X,
-                    'white',
-                    'black',
+                    poolPriceBackGroundColor,
+                    poolPriceTextColor,
                     tick,
                     undefined,
                     yAxisCanvasWidth,
@@ -384,10 +384,8 @@ function YAxisCanvas(props: yAxisIF) {
                         context,
                         isSameLocation ? sameLocationData : yScale(limit),
                         X,
-                        sellOrderStyle === 'order_sell'
-                            ? lineSellColor
-                            : lineBuyColor,
-                        sellOrderStyle === 'order_sell' ? 'white' : 'black',
+                        labelBackgroundColor,
+                        labelTextColor,
                         tick,
                         undefined,
                         yAxisCanvasWidth,
@@ -424,12 +422,6 @@ function YAxisCanvas(props: yAxisIF) {
                     sameLocationDataMax: sameLocationDataMax,
                 } = sameLocationRange();
 
-                const passValue = liquidityData
-                    ? liqMode === 'curve'
-                        ? liqTransitionPointforCurve
-                        : liqTransitionPointforDepth
-                    : poolPriceDisplay;
-
                 if (
                     (simpleRangeWidth !== 100 || advancedMode) &&
                     !(low === 0 && high === 0)
@@ -443,8 +435,8 @@ function YAxisCanvas(props: yAxisIF) {
                         context,
                         isSameLocationMin ? sameLocationDataMin : yScale(low),
                         X,
-                        low > passValue ? lineSellColor : lineBuyColor,
-                        low > passValue ? 'white' : 'black',
+                        labelBackgroundColor,
+                        labelTextColor,
                         lowTick,
                         undefined,
                         yAxisCanvasWidth,
@@ -464,8 +456,8 @@ function YAxisCanvas(props: yAxisIF) {
                         context,
                         isSameLocationMax ? sameLocationDataMax : yScale(high),
                         X,
-                        high > passValue ? lineSellColor : lineBuyColor,
-                        high > passValue ? 'white' : 'black',
+                        labelBackgroundColor,
+                        labelTextColor,
                         highTick,
                         undefined,
                         yAxisCanvasWidth,
@@ -554,7 +546,7 @@ function YAxisCanvas(props: yAxisIF) {
                     yScale(crosshairYValue),
                     X,
                     '#242F3F',
-                    'white',
+                    labelTextColor,
                     crosshairY,
                     undefined,
                     yAxisCanvasWidth,
