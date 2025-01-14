@@ -133,16 +133,9 @@ export function createAreaSeriesLiquidity(
             return liqScale(getActiveLiqDepth(d, curveType, isDenomBase));
         })
         .crossValue((d: LiquidityRangeIF) => {
-            if (liqType === 'bid') {
-                return !isDenomBase
-                    ? d.upperBoundInvPriceDecimalCorrected
-                    : d.lowerBoundPriceDecimalCorrected;
-            }
-            if (liqType === 'ask') {
-                return !isDenomBase
-                    ? d.lowerBoundInvPriceDecimalCorrected
-                    : d.upperBoundPriceDecimalCorrected;
-            }
+            return !isDenomBase
+                ? d.lowerBoundInvPriceDecimalCorrected
+                : d.upperBoundPriceDecimalCorrected;
         })
         .xScale(xScale)
         .yScale(yScale);
