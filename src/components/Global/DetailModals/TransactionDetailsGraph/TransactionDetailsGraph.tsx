@@ -305,13 +305,6 @@ export default function TransactionDetailsGraph(
 
     useEffect(() => {
         if (scaleData !== undefined && chartThemeColors) {
-            const d3LineColor = chartThemeColors.text2?.copy();
-            const d3RangeTriangleColor = chartThemeColors.text2?.copy();
-            const d3BandColor = chartThemeColors.text2?.copy();
-
-            if (d3RangeTriangleColor) d3RangeTriangleColor.opacity = 0.8;
-            if (d3BandColor) d3BandColor.opacity = 0.075;
-
             const lineSeries = d3fc
                 .seriesSvgLine()
                 .xScale(scaleData?.xScale)
@@ -329,10 +322,7 @@ export default function TransactionDetailsGraph(
                 .decorate((selection: any) => {
                     selection
                         .enter()
-                        .style(
-                            'stroke',
-                            d3LineColor ? d3LineColor.toString() : '#7371FC',
-                        );
+                        .style('stroke', chartThemeColors.shareableLineColor);
                 });
 
             setLineSeries(() => {
@@ -350,12 +340,7 @@ export default function TransactionDetailsGraph(
                 selection.enter().attr('class', 'priceLine');
                 selection
                     .enter()
-                    .attr(
-                        'stroke',
-                        d3RangeTriangleColor
-                            ? d3RangeTriangleColor.toString()
-                            : 'rgba(97, 71, 247, 0.8)',
-                    );
+                    .attr('stroke', chartThemeColors.triangleColor);
             });
 
             setPriceLine(() => {
@@ -462,15 +447,11 @@ export default function TransactionDetailsGraph(
                             )
                             .style(
                                 'stroke',
-                                d3RangeTriangleColor
-                                    ? d3RangeTriangleColor.toString()
-                                    : 'rgba(97, 71, 247, 0.8)',
+                                chartThemeColors.triangleColor.toString(),
                             )
                             .style(
                                 'fill',
-                                d3RangeTriangleColor
-                                    ? d3RangeTriangleColor.toString()
-                                    : 'rgba(97, 71, 247, 0.8)',
+                                chartThemeColors.triangleColor.toString(),
                             );
                     });
                 });
@@ -524,6 +505,10 @@ export default function TransactionDetailsGraph(
                 return crossPoint;
             });
 
+            const fillColor = chartThemeColors.rangeLinesColor.copy();
+
+            fillColor.opacity = 0.075;
+
             const horizontalBand = d3fc
                 .annotationSvgBand()
                 .xScale(scaleData.xScaleCopy)
@@ -543,12 +528,7 @@ export default function TransactionDetailsGraph(
                             'transform',
                             'translateX(' + scaleData.xScale(time) + 'px )',
                         );
-                    selection
-                        .select('path')
-                        .attr(
-                            'fill',
-                            d3BandColor ? d3BandColor.toString() : '#7371FC1A',
-                        );
+                    selection.select('path').attr('fill', fillColor);
                 });
 
             setHorizontalBand(() => {

@@ -35,6 +35,7 @@ import {
 } from '../../ChartUtils/chartUtils';
 import useDollarPrice from '../../ChartUtils/getDollarPrice';
 import { createRectLabel } from './YaxisUtils';
+import { ChartContext } from '../../../../../contexts';
 
 interface yAxisIF {
     scaleData: scaleData | undefined;
@@ -42,8 +43,6 @@ interface yAxisIF {
     liqMode: string;
     liqTransitionPointforCurve: number;
     liqTransitionPointforDepth: number;
-    lineSellColor: string;
-    lineBuyColor: string;
     ranges: Array<lineValue>;
     limit: number;
     isAmbientOrAdvanced: boolean;
@@ -87,7 +86,6 @@ function YAxisCanvas(props: yAxisIF) {
         chartPoolPrice,
         isAmbientOrAdvanced,
         limit,
-        checkLimitOrder,
         sellOrderStyle,
         crosshairActive,
         crosshairData,
@@ -125,13 +123,9 @@ function YAxisCanvas(props: yAxisIF) {
     const location = useLocation();
 
     const getDollarPrice = useDollarPrice();
+    const { chartThemeColors } = useContext(ChartContext);
 
     const { platformName } = useContext(BrandContext);
-
-    const labelTextColor = '#F0F0F8';
-    const labelBackgroundColor = '#6A6A6D';
-    const poolPriceTextColor = '#0E0E14';
-    const poolPriceBackGroundColor = '#F0F0F8';
 
     useEffect(() => {
         if (scaleData) {
@@ -276,7 +270,13 @@ function YAxisCanvas(props: yAxisIF) {
             .select('canvas')
             .node() as HTMLCanvasElement;
 
-        if (canvas !== null) {
+        if (canvas !== null && chartThemeColors) {
+            const labelTextColor = chartThemeColors.text1.toString();
+            const labelBackgroundColor =
+                chartThemeColors.rangeLinesColor.toString();
+            const poolPriceTextColor = chartThemeColors.dark4.toString();
+            const poolPriceBackGroundColor = chartThemeColors.text1.toString();
+
             const height = canvas.height;
             const width = canvas.width;
 
@@ -379,33 +379,19 @@ function YAxisCanvas(props: yAxisIF) {
                     getDollarPrice(limit).formattedValue,
                 );
 
-                if (checkLimitOrder) {
-                    createRectLabel(
-                        context,
-                        isSameLocation ? sameLocationData : yScale(limit),
-                        X,
-                        labelBackgroundColor,
-                        labelTextColor,
-                        tick,
-                        undefined,
-                        yAxisCanvasWidth,
-                        tickSubString,
-                        isTradeDollarizationEnabled,
-                    );
-                } else {
-                    createRectLabel(
-                        context,
-                        isSameLocation ? sameLocationData : yScale(limit),
-                        X,
-                        'rgba(235, 235, 255)',
-                        'black',
-                        tick,
-                        undefined,
-                        yAxisCanvasWidth,
-                        tickSubString,
-                        isTradeDollarizationEnabled,
-                    );
-                }
+                createRectLabel(
+                    context,
+                    isSameLocation ? sameLocationData : yScale(limit),
+                    X,
+                    labelBackgroundColor,
+                    labelTextColor,
+                    tick,
+                    undefined,
+                    yAxisCanvasWidth,
+                    tickSubString,
+                    isTradeDollarizationEnabled,
+                );
+
                 addYaxisLabel(
                     isSameLocation ? sameLocationData : yScale(limit),
                 );
@@ -841,7 +827,6 @@ function YAxisCanvas(props: yAxisIF) {
         yAxisCanvasWidth,
         reset,
         sellOrderStyle,
-        checkLimitOrder,
         location,
         crosshairActive,
         selectedDrawnShape,
