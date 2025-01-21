@@ -17,6 +17,7 @@ import {
     CandleDataIF,
     CandleDomainIF,
     CandleScaleIF,
+    LiquidityRangeIF,
     TransactionIF,
 } from '../../../../ambient-utils/types';
 import Spinner from '../../../../components/Global/Spinner/Spinner';
@@ -162,13 +163,8 @@ function TradeCandleStickChart(props: propsIF) {
     }>({
         isResetChart: false,
     });
-    const {
-        tokenA,
-        tokenB,
-        isDenomBase,
-        poolPriceNonDisplay,
-        currentPoolPriceTick,
-    } = useContext(TradeDataContext);
+    const { tokenA, tokenB, isDenomBase, poolPriceNonDisplay } =
+        useContext(TradeDataContext);
 
     const { liquidityData: unparsedLiquidityData } =
         useContext(GraphDataContext);
@@ -271,9 +267,11 @@ function TradeCandleStickChart(props: propsIF) {
     }, [isFetchingEnoughData]);
 
     const sumActiveLiq = unparsedLiquidityData
-        ? unparsedLiquidityData.ranges.reduce((sum, range) => {
-              return sum + (range.activeLiq || 0);
-          }, 0)
+        ? unparsedLiquidityData.ranges.askRanges
+              .concat(unparsedLiquidityData.ranges.bidRanges)
+              .reduce((sum, range) => {
+                  return sum + (range.activeLiq || 0);
+              }, 0)
         : 0;
 
     // Parse liquidity data
@@ -288,16 +286,12 @@ function TradeCandleStickChart(props: propsIF) {
             unparsedLiquidityData.curveState.poolIdx === poolIndex &&
             unparsedLiquidityData.curveState.chainId === chainId
         ) {
-            const liqAskData: LiquidityDataLocal[] = [];
-            const liqBidData: LiquidityDataLocal[] = [];
-            const depthLiqBidData: LiquidityDataLocal[] = [];
-            const depthLiqAskData: LiquidityDataLocal[] = [];
+            const allLiqData = unparsedLiquidityData.ranges.askRanges.concat(
+                unparsedLiquidityData.ranges.bidRanges,
+            );
 
-            let topBoundary = 0;
-            let lowBoundary = 0;
-
-            const lowTick = currentPoolPriceTick - 100 * 101;
-            const highTick = currentPoolPriceTick + 100 * 101;
+            const lowTick = unparsedLiquidityData.currentTick - 100 * 101;
+            const highTick = unparsedLiquidityData.currentTick + 100 * 101;
 
             const rangeBoundary = getPinnedPriceValuesFromTicks(
                 isDenomBase,
@@ -308,15 +302,19 @@ function TradeCandleStickChart(props: propsIF) {
                 gridSize,
             );
 
-            const limitBoundary = parseFloat(
-                rangeBoundary.pinnedMaxPriceDisplay,
-            );
+            const topBoundary = parseFloat(rangeBoundary.pinnedMaxPriceDisplay);
+            const lowBoundary = parseFloat(rangeBoundary.pinnedMinPriceDisplay);
+
+            const liqAskData: LiquidityDataLocal[] = [];
+            const liqBidData: LiquidityDataLocal[] = [];
+            const depthLiqBidData: LiquidityDataLocal[] = [];
+            const depthLiqAskData: LiquidityDataLocal[] = [];
 
             const barThreshold =
                 poolPriceDisplay !== undefined ? poolPriceDisplay : 0;
 
             const domainLeft = Math.min(
-                ...unparsedLiquidityData.ranges
+                ...allLiqData
                     .filter((item) => item.activeLiq > 0)
                     .map((o: any) => {
                         return o.activeLiq !== undefined
@@ -325,13 +323,13 @@ function TradeCandleStickChart(props: propsIF) {
                     }),
             );
             const domainRight = Math.max(
-                ...unparsedLiquidityData.ranges.map((o: any) => {
+                ...allLiqData.map((o: any) => {
                     return o.activeLiq !== undefined ? o.activeLiq : 0;
                 }),
             );
 
             const depthBidLeft = Math.min(
-                ...unparsedLiquidityData.ranges
+                ...allLiqData
 
                     .filter(
                         (o: any) =>
@@ -341,7 +339,7 @@ function TradeCandleStickChart(props: propsIF) {
             );
 
             const depthBidRight = Math.max(
-                ...unparsedLiquidityData.ranges
+                ...allLiqData
                     .filter(
                         (o: any) =>
                             o.cumBidLiq !== undefined && o.cumBidLiq !== 0,
@@ -350,7 +348,7 @@ function TradeCandleStickChart(props: propsIF) {
             );
 
             const depthAskLeft = Math.min(
-                ...unparsedLiquidityData.ranges
+                ...allLiqData
                     .filter(
                         (o: any) =>
                             o.cumAskLiq !== undefined && o.cumAskLiq !== 0,
@@ -359,7 +357,7 @@ function TradeCandleStickChart(props: propsIF) {
             );
 
             const depthAskRight = Math.max(
-                ...unparsedLiquidityData.ranges
+                ...allLiqData
                     .filter((o: any) => {
                         const price = isDenomBase
                             ? o.upperBoundInvPriceDecimalCorrected
@@ -367,7 +365,7 @@ function TradeCandleStickChart(props: propsIF) {
 
                         return (
                             price > barThreshold / 10 &&
-                            price < limitBoundary &&
+                            price < poolPriceDisplay &&
                             o.cumAskLiq !== undefined &&
                             o.cumAskLiq !== 0
                         );
@@ -390,20 +388,13 @@ function TradeCandleStickChart(props: propsIF) {
                 ])
                 .range([30, 550]);
 
-            unparsedLiquidityData.ranges.map((data: any) => {
-                const liqUpperPrices = isDenomBase
-                    ? data.upperBoundInvPriceDecimalCorrected
-                    : data.lowerBoundPriceDecimalCorrected;
+            unparsedLiquidityData.ranges.askRanges.forEach(
+                (data: LiquidityRangeIF) => {
+                    const liqUpperPrices = isDenomBase
+                        ? data.upperBoundInvPriceDecimalCorrected
+                        : data.lowerBoundPriceDecimalCorrected;
 
-                const liqLowerPrices = isDenomBase
-                    ? data.lowerBoundInvPriceDecimalCorrected
-                    : data.upperBoundPriceDecimalCorrected;
-
-                if (
-                    liqUpperPrices >= poolPriceDisplay &&
-                    liqUpperPrices < poolPriceDisplay * 10
-                ) {
-                    liqBidData.push({
+                    liqAskData.push({
                         activeLiq: liquidityScale(data.activeLiq),
                         liqPrices: liqUpperPrices,
                         deltaAverageUSD: data.deltaAverageUSD
@@ -412,208 +403,32 @@ function TradeCandleStickChart(props: propsIF) {
                         cumAverageUSD: data.cumAverageUSD
                             ? data.cumAverageUSD
                             : 0,
-                        upperBound:
-                            data.upperBound === '+inf'
-                                ? data.lowerBound
-                                : data.upperBound,
+                        upperBound: data.upperBound,
                         lowerBound: data.lowerBound,
                     });
-                } else {
-                    if (
-                        liqLowerPrices <= limitBoundary &&
-                        liqLowerPrices > poolPriceDisplay / 10
-                    ) {
-                        liqAskData.push({
-                            activeLiq: liquidityScale(data.activeLiq),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD
-                                ? data.deltaAverageUSD
-                                : 0,
-                            cumAverageUSD: data.cumAverageUSD
-                                ? data.cumAverageUSD
-                                : 0,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-                }
+                },
+            );
 
-                if (!isDenomBase) {
-                    if (
-                        data.cumAskLiq !== undefined &&
-                        data.cumAskLiq !== 0 &&
-                        liqUpperPrices !== '+inf' &&
-                        !Number.isNaN(
-                            depthLiquidityScale(
-                                data.cumAskLiq > 0
-                                    ? data.cumAskLiq
-                                    : -data.cumAskLiq,
-                            ),
-                        ) &&
-                        liqUpperPrices < poolPriceDisplay * 10
-                    ) {
-                        depthLiqBidData.push({
-                            activeLiq: depthLiquidityScale(
-                                data.cumAskLiq > 0
-                                    ? data.cumAskLiq
-                                    : -data.cumAskLiq,
-                            ),
-                            liqPrices: liqUpperPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
+            unparsedLiquidityData.ranges.bidRanges.forEach(
+                (data: LiquidityRangeIF) => {
+                    const liqLowerPrices = isDenomBase
+                        ? data.lowerBoundInvPriceDecimalCorrected
+                        : data.upperBoundPriceDecimalCorrected;
 
-                    if (
-                        data.cumBidLiq !== undefined &&
-                        !Number.isNaN(
-                            depthLiquidityScale(
-                                data.cumBidLiq > 0
-                                    ? data.cumBidLiq
-                                    : -data.cumBidLiq,
-                            ),
-                        ) &&
-                        liqLowerPrices > poolPriceDisplay / 10
-                    ) {
-                        depthLiqAskData.push({
-                            activeLiq: depthLiquidityScale(
-                                data.cumBidLiq > 0
-                                    ? data.cumBidLiq
-                                    : -data.cumBidLiq,
-                            ),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-                } else {
-                    if (
-                        data.cumBidLiq !== undefined &&
-                        data.cumBidLiq !== 0 &&
-                        liqUpperPrices !== '+inf' &&
-                        liqUpperPrices < poolPriceDisplay * 10 &&
-                        !Number.isNaN(
-                            depthLiquidityScale(
-                                data.cumBidLiq > 0
-                                    ? data.cumBidLiq
-                                    : -data.cumBidLiq,
-                            ),
-                        )
-                    ) {
-                        depthLiqBidData.push({
-                            activeLiq: depthLiquidityScale(
-                                data.cumBidLiq > 0
-                                    ? data.cumBidLiq
-                                    : -data.cumBidLiq,
-                            ),
-                            liqPrices: liqUpperPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-
-                    if (
-                        data.cumAskLiq !== undefined &&
-                        data.cumAskLiq !== '0' &&
-                        !Number.isNaN(
-                            depthLiquidityScale(
-                                data.cumAskLiq > 0
-                                    ? data.cumAskLiq
-                                    : -data.cumAskLiq,
-                            ),
-                        ) &&
-                        liqUpperPrices <= limitBoundary &&
-                        liqUpperPrices > poolPriceDisplay / 10
-                    ) {
-                        depthLiqAskData.push({
-                            activeLiq: depthLiquidityScale(
-                                data.cumAskLiq > 0
-                                    ? data.cumAskLiq
-                                    : -data.cumAskLiq,
-                            ),
-                            liqPrices: liqLowerPrices,
-                            deltaAverageUSD: data.deltaAverageUSD,
-                            cumAverageUSD: data.cumAverageUSD,
-                            upperBound:
-                                data.upperBound === '+inf'
-                                    ? data.lowerBound
-                                    : data.upperBound,
-                            lowerBound: data.lowerBound,
-                        });
-                    }
-                }
-            });
-            if (liqBidData.length > 1 && liqAskData.length > 1) {
-                liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-
-                liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-                depthLiqBidData.sort(
-                    (a: any, b: any) => b.liqPrices - a.liqPrices,
-                );
-
-                liqBidData.push({
-                    activeLiq: liqBidData.find(
-                        (liqData) => liqData.liqPrices < limitBoundary,
-                    )?.activeLiq,
-                    liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                depthLiqBidData.push({
-                    activeLiq: depthLiqBidData.find(
-                        (liqData) => liqData.liqPrices < limitBoundary,
-                    )?.activeLiq,
-                    liqPrices: limitBoundary,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                liqAskData.push({
-                    activeLiq: liqAskData[liqAskData.length - 1].activeLiq,
-                    liqPrices: 0,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-
-                depthLiqAskData.push({
-                    activeLiq:
-                        depthLiqAskData[
-                            !isDenomBase ? 0 : depthLiqAskData.length - 1
-                        ]?.activeLiq,
-                    liqPrices: 0,
-                    deltaAverageUSD: 0,
-                    cumAverageUSD: 0,
-                    upperBound: 0,
-                    lowerBound: 0,
-                });
-            }
-            topBoundary = limitBoundary;
-            lowBoundary = parseFloat(rangeBoundary.pinnedMinPriceDisplay);
+                    liqBidData.push({
+                        activeLiq: liquidityScale(data.activeLiq),
+                        liqPrices: liqLowerPrices,
+                        deltaAverageUSD: data.deltaAverageUSD
+                            ? data.deltaAverageUSD
+                            : 0,
+                        cumAverageUSD: data.cumAverageUSD
+                            ? data.cumAverageUSD
+                            : 0,
+                        upperBound: data.upperBound,
+                        lowerBound: data.lowerBound,
+                    });
+                },
+            );
 
             liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
@@ -636,7 +451,6 @@ function TradeCandleStickChart(props: propsIF) {
     }, [
         unparsedLiquidityData,
         poolPriceDisplay,
-        currentPoolPriceTick,
         baseTokenAddress,
         quoteTokenAddress,
         sumActiveLiq,
@@ -646,6 +460,7 @@ function TradeCandleStickChart(props: propsIF) {
         baseTokenDecimals,
         quoteTokenDecimals,
         gridSize,
+        unparsedLiquidityData?.currentTick,
     ]);
 
     useEffect(() => {
