@@ -150,8 +150,6 @@ function TradeCandleStickChart(props: propsIF) {
 
     const [isCandleAdded, setIsCandleAdded] = useState<boolean>(false);
 
-    const [isCompletedFetchData, setIsCompletedFetchData] = useState(true);
-
     const [fetchCountForEnoughData, setFetchCountForEnoughData] = useState(1);
 
     const [prevCandleCount, setPrevCandleCount] = useState<number>(0);
@@ -235,7 +233,6 @@ function TradeCandleStickChart(props: propsIF) {
 
     useEffect(() => {
         setSelectedDrawnShape(undefined);
-        setIsCompletedFetchData(true);
         setChartResetStatus({
             isResetChart: false,
         });
@@ -244,7 +241,6 @@ function TradeCandleStickChart(props: propsIF) {
 
     useEffect(() => {
         if (candleDomains.isResetRequest) {
-            setIsCompletedFetchData(true);
             setFetchCountForEnoughData(0);
         }
     }, [candleDomains.isResetRequest]);
@@ -883,9 +879,8 @@ function TradeCandleStickChart(props: propsIF) {
         !isFetchingEnoughData;
 
     useEffect(() => {
-        isOpenChart !== undefined &&
-            setIsChartOpen(isOpenChart && !isCompletedFetchData);
-    }, [isOpenChart, isCompletedFetchData]);
+        isOpenChart !== undefined && setIsChartOpen(isOpenChart);
+    }, [isOpenChart]);
 
     const loadingText = (
         <div
@@ -917,7 +912,7 @@ function TradeCandleStickChart(props: propsIF) {
                     gridTemplateRows: 'auto auto',
                 }}
             >
-                {(!isOpenChart || isCompletedFetchData) && (
+                {!isOpenChart && (
                     <>
                         <div
                             style={{
@@ -984,8 +979,6 @@ function TradeCandleStickChart(props: propsIF) {
                             updateURL={updateURL}
                             userTransactionData={userTransactionData}
                             setPrevCandleCount={setPrevCandleCount}
-                            isCompletedFetchData={isCompletedFetchData}
-                            setIsCompletedFetchData={setIsCompletedFetchData}
                             setChartResetStatus={setChartResetStatus}
                             chartResetStatus={chartResetStatus}
                             openMobileSettingsModal={openMobileSettingsModal}
@@ -993,9 +986,7 @@ function TradeCandleStickChart(props: propsIF) {
                     </>
                 )}
 
-                {!(!isOpenChart || isCompletedFetchData) &&
-                    isUserIdle60min &&
-                    skeletonChart}
+                {!!isOpenChart && isUserIdle60min && skeletonChart}
             </div>
         </>
     );
