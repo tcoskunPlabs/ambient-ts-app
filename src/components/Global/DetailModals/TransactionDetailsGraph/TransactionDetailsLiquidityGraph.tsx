@@ -165,7 +165,10 @@ export default function TransactionDetailsLiquidityGraph(props: propsIF) {
                 if (liqCurve) {
                     const liqAsk: LiquidityRangeIF[] = [];
                     const liqBid: LiquidityRangeIF[] = [];
-                    liqCurve.ranges.forEach((element) => {
+                    const allData = liqCurve.ranges.askRanges.concat(
+                        liqCurve.ranges.bidRanges,
+                    );
+                    allData.forEach((element) => {
                         const liqUpperPrices = isDenomBase
                             ? element.lowerBoundPriceDecimalCorrected
                             : element.upperBoundInvPriceDecimalCorrected;

@@ -402,6 +402,19 @@ function TradeCandleStickChart(props: propsIF) {
                         upperBound: data.upperBound,
                         lowerBound: data.lowerBound,
                     });
+
+                    depthLiqAskData.push({
+                        activeLiq: depthLiquidityScale(
+                            data.cumAskLiq > 0
+                                ? data.cumAskLiq
+                                : -data.cumAskLiq,
+                        ),
+                        liqPrices: liqUpperPrices,
+                        deltaAverageUSD: data.deltaAverageUSD,
+                        cumAverageUSD: data.cumAverageUSD,
+                        upperBound: data.upperBound,
+                        lowerBound: data.lowerBound,
+                    });
                 },
             );
 
@@ -423,13 +436,26 @@ function TradeCandleStickChart(props: propsIF) {
                         upperBound: data.upperBound,
                         lowerBound: data.lowerBound,
                     });
+
+                    depthLiqBidData.push({
+                        activeLiq: depthLiquidityScale(
+                            data.cumBidLiq > 0
+                                ? data.cumBidLiq
+                                : -data.cumBidLiq,
+                        ),
+                        liqPrices: liqLowerPrices,
+                        deltaAverageUSD: data.deltaAverageUSD,
+                        cumAverageUSD: data.cumAverageUSD,
+                        upperBound: data.upperBound,
+                        lowerBound: data.lowerBound,
+                    });
                 },
             );
 
             liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             depthLiqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-            depthLiqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
+            // depthLiqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
 
             return {
                 liqAskData: liqAskData,
