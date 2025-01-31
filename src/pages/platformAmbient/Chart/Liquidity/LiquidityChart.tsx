@@ -610,7 +610,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                         ? 0
                         : scaleData.yScale.domain()[0]
                     : d3.min(
-                          liqDataAsk,
+                          liqDataBid,
                           (d: LiquidityDataLocal) => d.liqPrices,
                       );
 
@@ -622,7 +622,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 (isAmbientPosition || advancedMode) && isRange
                     ? scaleData.yScale.domain()[1]
                     : d3.max(
-                          liqDataBid,
+                          liqDataAsk,
                           (d: LiquidityDataLocal) => d.liqPrices,
                       );
 
@@ -690,11 +690,6 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                         (isAmbientPosition || (advancedMode && isRange)) &&
                         scaleData
                     ) {
-                        console.log(
-                            ' allData[allData.length - 1]',
-                            allData[allData.length - 1],
-                        );
-
                         drawingData = drawingData.concat([
                             {
                                 activeLiq: allData[0].activeLiq,
@@ -932,8 +927,9 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     liquidityData?.liqAskData.map(
                         (liqData: LiquidityDataLocal) => {
                             if (
-                                liqData?.liqPrices >
-                                liqTooltipSelectedLiqBar?.liqPrices
+                                liqData?.liqPrices <
+                                    liqTooltipSelectedLiqBar?.liqPrices &&
+                                liqData.liqPrices > poolPriceDisplay
                             ) {
                                 liqTextData.totalValue =
                                     liqTextData.totalValue +
@@ -945,8 +941,9 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     liquidityData?.liqBidData.map(
                         (liqData: LiquidityDataLocal) => {
                             if (
-                                liqData?.liqPrices <
-                                liqTooltipSelectedLiqBar.liqPrices
+                                liqData?.liqPrices >
+                                    liqTooltipSelectedLiqBar.liqPrices &&
+                                liqData?.liqPrices < poolPriceDisplay
                             ) {
                                 liqTextData.totalValue =
                                     liqTextData.totalValue +
@@ -957,7 +954,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                 }
             }
             const pinnedTick =
-                liquidityMouseMoveActive === 'bid'
+                liquidityMouseMoveActive === 'ask'
                     ? isDenomBase
                         ? liqTooltipSelectedLiqBar?.upperBound
                         : liqTooltipSelectedLiqBar?.lowerBound
@@ -1006,11 +1003,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             };
 
             const filtered =
-                liquidityData?.liqBidData.length > 1
-                    ? liquidityData?.liqBidData.filter(
+                liquidityData?.liqAskData.length > 1
+                    ? liquidityData?.liqAskData.filter(
                           (d: LiquidityDataLocal) => d.liqPrices != null,
                       )
-                    : liquidityData?.liqBidData;
+                    : liquidityData?.liqAskData;
 
             const mousePosition = scaleData?.yScale.invert(offsetY);
 
@@ -1075,11 +1072,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             };
 
             const filtered =
-                liquidityData?.liqAskData.length > 1
-                    ? liquidityData?.liqAskData.filter(
+                liquidityData?.liqBidData.length > 1
+                    ? liquidityData?.liqBidData.filter(
                           (d: LiquidityDataLocal) => d.liqPrices != null,
                       )
-                    : liquidityData?.liqAskData;
+                    : liquidityData?.liqBidData;
 
             const mousePosition = scaleData?.yScale.invert(offsetY);
 

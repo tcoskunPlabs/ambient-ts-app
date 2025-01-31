@@ -455,13 +455,17 @@ function TradeCandleStickChart(props: propsIF) {
             liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             depthLiqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
-            // depthLiqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
+            depthLiqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
 
             return {
-                liqAskData: liqAskData,
-                liqBidData: liqBidData,
-                depthLiqBidData: depthLiqBidData,
-                depthLiqAskData: depthLiqAskData,
+                liqAskData: isDenomBase ? liqBidData : liqAskData,
+                liqBidData: isDenomBase ? liqAskData : liqBidData,
+                depthLiqBidData: isDenomBase
+                    ? depthLiqAskData
+                    : depthLiqBidData,
+                depthLiqAskData: isDenomBase
+                    ? depthLiqBidData
+                    : depthLiqAskData,
                 topBoundary: topBoundary,
                 lowBoundary: lowBoundary,
                 liqTransitionPointforCurve: poolPriceDisplay,
