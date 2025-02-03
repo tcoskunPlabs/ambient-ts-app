@@ -428,73 +428,69 @@ function TradeCandleStickChart(props: propsIF) {
                 ])
                 .range([30, 550]);
 
-            unparsedLiquidityData.ranges.askRanges.forEach(
-                (data: LiquidityRangeIF) => {
-                    const liqUpperPrices = isDenomBase
-                        ? data.upperBoundInvPriceDecimalCorrected
-                        : data.lowerBoundPriceDecimalCorrected;
+            const tempAskRanges = isDenomBase
+                ? unparsedLiquidityData.ranges.bidRanges
+                : unparsedLiquidityData.ranges.askRanges;
 
-                    liqAskData.push({
-                        activeLiq: liquidityScale(data.activeLiq),
-                        liqPrices: liqUpperPrices,
-                        deltaAverageUSD: data.deltaAverageUSD
-                            ? data.deltaAverageUSD
-                            : 0,
-                        cumAverageUSD: data.cumAverageUSD
-                            ? data.cumAverageUSD
-                            : 0,
-                        upperBound: data.upperBound,
-                        lowerBound: data.lowerBound,
-                    });
+            const tempBidRanges = isDenomBase
+                ? unparsedLiquidityData.ranges.askRanges
+                : unparsedLiquidityData.ranges.bidRanges;
 
-                    depthLiqAskData.push({
-                        activeLiq: depthLiquidityScale(
-                            data.cumAskLiq > 0
-                                ? data.cumAskLiq
-                                : -data.cumAskLiq,
-                        ),
-                        liqPrices: liqUpperPrices,
-                        deltaAverageUSD: data.deltaAverageUSD,
-                        cumAverageUSD: data.cumAverageUSD,
-                        upperBound: data.upperBound,
-                        lowerBound: data.lowerBound,
-                    });
-                },
-            );
+            tempAskRanges.forEach((data: LiquidityRangeIF) => {
+                const liqUpperPrices = isDenomBase
+                    ? data.upperBoundInvPriceDecimalCorrected
+                    : data.upperBoundPriceDecimalCorrected;
 
-            unparsedLiquidityData.ranges.bidRanges.forEach(
-                (data: LiquidityRangeIF) => {
-                    const liqLowerPrices = isDenomBase
-                        ? data.lowerBoundInvPriceDecimalCorrected
-                        : data.upperBoundPriceDecimalCorrected;
+                liqAskData.push({
+                    activeLiq: liquidityScale(data.activeLiq),
+                    liqPrices: liqUpperPrices,
+                    deltaAverageUSD: data.deltaAverageUSD
+                        ? data.deltaAverageUSD
+                        : 0,
+                    cumAverageUSD: data.cumAverageUSD ? data.cumAverageUSD : 0,
+                    upperBound: data.upperBound,
+                    lowerBound: data.lowerBound,
+                });
 
-                    liqBidData.push({
-                        activeLiq: liquidityScale(data.activeLiq),
-                        liqPrices: liqLowerPrices,
-                        deltaAverageUSD: data.deltaAverageUSD
-                            ? data.deltaAverageUSD
-                            : 0,
-                        cumAverageUSD: data.cumAverageUSD
-                            ? data.cumAverageUSD
-                            : 0,
-                        upperBound: data.upperBound,
-                        lowerBound: data.lowerBound,
-                    });
+                depthLiqAskData.push({
+                    activeLiq: depthLiquidityScale(
+                        data.cumAskLiq > 0 ? data.cumAskLiq : -data.cumAskLiq,
+                    ),
+                    liqPrices: liqUpperPrices,
+                    deltaAverageUSD: data.deltaAverageUSD,
+                    cumAverageUSD: data.cumAverageUSD,
+                    upperBound: data.upperBound,
+                    lowerBound: data.lowerBound,
+                });
+            });
 
-                    depthLiqBidData.push({
-                        activeLiq: depthLiquidityScale(
-                            data.cumBidLiq > 0
-                                ? data.cumBidLiq
-                                : -data.cumBidLiq,
-                        ),
-                        liqPrices: liqLowerPrices,
-                        deltaAverageUSD: data.deltaAverageUSD,
-                        cumAverageUSD: data.cumAverageUSD,
-                        upperBound: data.upperBound,
-                        lowerBound: data.lowerBound,
-                    });
-                },
-            );
+            tempBidRanges.forEach((data: LiquidityRangeIF) => {
+                const liqLowerPrices = isDenomBase
+                    ? data.lowerBoundInvPriceDecimalCorrected
+                    : data.lowerBoundPriceDecimalCorrected;
+
+                liqBidData.push({
+                    activeLiq: liquidityScale(data.activeLiq),
+                    liqPrices: liqLowerPrices,
+                    deltaAverageUSD: data.deltaAverageUSD
+                        ? data.deltaAverageUSD
+                        : 0,
+                    cumAverageUSD: data.cumAverageUSD ? data.cumAverageUSD : 0,
+                    upperBound: data.upperBound,
+                    lowerBound: data.lowerBound,
+                });
+
+                depthLiqBidData.push({
+                    activeLiq: depthLiquidityScale(
+                        data.cumBidLiq > 0 ? data.cumBidLiq : -data.cumBidLiq,
+                    ),
+                    liqPrices: liqLowerPrices,
+                    deltaAverageUSD: data.deltaAverageUSD,
+                    cumAverageUSD: data.cumAverageUSD,
+                    upperBound: data.upperBound,
+                    lowerBound: data.lowerBound,
+                });
+            });
 
             liqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
             liqBidData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
@@ -502,14 +498,10 @@ function TradeCandleStickChart(props: propsIF) {
             depthLiqAskData.sort((a: any, b: any) => b.liqPrices - a.liqPrices);
 
             return {
-                liqAskData: isDenomBase ? liqBidData : liqAskData,
-                liqBidData: isDenomBase ? liqAskData : liqBidData,
-                depthLiqBidData: isDenomBase
-                    ? depthLiqAskData
-                    : depthLiqBidData,
-                depthLiqAskData: isDenomBase
-                    ? depthLiqBidData
-                    : depthLiqAskData,
+                liqAskData: liqAskData,
+                liqBidData: liqBidData,
+                depthLiqBidData: depthLiqBidData,
+                depthLiqAskData: depthLiqAskData,
                 topBoundary: topBoundary,
                 lowBoundary: lowBoundary,
                 liqTransitionPointforCurve: poolPriceDisplay,
