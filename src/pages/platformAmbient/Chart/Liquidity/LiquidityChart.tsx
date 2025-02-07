@@ -533,19 +533,15 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         const high = _low > _high ? _low : _high;
 
         if (isRange) {
-            const drawingData = data;
-
-            drawingData.sort((a, b) => a.liqPrices - b.liqPrices);
-
             if (!advancedMode || (advancedMode && high > poolPriceDisplay)) {
                 clipHighlightedLines(canvas, 'ask');
-                lineLiqAskSeries(drawingData.slice().reverse());
+                lineLiqAskSeries(data.slice().reverse());
                 ctx?.restore();
             }
 
             if (!advancedMode || (advancedMode && low < poolPriceDisplay)) {
                 clipHighlightedLines(canvas, 'bid');
-                lineLiqBidSeries(drawingData);
+                lineLiqBidSeries(data);
                 ctx?.restore();
             }
         }
@@ -606,10 +602,6 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             const { offsetX, offsetY } = getXandYLocationForChart(event, rect);
 
             const currentDataY = scaleData?.yScale.invert(offsetY);
-            const currentDataX =
-                liqMode === 'depth'
-                    ? liquidityDepthScale.invert(offsetX)
-                    : liquidityScale.invert(offsetX);
 
             const bidMinBoudnary =
                 (isAmbientPosition || advancedMode) && isRange
@@ -623,17 +615,16 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
             const bidMaxBoudnary = poolPriceDisplay;
 
-            const askMinBoudnary = poolPriceDisplay;
-
-            const askMaxBoudnary =
+            const askMinBoudnary =
                 (isAmbientPosition || advancedMode) && isRange
                     ? scaleData.yScale.domain()[1]
                     : d3.max(
                           liqDataAsk,
                           (d: LiquidityDataLocal) => d.liqPrices,
                       );
+            const askMaxBoudnary = poolPriceDisplay;
 
-            if (liqMaxActiveLiq && currentDataX <= liqMaxActiveLiq) {
+            if (offsetX > 0 && offsetX <= liquidityScale.range()[0]) {
                 if (
                     askMinBoudnary !== undefined &&
                     askMaxBoudnary !== undefined
