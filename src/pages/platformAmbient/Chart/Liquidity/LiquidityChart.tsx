@@ -922,19 +922,17 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
             if (liqTooltipSelectedLiqBar?.liqPrices != null) {
                 if (liquidityMouseMoveActive === 'ask') {
-                    liquidityData?.liqAskData.map(
-                        (liqData: LiquidityDataLocal) => {
-                            if (
-                                liqData?.liqPrices <
-                                    liqTooltipSelectedLiqBar?.liqPrices &&
-                                liqData.liqPrices > poolPriceDisplay
-                            ) {
-                                liqTextData.totalValue =
-                                    liqTextData.totalValue +
-                                    liqData?.deltaAverageUSD;
-                            }
-                        },
-                    );
+                    liqDataAsk.map((liqData: LiquidityDataLocal) => {
+                        if (
+                            liqData?.liqPrices <
+                                liqTooltipSelectedLiqBar?.liqPrices &&
+                            liqData.liqPrices > poolPriceDisplay
+                        ) {
+                            liqTextData.totalValue =
+                                liqTextData.totalValue +
+                                liqData?.deltaAverageUSD;
+                        }
+                    });
                 } else {
                     liquidityData?.liqBidData.map(
                         (liqData: LiquidityDataLocal) => {
@@ -979,7 +977,7 @@ export default function LiquidityChart(props: liquidityPropsIF) {
         liquidityMouseMoveActive,
         liqTooltip,
         currentPoolPriceTick,
-        liquidityData?.liqAskData,
+        liqDataAsk,
         liquidityData?.liqBidData,
     ]);
 
@@ -1001,11 +999,11 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             };
 
             const filtered =
-                liquidityData?.liqAskData.length > 1
-                    ? liquidityData?.liqAskData.filter(
+                liqDataAsk.length > 1
+                    ? liqDataAsk.filter(
                           (d: LiquidityDataLocal) => d.liqPrices != null,
                       )
-                    : liquidityData?.liqAskData;
+                    : liqDataAsk;
 
             const mousePosition = scaleData?.yScale.invert(offsetY);
 
@@ -1014,6 +1012,8 @@ export default function LiquidityChart(props: liquidityPropsIF) {
                     item.liqPrices ===
                     d3.min(filtered, (d: LiquidityDataLocal) => d.liqPrices),
             );
+
+            console.log('liquidityData?.liqAskData', liqDataAsk, closest);
 
             filtered.map((data: LiquidityDataLocal) => {
                 if (
