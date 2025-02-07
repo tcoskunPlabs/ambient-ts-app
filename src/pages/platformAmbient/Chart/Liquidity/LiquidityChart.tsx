@@ -145,26 +145,33 @@ export default function LiquidityChart(props: liquidityPropsIF) {
             ? 0
             : Math.log(poolPriceNonDisplay) / Math.log(1.0001);
 
-    const liqDataAsk = liquidityData?.liqAskData;
-
-    const liqDataDepthAsk = liquidityData?.depthLiqAskData;
+    const liqDataDepthBid = liquidityData?.depthLiqBidData;
 
     const liqDataBid = liquidityData?.liqBidData;
 
     const isAmbientPosition = simpleRangeWidth === 100 && !advancedMode;
 
-    const liqDataDepthBid = useMemo<LiquidityDataLocal[]>(() => {
+    const liqDataDepthAsk = useMemo<LiquidityDataLocal[]>(() => {
         return advancedMode
-            ? liquidityData?.depthLiqBidData
-            : liquidityData?.depthLiqBidData.filter(
+            ? liquidityData?.depthLiqAskData
+            : liquidityData?.depthLiqAskData.filter(
                   (d: LiquidityDataLocal) =>
                       d.liqPrices <= liquidityData?.topBoundary,
               );
     }, [
         advancedMode,
-        liquidityData?.depthLiqBidData,
+        liquidityData?.depthLiqAskData,
         liquidityData?.topBoundary,
     ]);
+
+    const liqDataAsk = useMemo<LiquidityDataLocal[]>(() => {
+        return advancedMode
+            ? liquidityData?.liqAskData
+            : liquidityData?.liqAskData.filter(
+                  (d: LiquidityDataLocal) =>
+                      d.liqPrices <= liquidityData?.topBoundary,
+              );
+    }, [liquidityData?.liqAskData]);
 
     const findLiqNearest = (
         liqDataAll: LiquidityDataLocal[],
