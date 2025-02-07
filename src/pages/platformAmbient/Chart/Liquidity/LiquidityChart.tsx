@@ -615,14 +615,14 @@ export default function LiquidityChart(props: liquidityPropsIF) {
 
             const bidMaxBoudnary = poolPriceDisplay;
 
-            const askMinBoudnary =
+            const askMaxBoudnary =
                 (isAmbientPosition || advancedMode) && isRange
                     ? scaleData.yScale.domain()[1]
                     : d3.max(
                           liqDataAsk,
                           (d: LiquidityDataLocal) => d.liqPrices,
                       );
-            const askMaxBoudnary = poolPriceDisplay;
+            const askMinBoudnary = poolPriceDisplay;
 
             if (offsetX > 0 && offsetX <= liquidityScale.range()[0]) {
                 if (
